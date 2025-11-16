@@ -9,7 +9,17 @@ const PORT = 3000; // The port your server will run on. Ensure it's open.
 
 // --- Path Resolution ---
 // Resolve all paths from config.json relative to the application's root directory
-const resolvePath = (relativePath) => path.resolve(__dirname, relativePath);
+const resolvePath = (p) => {
+    // Check for Windows-style absolute paths (e.g., C:/...)
+    if (/^[a-zA-Z]:/.test(p)) {
+        return p;
+    }
+    // Use path.isAbsolute for other absolute paths (e.g., /home/user)
+    if (path.isAbsolute(p)) {
+        return p;
+    }
+    return path.resolve(__dirname, p);
+}
 
 const MONSTER_SPAWN_PATH = resolvePath(config.MONSTER_SPAWN_PATH);
 const MONSTER_LIST_PATH = resolvePath(config.MONSTER_LIST_PATH);
