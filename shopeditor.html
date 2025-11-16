@@ -23,7 +23,7 @@
                 <button class="close-btn" onclick="closeConfirmModal()"><i data-lucide="x"></i></button>
             </div>
             <div class="modal-body">
-                <p id="confirmMessage" style="color: var(--text-secondary); line-height: 1.6%;">This action cannot be undone.</p>
+                <p id="confirmMessage">This action cannot be undone.</p>
             </div>
             <div class="modal-footer">
                 <button class="btn btn-outline" onclick="closeConfirmModal()">Cancel</button>
@@ -48,19 +48,21 @@
             <h1><i data-lucide="store"></i>MU Shop Editor<i data-lucide="store"></i></h1>
             <p>Manage NPC shop inventories across the server</p>
             
-            <div class="back-button-control">
-                <button class="btn btn-outline" onclick="checkUnsavedChangesAndRedirect()"><i data-lucide="arrow-left"></i> Dashboard</button>
+            <div class="header-right-controls">
+                <a href="index.html" class="btn btn-outline" title="Back to Dashboard">
+                    <i data-lucide="home"></i>Dashboard
+                </a>
                 <button class="btn btn-outline" onclick="openGuideModal()"><i data-lucide="help-circle"></i>Guide</button>
             </div>
         </div>
         
         <div id="statusBar" class="status-bar"></div>
         
-        <div id="dataManagementSection" class="glass-effect" style="display: none; padding: 20px;">
+        <div id="dataManagementSection" class="glass-effect" style="display: none;">
             <div style="display: flex; justify-content: space-between; align-items: center;">
                 <div>
                     <h3><i data-lucide="database"></i>Data Management</h3>
-                    <p style="font-size: 14px; color: var(--text-secondary);">Your edits are saved locally. Server merging is handled on save.</p>
+                    <p>Your edits are saved locally. Server merging is handled on save.</p>
                 </div>
                 <button class="btn btn-danger" onclick="confirmClearCache()">
                     <i data-lucide="trash-2"></i> Clear Local Cache
@@ -69,12 +71,12 @@
         </div>
         
         <div class="main-content" id="mainContent" style="display: none;">
-            <div class="sidebar glass-effect" style="padding: 20px;">
+            <div class="sidebar glass-effect">
                 <h3><i data-lucide="contact"></i>Shops</h3>
-                <div class="search-bar" style="margin-bottom: 15px;"><input type="text" id="shopSearch" oninput="filterShops()" placeholder="Search shops..."></div>
+                <div class="search-bar"><input type="text" id="shopSearch" oninput="filterShops()" placeholder="Search shops..."></div>
                 <div class="shop-list" id="shopList"></div>
             </div>
-            <div class="editor-panel glass-effect" style="padding: 25px;">
+            <div class="editor-panel glass-effect">
                 <div id="editorContent"><div class="empty-state"><h3>Select a Shop</h3><p>Choose a shop from the list on the left to start editing.</p></div></div>
             </div>
         </div>
