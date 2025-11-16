@@ -205,3 +205,61 @@
         .dropdown:hover .btn-primary { background: #fff; }
         .dropdown .btn i { transition: transform 0.2s ease-in-out; }
         .dropdown:hover .btn i { transform: rotate(180deg); }
+
+        /* MODIFICATION: New section for beautification and unified controls */
+        .header-right-controls {
+            position: absolute;
+            top: 25px;
+            right: 30px;
+            display: flex;
+            gap: 10px;
+        }
+
+        .form-divider {
+            grid-column: 1 / -1;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin: 20px 0;
+        }
+        .form-divider h4 {
+            color: var(--text-secondary);
+            font-weight: 600;
+            white-space: nowrap;
+        }
+        .form-divider hr {
+            width: 100%;
+            border: none;
+            border-top: 1px solid rgba(0, 170, 255, 0.2);
+        }
+
+        @keyframes background-pan {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        body {
+            background: linear-gradient(135deg, #1a223f 0%, var(--bg-dark) 50%, #1a223f 100%);
+            background-size: 200% 200%;
+            animation: background-pan 30s ease infinite;
+        }
+
+        .glass-effect {
+            background: radial-gradient(circle at top left, rgba(26, 34, 63, 0.7), rgba(26, 34, 63, 0.5));
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5), 0 0 1px 1px rgba(0, 170, 255, 0.2);
+        }
+
+        .btn {
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+            transform: translateY(0);
+        }
+        .btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+        }
+        .btn-primary:hover:not(:disabled) { background: #fff; color: var(--bg-dark); }
+        .btn-success:hover:not(:disabled) { background: #fff; color: var(--bg-dark); }
+        .btn-danger:hover:not(:disabled) { background: #fff; color: var(--accent-pink); }
+        .btn-outline:hover { background: rgba(0, 170, 255, 0.1); border-color: var(--accent-blue); }
+        .btn-warning:hover:not(:disabled) { background: #fff; color: var(--bg-dark); }
