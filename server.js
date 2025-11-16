@@ -69,6 +69,14 @@ app.get('/mixeditor.html', (req, res) => {
     res.sendFile(path.join(__dirname, 'mixeditor.html'));
 });
 
+app.get('/monsterdropeditor.html', (req, res) => {
+    res.sendFile(path.join(__dirname, 'monsterdropeditor.html'));
+});
+
+app.get('/zendropeditor.html', (req, res) => {
+    res.sendFile(path.join(__dirname, 'zendropeditor.html'));
+});
+
 
 // --- Helper Functions ---
 /**
