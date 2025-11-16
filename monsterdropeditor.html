@@ -1,0 +1,1813 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Monster Drop Editor (Each Map Bag)</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@500&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <!-- Styles copied from monstereditor.html for consistency -->
+    <style>
+        :root {
+            --bg-dark: #0a0f1e;
+            --bg-glass: rgba(26, 34, 63, 0.6);
+            --text-primary: #e0e0e0;
+            --text-secondary: #a0a0c0;
+            --text-bright: #ffffff;
+            --font-ui: 'Inter', sans-serif;
+            --font-data: 'Fira Code', monospace;
+            
+            --accent-blue: #00aaff;
+            --accent-green: #00ff9b;
+            --accent-amber: #ffc107;
+            --accent-pink: #ff0055;
+            --accent-purple: #6f42c1;
+        }
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: var(--font-ui);
+            background: linear-gradient(135deg, #1a223f 0%, var(--bg-dark) 100%);
+            color: var(--text-primary);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 95%; /* Wider for more columns */
+            margin: 0 auto;
+            background: transparent;
+            border-radius: 12px;
+            padding: 30px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .glass-effect {
+            background: var(--bg-glass);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(0, 170, 255, 0.2);
+            border-radius: 12px;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+        }
+        
+        .header { position: relative; padding: 30px; text-align: center; }
+        .header .header-controls { position: absolute; top: 25px; left: 30px; display: flex; align-items: center; gap: 10px; background: rgba(0, 170, 255, 0.1); padding: 8px 12px; border-radius: 6px; }
+        .header .header-controls label { font-weight: 600; font-size: 14px; }
+        .header h1 { font-size: 28px; margin-bottom: 10px; color: var(--text-bright); display: flex; align-items: center; justify-content: center; gap: 15px; }
+        .header p { color: var(--text-secondary); }
+        
+        /* Status Bar Variants */
+        .status-bar { display: none; padding: 15px; border-radius: 8px; font-weight: 600; margin-bottom: 20px; }
+        .status-bar-success { background: rgba(0, 255, 155, 0.2); color: var(--accent-green); border: 1px solid var(--accent-green); }
+        .status-bar-error { background: rgba(255, 0, 85, 0.2); color: var(--accent-pink); border: 1px solid var(--accent-pink); }
+        .status-bar-warning { background: rgba(255, 193, 7, 0.2); color: var(--accent-amber); border: 1px solid var(--accent-amber); }
+        .status-bar-info { background: rgba(0, 170, 255, 0.2); color: var(--accent-blue); border: 1px solid var(--accent-blue); }
+        
+        .main-content { display: grid; grid-template-columns: 300px 1fr; gap: 20px; }
+        .sidebar h3 { display: flex; align-items: center; gap: 10px; margin-bottom: 15px; color: var(--text-bright); }
+        .map-list { max-height: 70vh; overflow-y: auto; }
+        .map-item { padding: 10px; margin-bottom: 5px; background: transparent; color: var(--text-secondary); border-radius: 6px; cursor: pointer; transition: all 0.2s; border-left: 3px solid transparent; font-size: 14px; }
+        .map-item:hover { background: rgba(0, 170, 255, 0.1); color: var(--text-primary); border-left-color: var(--accent-blue); }
+        .map-item.active { background: var(--accent-blue); color: var(--bg-dark); font-weight: 600; border-left-color: var(--accent-amber); }
+        .map-item-number { font-weight: bold; margin-right: 8px; font-family: var(--font-data); }
+        .search-bar input { width: 100%; padding: 12px; border: 1px solid rgba(0, 170, 255, 0.2); border-radius: 6px; font-size: 14px; background-color: rgba(0,0,0,0.3); color: var(--text-primary); }
+        .search-bar input:focus { outline: none; border-color: var(--accent-blue); }
+
+        .btn { padding: 10px 18px; border: none; border-radius: 6px; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.3s; display: inline-flex; align-items: center; gap: 8px; }
+        .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+        .btn-primary { background: var(--accent-blue); color: var(--bg-dark); }
+        .btn-primary:hover:not(:disabled) { background: #fff; }
+        .btn-success { background: var(--accent-green); color: var(--bg-dark); }
+        .btn-success:hover:not(:disabled) { background: #fff; }
+        .btn-danger { background: var(--accent-pink); color: #fff; }
+        .btn-danger:hover:not(:disabled) { background: #fff; color: var(--accent-pink); }
+        .btn-outline { background: transparent; border: 1px solid rgba(0, 170, 255, 0.5); color: var(--accent-blue); }
+        .btn-outline:hover { background: rgba(0, 170, 255, 0.1); }
+        
+        .editor-panel-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 15px; }
+        .editor-panel-header .search-bar { flex-grow: 1; min-width: 250px; }
+        
+        .table-wrapper { overflow-x: auto; max-height: 70vh; background: rgba(0,0,0,0.2); border-radius: 8px; }
+        table { width: 100%; border-collapse: collapse; min-width: 2000px; /* Force horizontal scroll */ }
+        th { background: rgba(0, 170, 255, 0.1); color: var(--text-bright); padding: 10px 12px; text-align: left; font-weight: 600; font-size: 12px; vertical-align: top; position: sticky; top: 0; z-index: 10; }
+        td { padding: 8px 12px; border-bottom: 1px solid rgba(0, 170, 255, 0.1); vertical-align: middle; font-size: 13px; }
+        tr:hover { background: rgba(0, 170, 255, 0.05); }
+
+        .spawn-row-new { background-color: rgba(0, 255, 155, 0.1) !important; }
+        .spawn-row-modified { background-color: rgba(255, 193, 7, 0.1) !important; }
+
+        .inline-input { width: 100%; min-width: 50px; padding: 4px 6px; border: 1px solid transparent; background: rgba(0,0,0,0.3); border-radius: 4px; font-family: var(--font-data); font-size: 13px; transition: all 0.2s; color: var(--text-primary); }
+        .inline-input:hover, .inline-input:focus { border-color: var(--accent-blue); background: var(--bg-dark); }
+        .inline-input.wide { min-width: 120px; }
+        
+        input[type=number]::-webkit-inner-spin-button, input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+        input[type=number] { -moz-appearance: textfield; }
+        
+        .monster-name, .item-name { font-weight: 600; color: var(--text-primary); font-size: 13px; cursor: help; white-space: nowrap; }
+        .item-name-col { min-width: 180px; }
+        .monster-name-col { min-width: 160px; }
+        
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.7); z-index: 1000; align-items: center; justify-content: center; }
+        .modal.show { display: flex; }
+        
+        .modal-content { box-shadow: 0 8px 32px 0 rgba(0,0,0,0.5); color: var(--text-primary); max-width: 1000px; width: 90%; max-height: 90vh; overflow-y: auto; }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; padding: 20px 25px; border-bottom: 1px solid rgba(0, 170, 255, 0.2); }
+        .modal-header h2 { color: var(--text-bright); }
+        .modal-body { padding: 25px; }
+        .modal-footer { display: flex; gap: 10px; justify-content: flex-end; padding: 20px 25px; border-top: 1px solid rgba(0, 170, 255, 0.2); }
+        .close-btn { color: var(--text-secondary); transition: all 0.2s; background: none; border: none; cursor: pointer;}
+        .close-btn:hover { color: var(--text-bright); transform: rotate(90deg); }
+        
+        .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; }
+        .form-group.full-width { grid-column: 1 / -1; }
+        .form-grid label { display: block; margin-bottom: 5px; font-weight: 600; color: var(--text-secondary); font-size: 12px; }
+        .form-group input, .form-group select { width: 100%; padding: 8px 10px; border: 1px solid rgba(0, 170, 255, 0.2); border-radius: 6px; font-size: 14px; background-color: rgba(0,0,0,0.3); color: var(--text-primary); font-family: var(--font-data); }
+        .form-group input:focus, .form-group select:focus { outline: none; border-color: var(--accent-blue); }
+        
+        .monster-search, .item-search { position: relative; }
+        .suggestions { background: var(--bg-dark); border: 1px solid var(--accent-blue); position: absolute; top: 100%; left: 0; right: 0; max-height: 200px; overflow-y: auto; z-index: 100; display: none; }
+        .suggestions.show { display: block; }
+        .suggestion-item { padding: 10px; cursor: pointer; border-bottom: 1px solid rgba(0, 170, 255, 0.1); }
+        .suggestion-item:hover { background: rgba(0, 170, 255, 0.1); }
+        .suggestion-item-id { color: var(--accent-blue); font-family: var(--font-data); margin-right: 8px; }
+        /* NEW: Style for category name in suggestions */
+        .suggestion-item-cat { color: var(--accent-amber); font-family: var(--font-data); margin-right: 8px; }
+
+        
+        /* NEW: Style for bulk edit form dividers */
+        .form-divider {
+            grid-column: 1 / -1;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 10px 0;
+            color: var(--accent-blue);
+        }
+        .form-divider hr {
+            flex-grow: 1;
+            border: none;
+            border-top: 1px solid rgba(0, 170, 255, 0.2);
+        }
+        .form-divider h4 {
+            font-weight: 600;
+        }
+
+        .action-btn { padding: 5px; border-radius: 4px; cursor: pointer; background: transparent; border: none; color: var(--text-secondary); }
+        .action-btn:hover { color: var(--text-bright); }
+        .btn-delete:hover { color: var(--accent-pink); }
+        .btn-duplicate:hover { color: var(--accent-blue); }
+        .btn-view:hover { color: var(--accent-amber); } /* NEW: Style for view button */
+        .empty-state { text-align: center; padding: 60px 20px; color: var(--text-secondary); }
+        
+        /* NEW: Load More Button */
+        .load-more-container {
+            text-align: center;
+            padding: 20px 0;
+        }
+
+        /* NEW: Undo/Redo Buttons */
+        #undoRedoControls button {
+            background: rgba(0, 170, 255, 0.1);
+            color: var(--accent-blue);
+        }
+        #undoRedoControls button:disabled {
+            opacity: 0.2;
+            cursor: not-allowed;
+            color: var(--text-secondary);
+        }
+
+
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: var(--accent-blue); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #fff; }
+
+        .btn i, .action-btn i, h1 i, h3 i { width: 16px; height: 16px; stroke-width: 2.5; }
+        .action-btn i { width: 18px; height: 18px; }
+        .header h1 i { width: 32px; height: 32px; color: var(--accent-blue); }
+    </style>
+</head>
+<body>
+    
+    <!-- Confirmation Modal -->
+    <div class="modal" id="confirmModal">
+        <div class="modal-content glass-effect" style="max-width: 500px;">
+            <div class="modal-header">
+                <h2 id="confirmTitle">Are you sure?</h2>
+                <button class="close-btn" onclick="closeConfirmModal()"><i data-lucide="x"></i></button>
+            </div>
+            <div class="modal-body">
+                <p id="confirmMessage" style="color: var(--text-secondary); line-height: 1.6;">This action cannot be undone.</p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" onclick="closeConfirmModal()">Cancel</button>
+                <button id="confirmButton" class="btn btn-danger">Confirm</button>
+            </div>
+        </div>
+    </div>
+    
+    <div class="container glass-effect">
+        <div class="header">
+            <h1><i data-lucide="droplets"></i>Monster Drop Editor<i data-lucide="package"></i></h1>
+            <p>Manage item drops for each map bag file (<code>EachMonsterMapDrop</code>)</p>
+            
+            <!-- START: UPDATED HEADER CONTROLS -->
+            <div class="header-right-controls" style="position: absolute; top: 25px; right: 30px; display: flex; gap: 10px;">
+                <a href="index.html" class="btn btn-outline" title="Back to Dashboard">
+                    <i data-lucide="home"></i>Dashboard
+                </a>
+                <button class="btn btn-outline" onclick="openGuideModal()"><i data-lucide="help-circle"></i>Guide</button>
+            </div>
+            <!-- END: UPDATED HEADER CONTROLS -->
+            
+            <!-- NEW: Undo/Redo Controls -->
+            <div class="header-controls" id="undoRedoControls">
+                <button class="btn btn-outline" id="undoBtn" disabled title="Undo (Ctrl+Z)" onclick="undoChange()">
+                    <i data-lucide="undo-2"></i> Undo
+                </button>
+                <button class="btn btn-outline" id="redoBtn" disabled title="Redo (Ctrl+Y / Cmd+Shift+Z)" onclick="redoChange()">
+                    <i data-lucide="redo-2"></i> Redo
+                </button>
+            </div>
+        </div>
+        
+        <div id="statusBar" class="status-bar"></div>
+        
+        <div class="main-content" id="mainContent">
+            <div class="sidebar glass-effect" style="padding: 20px;">
+                <h3><i data-lucide="map"></i>Map Bag Files</h3>
+                <div class="search-bar" style="margin-bottom: 15px;"><input type="text" id="mapSearch" oninput="filterMapFiles()" placeholder="Search map files..."></div>
+                <div class="map-list" id="mapFileList"></div>
+            </div>
+            <div class="editor-panel glass-effect" style="padding: 25px;">
+                <div id="editorContent">
+                    <div class="empty-state">
+                        <h3>Loading data...</h3>
+                        <p>Fetching map drop files, item lists, and monster lists from the server.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Add/Edit Drop Modal -->
+    <div class="modal" id="dropModal">
+        <div class="modal-content glass-effect">
+            <div class="modal-header">
+                <h2 id="modalTitle">Add New Drop Item</h2>
+                <button class="close-btn" onclick="closeModal()"><i data-lucide="x"></i></button>
+            </div>
+            <form id="dropForm">
+                <div class="modal-body">
+                    <div class="form-grid">
+                        <!-- Monster -->
+                        <div class="form-group full-width monster-search">
+                            <label>Monster *</label>
+                            <input type="text" id="monsterSearch" autocomplete="off" required>
+                            <input type="hidden" id="monsterID">
+                            <div class="suggestions" id="monsterSuggestions"></div>
+                        </div>
+                        
+                        <!-- Item -->
+                        <div class="form-group full-width item-search">
+                            <label>Item *</label>
+                            <input type="text" id="itemSearch" autocomplete="off" required>
+                            <input type="hidden" id="itemCat">
+                            <input type="hidden" id="itemIndex">
+                            <div class="suggestions" id="itemSuggestions"></div>
+                        </div>
+                        
+                        <!-- Player Conditions -->
+                        <div class="form-group"><label>Monster Element</label><input type="number" id="monsterElement" value="-1"></div>
+                        <div class="form-group"><label>Player Min Reset</label><input type="number" id="playerMinReset" value="-1"></div>
+                        <div class="form-group"><label>Player Max Reset</label><input type="number" id="playerMaxReset" value="-1"></div>
+                        <div class="form-group"><label>Player Min Level</label><input type="number" id="playerMinLevel" value="-1"></div>
+                        <div class="form-group"><label>Player Max Level</label><input type="number" id="playerMaxLevel" value="-1"></div>
+                        
+                        <!-- Item Properties -->
+                        <div class="form-group"><label>Min Level</label><input type="number" id="minLevel" value="0" min="0" max="15"></div>
+                        <div class="form-group"><label>Max Level</label><input type="number" id="maxLevel" value="0" min="0" max="15"></div>
+                        <div class="form-group"><label>Durability</label><input type="number" id="durability" value="0"></div>
+                        <div class="form-group"><label>Skill</label><input type="number" id="skill" value="-1"></div>
+                        <div class="form-group"><label>Luck</label><input type="number" id="luck" value="-1"></div>
+                        <div class="form-group"><label>Option</label><input type="number" id="option" value="0"></div>
+                        
+                        <!-- Excellent & Socket -->
+                        <div class="form-group"><label>Exc</label><input type="text" id="exc" value="-1"></div>
+                        <div class="form-group"><label>Element</label><input type="number" id="element" value="0"></div>
+                        <div class="form-group"><label>SocketCount</label><input type="text" id="socketCount" value="0;0"></div>
+                        <div class="form-group"><label>Duration</label><input type="number" id="duration" value="0"></div>
+
+                        <!-- Rate -->
+                        <div class="form-group"><label>Rate *</label><input type="number" id="rate" value="1000" required></div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline" onclick="closeModal()">Cancel</button>
+                    <button type="submit" class="btn btn-success">Save</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- NEW: Bulk Edit Modal -->
+    <div class="modal" id="bulkEditModal">
+        <div class="modal-content glass-effect">
+            <div class="modal-header">
+                <h2 id="bulkModalTitle">Bulk Edit Drops</h2>
+                <button class="close-btn" onclick="closeBulkModal()"><i data-lucide="x"></i></button>
+            </div>
+            <form id="bulkEditForm">
+                <div class="modal-body">
+                    
+                    <div class="form-divider">
+                        <i data-lucide="search"></i>
+                        <h4>FIND</h4>
+                        <hr>
+                    </div>
+                    
+                    <div class="form-grid">
+                        <!-- Monster to Find -->
+                        <div class="form-group full-width monster-search">
+                            <label>Find Monster *</label>
+                            <input type="text" id="bulkFindMonsterSearch" autocomplete="off" required>
+                            <input type="hidden" id="bulkFindMonsterID">
+                            <div class="suggestions" id="bulkFindMonsterSuggestions"></div>
+                        </div>
+                        
+                        <!-- Item to Find (Optional) -->
+                        <div class="form-group full-width item-search">
+                            <label>Find Item (Optional)</label>
+                            <input type="text" id="bulkFindItemSearch" autocomplete="off" placeholder="Leave blank to target all items from this monster">
+                            <input type="hidden" id="bulkFindItemCat">
+                            <input type="hidden" id="bulkFindItemIndex">
+                            <div class="suggestions" id="bulkFindItemSuggestions"></div>
+                        </div>
+                    </div>
+
+                    <div class="form-divider">
+                        <i data-lucide="refresh-cw"></i>
+                        <h4>REPLACE WITH (OPTIONAL)</h4>
+                        <hr>
+                    </div>
+
+                    <p style="color: var(--accent-amber); font-size: 13px; margin-bottom: 15px; grid-column: 1 / -1;">
+                        Leave blank to only modify the item properties below.
+                    </p>
+
+                    <div class="form-grid">
+                        <!-- Item to Replace With -->
+                        <div class="form-group full-width item-search">
+                            <label>New Item</label>
+                            <input type="text" id="bulkReplaceItemSearch" autocomplete="off" placeholder="Leave blank to keep current item">
+                            <input type="hidden" id="bulkReplaceItemCat">
+                            <input type="hidden" id="bulkReplaceItemIndex">
+                            <div class="suggestions" id="bulkReplaceItemSuggestions"></div>
+                        </div>
+                    </div>
+
+                    <div class="form-divider">
+                        <i data-lucide="settings-2"></i>
+                        <h4>SET NEW VALUES (OPTIONAL)</h4>
+                        <hr>
+                    </div>
+
+                    <p style="color: var(--text-secondary); font-size: 13px; margin-bottom: 15px; grid-column: 1 / -1;">
+                        Only fill in the fields you want to change. Blank fields will keep their original values.
+                    </p>
+
+                    <div class="form-grid">
+                        <!-- Optional New Values -->
+                        <div class="form-group"><label>Min Level</label><input type="number" id="bulkMinLevel" placeholder="e.g., 0" min="0" max="15"></div>
+                        <div class="form-group"><label>Max Level</label><input type="number" id="bulkMaxLevel" placeholder="e.g., 0" min="0" max="15"></div>
+                        <div class="form-group"><label>Durability</label><input type="number" id="bulkDurability" placeholder="e.g., 0"></div>
+                        <div class="form-group"><label>Skill</label><input type="text" id="bulkSkill" placeholder="e.g., -1"></div>
+                        <div class="form-group"><label>Luck</label><input type="text" id="bulkLuck" placeholder="e.g., -1"></div>
+                        <div class="form-group"><label>Option</label><input type="text" id="bulkOption" placeholder="e.g., 0"></div>
+                        <div class="form-group"><label>Exc</label><input type="text" id="bulkExc" placeholder="e.g., -1"></div>
+                        <div class="form-group"><label>SocketCount</label><input type="text" id="bulkSocketCount" placeholder="e.g., 0;0"></div>
+                        <div class="form-group"><label>Duration</label><input type="number" id="bulkDuration" placeholder="e.g., 0"></div>
+                        <div class="form-group"><label>Rate *</label><input type="number" id="bulkRate" placeholder="e.g., 1000"></div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline" onclick="closeBulkModal()">Cancel</button>
+                    <button type="submit" class="btn btn-success">Apply Bulk Edit</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- NEW: Rate Adjust Modal -->
+    <div class="modal" id="rateAdjustModal">
+        <div class="modal-content glass-effect" style="max-width: 600px;">
+            <div class="modal-header">
+                <h2 id="rateAdjustModalTitle">Adjust All Drop Rates</h2>
+                <button class="close-btn" onclick="closeRateAdjustModal()"><i data-lucide="x"></i></button>
+            </div>
+            <form id="rateAdjustForm">
+                <div class="modal-body">
+                    <p style="color: var(--text-secondary); font-size: 14px; margin-bottom: 20px;">
+                        This will multiply all drop rates in the current file (<strong><span id="rateAdjustFileName"></span></strong>) by a percentage.
+                    </p>
+                    <div class="form-group full-width">
+                        <label for="rateAdjustPercent">Enter Percentage</label>
+                        <input type="number" id="rateAdjustPercent" placeholder="e.g., '50' for 50%, '150' for 150%" required oninput="calculateRateChange()">
+                    </div>
+                    
+                    <div id="rateAdjustPreview" style="background: rgba(0,0,0,0.2); padding: 15px; border-radius: 6px; margin-top: 20px;">
+                        <!-- Preview content goes here -->
+                        <p style="color: var(--text-secondary);">Enter a percentage to preview changes.</p>
+                    </div>
+                    
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline" onclick="closeRateAdjustModal()">Cancel</button>
+                    <button type="submit" class="btn btn-success">Apply Adjustment</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Guide Modal -->
+    <div class="modal" id="guideModal">
+        <div class="modal-content glass-effect">
+            <div class="modal-header">
+                <h2><i data-lucide="help-circle"></i> How to Use the Drop Editor</h2>
+                <button class="close-btn" onclick="closeGuideModal()"><i data-lucide="x"></i></button>
+            </div>
+            <div class="modal-body" id="guideContent" style="line-height: 1.7; color: var(--text-secondary);">
+                <h3>1. Getting Started</h3>
+                <ul>
+                    <li>This editor allows you to edit the <strong>Monster Map Drop</strong> files (<code>MonsterMap_..._Bag.xml</code>).</li>
+                    <li>Select a map file from the list on the left to load its drop table.</li>
+                </ul>
+
+                <h3>2. Editing Drops</h3>
+                <ul>
+                    <li><strong>Inline Editing:</strong> Click any value in the table to edit it directly. Press <strong>Enter</strong> to save the change to the table.</li>
+                    <li><strong>Item/Monster Names:</strong> Hover over the Monster ID or Item (Cat/Index) to see their names.</li>
+                    <li><strong>Add New Drop:</strong> Click the "Add New Drop" button. You can search for monsters and items by name or ID in the modal.</li>
+                    <li><strong>Delete Drop:</strong> Click the red trash can icon at the end of a row to delete a drop. You will be asked to confirm.</li>
+                    <li><strong>Duplicate Drop:</strong> Click the blue copy icon to quickly duplicate an existing drop row.</li>
+                    <li><strong>Bulk Edit:</strong> Use the "Bulk Edit" button to find all drops by a specific monster (and optionally a specific item) and mass-replace the item or update properties like **Min/Max Level**, **Luck**, or **Rate**.</li>
+                    <li><strong>Adjust Rates:</strong> Use the "Adjust Rates" button to multiply **ALL** drop rates in the current file by a single percentage (e.g., 50% to half all rates, 150% to increase all rates).</li>
+                </ul>
+                
+                <h3>3. Filtering</h3>
+                <ul>
+                    <li>Use the <strong>Search Map Files</strong> bar to find a specific map file.</li>
+                    <li>Once a map is loaded, use the <strong>Search Drops...</strong> bar to filter the table by Monster ID, Monster Name, Item ID (Cat\_Index), or Item Name.</li>
+                </ul>
+
+                <h3>4. Field Definitions (from <code>### Each Bag System Description ###.txt</code>)</h3>
+                <ul>
+                    <li><strong>MonsterID:</strong> The monster that drops the item.</li>
+                    <li><strong>MonsterElement:</strong> -1 for any, 0-5 for specific elements.</li>
+                    <li><strong>Player Resets/Levels:</strong> -1 for any, or set min/max values.</li>
+                    <li><strong>Cat/Index:</strong> The item's category and index.</li>
+                    <li><strong>Min/Max Level:</strong> Item level range (0-15).</li>
+                    <li><strong>Skill/Luck:</strong> -1 for random, 0 for no, 1 for yes.</li>
+                    <li><strong>Option:</strong> -1 for random, 0 for no, or 1-7 for specific option levels.</li>
+                    <li><strong>Exc:</strong> -1 for no exc, -2 for random, etc. Refer to the <code>.txt</code> file for advanced options.</li>
+                    <li><strong>SocketCount:</strong> "min;max" format (e.g., "1;3"). 0;0 for default.</li>
+                    <li><strong>Rate:</strong> The drop chance. The sum of all rates in one file should not exceed 100,000,000.</li>
+                </ul>
+
+                <h3>5. Saving Your Work</h3>
+                 <ul>
+                    <li>Click the <strong><i data-lucide="save" style="width:14px; height: 14px; display: inline-block; vertical-align: middle;"></i> Save Changes</strong> button.</li>
+                    <li>This sends your edits for the <strong>currently selected map file</strong> to the server, creates a backup, and saves the new file.</li>
+                    <li><strong>You must save changes for each map file individually.</strong></li>
+                </ul>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-primary" onclick="closeGuideModal()">Got it!</button>
+            </div>
+        </div>
+    </div>
+
+        <script>
+        const SERVER_URL = 'http://149.202.139.156:3000';
+        
+        // --- Application State ---
+        let monsterList = {}; // { "ID": "Name" }
+        let itemList = {};    // MODIFIED: { Cat: { Index: "Name" } }
+        let itemCategories = {}; // NEW: { Cat: "Category Name" }
+        let mapDropFiles = []; // { "filename.xml": "<xml content>" } -> NOW an array of filenames
+        let fileContentCache = {}; // NEW: Caches content of loaded files
+        let loadedContextFiles = {}; // NEW: Stores context files (mastery, pentagram, etc.)
+        let currentFile = null;
+        let originalXMLHeaders = {}; // { "filename.xml": "..." }
+        let currentDropData = []; // Array of drop objects for the table
+        let editingDropIndex = null; // Index in currentDropData
+        
+        // --- NEW: Undo/Redo State ---
+        const MAX_HISTORY = 20;
+        let history = [];
+        let historyIndex = -1; 
+        
+        // --- NEW: Pagination State ---
+        let currentVisibleRows = 100;
+        const ROWS_PER_PAGE = 100;
+        
+        // --- UPDATED: Map Names Constant (Filled in Event Maps) ---
+        const MAP_NAMES = {
+            0: "Lorencia",
+            1: "Dungeon",
+            2: "Devias",
+            3: "Noria",
+            4: "Losttower",
+            5: "Exile",
+            6: "Stadium",
+            7: "Atlans",
+            8: "Tarkan",
+            9: "Devil Square", // ADDED
+            10: "Icarus",
+            11: "Blood Castle 1", // ADDED
+            12: "Blood Castle 2", // ADDED
+            13: "Blood Castle 3", // ADDED
+            14: "Blood Castle 4", // ADDED
+            15: "Blood Castle 5", // ADDED
+            16: "Blood Castle 6", // ADDED
+            17: "Blood Castle 7", // ADDED
+            18: "Chaos Castle 1", // ADDED
+            19: "Chaos Castle 2", // ADDED
+            20: "Chaos Castle 3", // ADDED
+            21: "Chaos Castle 4", // ADDED
+            22: "Chaos Castle 5", // ADDED
+            23: "Chaos Castle 6", // ADDED
+            24: "Kalima 1",
+            25: "Kalima 2",
+            26: "Kalima 3",
+            27: "Kalima 4",
+            28: "Kalima 5",
+            29: "Kalima 6",
+            30: "Valley Of Loren",
+            31: "Land Of Trials",
+            32: "Devil Square (Event)", // ADDED
+            33: "Aida",
+            34: "Crywolf",
+            35: "Illusion Temple", // ADDED
+            36: "Kalima 7",
+            37: "Kanturu",
+            38: "Kanturu Core",
+            39: "Kanturu Boss",
+            40: "Event Zone",
+            41: "Barracks",
+            42: "Refuge",
+            51: "Elbeland",
+            52: "Blood Castle 8", // ADDED
+            53: "Chaos Castle 7", // ADDED
+            56: "Swamp of Peace",
+            57: "Raklion",
+            62: "XMas",
+            63: "Vulcanus",
+            64: "PK Field (Vulcanus)", // ADDED
+            65: "Doppelganger", // ADDED
+            64: "Doppelganger", // ADDED
+            69: "Acheron", // ADDED
+            79: "Loren Market",
+            80: "Kalrutan 1",
+            81: "Karutan 2",
+            91: "Acheron 1",
+            95: "Debenter",
+            100: "Uruk Mountain 1",
+            110: "Nars",
+            112: "Ferea",
+            113: "Nixies Lake",
+            114: "Quest Zone",
+            116: "Deep Dungeon 1",
+            117: "Deep Dungeon 2",
+            118: "Deep Dungeon 3",
+            119: "Deep Dungeon 4",
+            120: "Deep Dungeon 5",
+            122: "Swamp of Darkness",
+            123: "Kubera Mine",
+            124: "Kubera Mine",
+            125: "Kubera Mine",
+            126: "Kubera Mine",
+            127: "Kubera Mine",
+            128: "Abyss of Atlans 1",
+            129: "Abyss of Atlans 2",
+            130: "Abyss of Atlans 3",
+            131: "Scorched Canyon",
+            132: "Red Smoke Icarus",
+            133: "Arenil Temple",
+            134: "Ashen Aida",
+            135: "Old Kethotum",
+            136: "Blaze Kethotum",
+            137: "Kanturu Undergrounds",
+            138: "Ignis Volcano",
+            140: "Bloody Tarkan",
+            141: "Tormenta Island",
+            142: "Twisted Karutan",
+            143: "Kardamahal Underground Temple"
+        };
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            lucide.createIcons();
+            loadData();
+        });
+
+        // --- Undo/Redo Logic ---
+
+        function updateHistory(data) {
+            // Trim forward history
+            if (historyIndex < history.length - 1) {
+                history = history.slice(0, historyIndex + 1);
+            }
+            
+            // Add new state (deep copy to avoid mutation)
+            const newState = JSON.parse(JSON.stringify(data));
+            history.push(newState);
+
+            // Maintain max history size
+            if (history.length > MAX_HISTORY) {
+                history.shift(); // Remove oldest state
+            }
+            
+            historyIndex = history.length - 1;
+            updateUndoRedoButtons();
+        }
+
+        function updateUndoRedoButtons() {
+            const undoBtn = document.getElementById('undoBtn');
+            const redoBtn = document.getElementById('redoBtn');
+
+            if (undoBtn) undoBtn.disabled = historyIndex <= 0;
+            if (redoBtn) redoBtn.disabled = historyIndex >= history.length - 1;
+        }
+
+        function undoChange() {
+            if (historyIndex > 0) {
+                historyIndex--;
+                // Apply the previous state (deep copy)
+                currentDropData = JSON.parse(JSON.stringify(history[historyIndex]));
+                renderEditorPanel();
+                updateUndoRedoButtons();
+                showStatus('Undo successful.', false);
+            } else {
+                showStatus('Nothing to undo.', true, true);
+            }
+        }
+
+        function redoChange() {
+            if (historyIndex < history.length - 1) {
+                historyIndex++;
+                // Apply the next state (deep copy)
+                currentDropData = JSON.parse(JSON.stringify(history[historyIndex]));
+                renderEditorPanel();
+                updateUndoRedoButtons();
+                showStatus('Redo successful.', false);
+            } else {
+                showStatus('Nothing to redo.', true, true);
+            }
+        }
+        
+        // Listen for global undo/redo keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+            if (!currentFile) return; // Only process if a file is loaded
+
+            // Check if focus is on a text input/textarea (to prevent undoing typing)
+            const isInputFocused = document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA';
+            if (isInputFocused) return;
+
+            if ((e.ctrlKey || e.metaKey) && e.key === 'z') { // Ctrl+Z or Cmd+Z
+                e.preventDefault();
+                undoChange();
+            }
+            if (((e.ctrlKey || e.metaKey) && e.key === 'y') || ((e.metaKey && e.shiftKey) && e.key === 'Z')) { // Ctrl+Y or Cmd+Shift+Z
+                e.preventDefault();
+                redoChange();
+            }
+        });
+
+
+        // --- Confirmation Modal Logic ---
+        function confirmAction(title, message, onConfirm, buttonClass = 'btn-danger') {
+            document.getElementById('confirmTitle').textContent = title;
+            document.getElementById('confirmMessage').textContent = message;
+            const confirmButton = document.getElementById('confirmButton');
+            confirmButton.className = `btn ${buttonClass}`;
+            confirmButton.onclick = () => {
+                onConfirm();
+                closeConfirmModal();
+            };
+            document.getElementById('confirmModal').classList.add('show');
+            lucide.createIcons();
+        }
+
+        function closeConfirmModal() {
+            document.getElementById('confirmModal').classList.remove('show');
+        }
+
+        // --- Status Logic ---
+        function showStatus(message, isError = false, isWarning = false) {
+            const statusBar = document.getElementById('statusBar');
+            statusBar.textContent = message;
+            
+            let typeClass = 'status-bar-success';
+            if (isError) typeClass = 'status-bar-error';
+            else if (isWarning) typeClass = 'status-bar-warning';
+            
+            statusBar.className = `status-bar ${typeClass}`;
+            statusBar.style.display = 'block';
+
+            setTimeout(() => { statusBar.style.display = 'none'; }, 5000);
+        }
+
+        // --- Data Loading & Parsing ---
+        async function loadData() {
+            try {
+                const response = await fetch(`${SERVER_URL}/api/map-drop-data`);
+                
+                if (!response.ok) {
+                    // Get error text from server
+                    const errorText = await response.text();
+                    console.error('Server responded with an error:', errorText);
+                    throw new Error(`Server responded with status: ${response.status}. Message: ${errorText.substring(0, 200)}...`);
+                }
+
+                const contentType = response.headers.get('content-type');
+                if (!contentType || !contentType.includes('application/json')) {
+                    const responseText = await response.text();
+                    console.error('Expected JSON, but got:', responseText);
+                    throw new Error(`Expected JSON response from server, but got ${contentType}. Response: ${responseText.substring(0, 200)}...`);
+                }
+
+                const data = await response.json();
+
+                // 1. Parse Monster List
+                parseMonsterList(data.monsterListXml);
+
+                // 2. Parse Item List
+                parseItemList(data.itemListXml);
+                
+                // 3. Store Map Drop Filenames (now an array)
+                mapDropFiles = data.mapDropFiles;
+
+                // --- NEW DEBUGGING LOGIC ---
+                console.log(`[DEBUG] Server returned ${mapDropFiles.length} map drop files:`, mapDropFiles);
+                const deviasFile = mapDropFiles.find(f => f.includes('(2)_Bag.xml'));
+                if (!deviasFile) {
+                    console.warn(`[DEBUG] File for Devias (Map 2) not found in the list returned by the server. Check filename on server: MonsterMap_(2)_Bag.xml`);
+                }
+                // --- END NEW DEBUGGING LOGIC ---
+                
+                // 4. Store new context files
+                loadedContextFiles.masteryExc = data.masteryExcOptionsXml;
+                loadedContextFiles.pentagram = data.pentagramDropRateXml;
+                loadedContextFiles.socket = data.socketItemDropRatesXml;
+                loadedContextFiles.ini = data.itemDropRateControlIni;
+                
+                renderMapFileList();
+                document.getElementById('editorContent').innerHTML = `<div class="empty-state"><h3>Select a Map Bag File</h3><p>Choose a file from the list on the left to start editing drops.</p></div>`;
+
+            } catch (error) {
+                console.error('Failed to load data from server:', error);
+                showStatus(`✗ Error: Could not load files from the server. ${error.message}`, true);
+                const editorContent = document.getElementById('editorContent');
+                if (editorContent) {
+                    editorContent.innerHTML = `<div class="empty-state"><h3>Connection Failed</h3><p>Could not connect to the server at <strong>${SERVER_URL}</strong>.</p><p style="color: var(--accent-pink); font-family: var(--font-data);">${error.message}</p></div>`;
+                }
+            }
+        }
+
+        function parseMonsterList(xmlText) {
+            const parser = new DOMParser();
+            const xmlDoc = parser.parseFromString(xmlText, 'text/xml');
+            monsterList = {};
+            for (let monster of xmlDoc.getElementsByTagName('Monster')) {
+                monsterList[monster.getAttribute('ID')] = monster.getAttribute('Name');
+            }
+        }
+
+        // --- MODIFIED: Swapped to use Shop Editor's parsing logic ---
+        function parseItemList(xmlText) {
+            const parser = new DOMParser();
+            const xmlDoc = parser.parseFromString(xmlText, "text/xml");
+            itemList = {};
+            itemCategories = {}; // Ensure this is reset
+            for (let category of xmlDoc.getElementsByTagName('Category')) {
+                // Use parseInt to normalize category index (e.g., "07" and "7" both becomes 7)
+                const catIndex = parseInt(category.getAttribute('Index'), 10);
+                if (isNaN(catIndex)) continue; // Skip invalid categories
+                
+                itemCategories[catIndex] = category.getAttribute('Name');
+                itemList[catIndex] = {};
+                
+                for (let item of category.getElementsByTagName('Item')) {
+                    // Use parseInt to normalize item index
+                    const itemIndex = parseInt(item.getAttribute('Index'), 10);
+                    if (isNaN(itemIndex)) continue; // Skip invalid items
+                    
+                    itemList[catIndex][itemIndex] = item.getAttribute('Name');
+                }
+            }
+        }
+        
+        function parseMapDropXML(xmlText) {
+            const parser = new DOMParser();
+            const xmlDoc = parser.parseFromString(xmlText, 'text/xml');
+            
+            // Check for parsing errors
+            if (xmlDoc.getElementsByTagName('parsererror').length > 0) {
+                console.error("XML Parsing Error for current file:", xmlDoc.getElementsByTagName('parsererror')[0].textContent);
+                // Attempt to retrieve a partial list or return empty
+                // Continue to try reading drops, but log the error
+            }
+
+            const drops = [];
+            const dropNodes = xmlDoc.getElementsByTagName('DropItem');
+            
+            for (const node of dropNodes) {
+                // Note: Due to the duplicate PlayerMinReset/PlayerMaxReset attributes in the XML,
+                // the DOM parser will only retrieve the LAST instance of that attribute name.
+                
+                // Get attributes, defaulting to -1 or 0 if missing
+                const getAttr = (attr) => node.getAttribute(attr) || '-1';
+                const getNumAttr = (attr) => node.getAttribute(attr) || '0';
+                
+                drops.push({
+                    MonsterID: getAttr('MonsterID'),
+                    MonsterElement: getAttr('MonsterElement'),
+                    PlayerMinReset: getAttr('PlayerMinReset'),
+                    PlayerMaxReset: getAttr('PlayerMaxReset'),
+                    PlayerMinLevel: getAttr('PlayerMinLevel'),
+                    PlayerMaxLevel: getAttr('PlayerMaxLevel'),
+                    Cat: getAttr('Cat'),
+                    Index: getAttr('Index'),
+                    MinLevel: getNumAttr('MinLevel'),
+                    MaxLevel: getNumAttr('MaxLevel'),
+                    Durability: getNumAttr('Durability'),
+                    Skill: getAttr('Skill'),
+                    Luck: getAttr('Luck'),
+                    Option: getNumAttr('Option'),
+                    Exc: getAttr('Exc'),
+                    Element: getNumAttr('Element'),
+                    SocketCount: getNumAttr('SocketCount'),
+                    Duration: getNumAttr('Duration'),
+                    Rate: getNumAttr('Rate'),
+                    // Internal state
+                    isNew: false,
+                    isModified: false,
+                    originalName: node.getAttribute('Name') // Preserve original name comment if present
+                });
+            }
+            
+            console.log(`[DEBUG] Parsed ${drops.length} drops from file.`);
+            return drops;
+        }
+
+        // --- Map File List Rendering ---
+        function renderMapFileList() {
+            const fileListEl = document.getElementById('mapFileList');
+            fileListEl.innerHTML = '';
+            const sortedFiles = mapDropFiles.sort((a, b) => { // mapDropFiles is now an array
+                const numA = parseInt(a.match(/\((\d+)\)/)?.[1] || -1);
+                const numB = parseInt(b.match(/\((\d+)\)/)?.[1] || -1);
+                return numA - numB;
+            });
+            
+            sortedFiles.forEach(filename => {
+                const mapItem = document.createElement('div');
+                const mapNum = parseInt(filename.match(/\((\d+)\)/)?.[1] || -1);
+                const mapName = MAP_NAMES[mapNum] || 'Unknown Map'; // UPDATED: Use MAP_NAMES
+                
+                mapItem.className = 'map-item';
+                mapItem.id = `map-item-${filename}`;
+                mapItem.textContent = `(${mapNum}) ${mapName}`; // Show number and name
+                mapItem.dataset.filename = filename; // Store filename
+                mapItem.onclick = () => selectMapFile(filename);
+                fileListEl.appendChild(mapItem);
+            });
+        }
+
+        function filterMapFiles() {
+            const searchTerm = document.getElementById('mapSearch').value.toLowerCase();
+            document.querySelectorAll('.map-item').forEach(item => {
+                item.style.display = item.textContent.toLowerCase().includes(searchTerm) ? '' : 'none';
+            });
+        }
+        
+        async function selectMapFile(filename) { // --- Make function async ---
+            if (currentFile === filename) return;
+            
+            currentFile = filename;
+            
+            document.querySelectorAll('.map-item').forEach(item => item.classList.remove('active'));
+            document.getElementById(`map-item-${filename}`).classList.add('active');
+            
+            // --- NEW: Load-on-demand logic ---
+            let xmlText;
+            
+            // Show loading state
+            document.getElementById('editorContent').innerHTML = `<div class="empty-state"><h3><i data-lucide="loader-2" class="spin"></i> Loading ${filename}...</h3><p>Fetching file content from server.</p></div>`;
+            lucide.createIcons();
+            document.querySelector('.spin')?.animate([{ transform: 'rotate(0deg)' }, { transform: 'rotate(360deg)' }], { duration: 1000, iterations: Infinity });
+            
+            try {
+                if (fileContentCache[filename]) {
+                    xmlText = fileContentCache[filename];
+                } else {
+                    const response = await fetch(`${SERVER_URL}/api/map-drop-file-content?filename=${filename}`);
+                    if (!response.ok) {
+                        const errorText = await response.text();
+                        console.error(`Server error for ${filename}:`, errorText);
+                        throw new Error(`Server responded with status ${response.status}. Message: ${errorText.substring(0, 200)}...`);
+                    }
+                    xmlText = await response.text();
+                    fileContentCache[filename] = xmlText; // Cache the content
+                }
+
+                // --- NEW DEBUGGING LOG: Show raw content ---
+                console.log(`[DEBUG] Raw XML content for ${filename}:`, xmlText.substring(0, 500) + '...');
+                // --- END DEBUGGING LOG ---
+                
+                // Extract header
+                const headerMatch = xmlText.match(/^[\s\S]*?(?=<MonsterMapItemDrop>)/i);
+                originalXMLHeaders[filename] = headerMatch ? headerMatch[0] : '<?xml version="1.0" encoding="utf-8"?>\n';
+                
+                // Parse and render
+                currentDropData = parseMapDropXML(xmlText);
+                currentVisibleRows = ROWS_PER_PAGE; // Reset pagination
+                
+                // Set initial history state only on successful file load
+                history = [];
+                historyIndex = -1;
+                updateHistory(currentDropData); 
+
+                renderEditorPanel();
+                
+            } catch (error) {
+                console.error(`Failed to load file ${filename}:`, error);
+                showStatus(`✗ Error: Could not load file ${filename}. ${error.message}`, true);
+                document.getElementById('editorContent').innerHTML = `<div class="empty-state"><h3>Load Failed</h3><p>Could not load ${filename}.</p><p style="color: var(--accent-pink); font-family: var(--font-data);">${error.message}</p></div>`;
+            }
+        }
+        
+        // --- Editor Panel Rendering ---
+        function renderEditorPanel() {
+            if (!currentFile) {
+                document.getElementById('editorContent').innerHTML = `<div class="empty-state"><h3>Select a Map Bag File</h3><p>Choose a file from the list on the left to start editing drops.</p></div>`;
+                return;
+            }
+            
+            let html = `
+                <div class="editor-panel-header">
+                    <h2 style="color: var(--text-bright);">${currentFile}</h2>
+                    <div class="search-bar">
+                        <input type="text" id="dropSearch" oninput="filterDropTable()" placeholder="Search drops by Monster ID/Name or Item (Cat, Index) Name...">
+                    </div>
+                    <div class="controls" style="display: flex; gap: 10px;">
+                        <!-- NEW: Added Bulk Edit Button -->
+                        <button class="btn btn-outline" onclick="openBulkModal()"><i data-lucide="wand-2"></i> Bulk Edit</button>
+                        <!-- ADDED: Rate Adjust Button -->
+                        <button class="btn btn-outline" style="background-color: var(--accent-purple); color: white;" onclick="openRateAdjustModal()">
+                            <i data-lucide="percent"></i> Adjust Rates
+                        </button>
+                        <button class="btn btn-primary" onclick="openAddModal()"><i data-lucide="plus-circle"></i> Add New Drop</button>
+                        <button class="btn btn-success" onclick="saveChangesToServer()"><i data-lucide="save"></i> Save Changes</button>
+                    </div>
+                </div>
+                <div class="table-wrapper">
+                    <table id="dropTable" style="min-width: 1000px;">
+                        <thead>
+                            <tr>
+                                <th style="min-width: 200px;">Monster ID</th>
+                                <th style="min-width: 200px;">Item (Cat_Index)</th>
+                                <th>Rate</th>
+                                <th>Min/Max Lvl</th>
+                                <th>Exc</th>
+                                <th>Socket</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${currentDropData.length === 0 
+                                ? `<tr><td colspan="7"><div class="empty-state"><h3>No Drop Items Found</h3><p>The selected file is empty or could not be parsed correctly.</p></div></td></tr>` 
+                                : currentDropData.slice(0, currentVisibleRows).map((drop, index) => getDropRowHtml(drop, index)).join('')
+                            }
+                        </tbody>
+                    </table>
+                </div>
+                
+                <!-- NEW: Load More Button -->
+                <div class="load-more-container" id="loadMoreContainer">
+                    ${currentVisibleRows < currentDropData.length ?
+                        `<button class="btn btn-outline" onclick="loadMoreRows()">
+                            <i data-lucide="arrow-down"></i>
+                            Load ${Math.min(ROWS_PER_PAGE, currentDropData.length - currentVisibleRows)} More (${currentVisibleRows} / ${currentDropData.length})
+                        </button>`
+                        : ''
+                    }
+                </div>
+            `;
+            
+            document.getElementById('editorContent').innerHTML = html;
+            lucide.createIcons();
+            updateUndoRedoButtons(); // Ensure button state is current
+        }
+
+        // --- NEW: Load More Function ---
+        function loadMoreRows() {
+            currentVisibleRows += ROWS_PER_PAGE;
+            renderEditorPanel();
+        }
+        
+        // --- MODIFIED: Use new itemList structure ---
+        function getDropRowHtml(drop, index) {
+            const monsterName = monsterList[drop.MonsterID] || 'Unknown Monster';
+            // MODIFIED: Look up item name from nested structure
+            const catNum = parseInt(drop.Cat, 10);
+            const indexNum = parseInt(drop.Index, 10);
+            const itemName = (itemList[catNum] && itemList[catNum][indexNum]) || drop.originalName || 'Unknown Item';
+            
+            let rowClass = drop.isNew ? 'spawn-row-new' : (drop.isModified ? 'spawn-row-modified' : '');
+            
+            return `
+                <tr data-index="${index}" class="${rowClass}">
+                    <td class="monster-name-col"><span class="monster-name" title="[${drop.MonsterID}] ${monsterName}">[${drop.MonsterID}] ${monsterName}</span></td>
+                    <td class="item-name-col"><span class="item-name" title="[${drop.Cat}_${drop.Index}] ${itemName}">[${drop.Cat}_${drop.Index}] ${itemName}</span></td>
+                    <td><input type="number" class="inline-input" value="${drop.Rate}" onchange="updateDropValue(${index}, 'Rate', this.value)"></td>
+                    <td><input type="text" class="inline-input" value="${drop.MinLevel};${drop.MaxLevel}" onchange="updateMinMax(${index}, 'Level', this.value)"></td>
+                    <td><input type="text" class="inline-input" value="${drop.Exc}" onchange="updateDropValue(${index}, 'Exc', this.value)"></td>
+                    <td><input type="text" class="inline-input" value="${drop.SocketCount}" onchange="updateDropValue(${index}, 'SocketCount', this.value)"></td>
+                    <td style="white-space: nowrap;">
+                        <button class="action-btn btn-view" title="View / Edit" onclick="openViewModal(${index})"><i data-lucide="edit"></i></button>
+                        <button class="action-btn btn-duplicate" title="Duplicate" onclick="duplicateDrop(${index})"><i data-lucide="copy"></i></button>
+                        <button class="action-btn btn-delete" title="Delete" onclick="deleteDrop(${index})"><i data-lucide="trash-2"></i></button>
+                    </td>
+                </tr>
+            `;
+        }
+        
+        function updateDropValue(index, field, value) {
+            // Store current state for potential undo BEFORE modification
+            updateHistory(currentDropData); 
+            
+            const drop = currentDropData[index];
+            drop[field] = value;
+            if (!drop.isNew) {
+                drop.isModified = true;
+                // Re-render row to update modified status color
+                document.querySelector(`tr[data-index="${index}"]`).classList.add('spawn-row-modified');
+            }
+            // Update history again to reflect final modified state of this inline edit
+            updateHistory(currentDropData);
+        }
+        
+        function updateMinMax(index, type, value) {
+            // Store current state for potential undo BEFORE modification
+            updateHistory(currentDropData); 
+            
+            const parts = value.split(';').map(v => v.trim());
+            const min = parts[0] || '0';
+            const max = parts[1] || '0';
+            const drop = currentDropData[index];
+            
+            if (type === 'Level') {
+                drop.MinLevel = min;
+                drop.MaxLevel = max;
+            } else if (type === 'Reset') {
+                drop.PlayerMinReset = min;
+                drop.PlayerMaxReset = max;
+            } else if (type === 'PLevel') {
+                drop.PlayerMinLevel = min;
+                drop.PlayerMaxLevel = max;
+            }
+            
+            if (!drop.isNew) {
+                drop.isModified = true;
+                document.querySelector(`tr[data-index="${index}"]`).classList.add('spawn-row-modified');
+            }
+            // Update history again to reflect final modified state
+            updateHistory(currentDropData);
+        }
+
+        // --- MODIFIED: Use new itemList structure and add more search fields ---
+        function filterDropTable() {
+            const searchTerm = document.getElementById('dropSearch').value.toLowerCase();
+            const table = document.getElementById('dropTable');
+            table.querySelectorAll('tbody tr').forEach(row => {
+                const index = row.dataset.index;
+                const drop = currentDropData[index];
+                if (!drop) {
+                    row.style.display = 'none';
+                    return;
+                }
+                
+                const monsterName = (monsterList[drop.MonsterID] || '').toLowerCase();
+                
+                // NEW: Get item name from nested structure
+                const catNum = parseInt(drop.Cat, 10);
+                const indexNum = parseInt(drop.Index, 10);
+                const itemName = (itemList[catNum] && itemList[catNum][indexNum]) || drop.originalName || '';
+                
+                // Build search strings
+                const itemKey = `${drop.Cat}_${drop.Index}`; // "14_13"
+                const fullItemName = `(${drop.Cat}, ${drop.Index}) ${itemName}`; // "(14, 13) Jewel of Bless"
+
+                const isVisible = 
+                    drop.MonsterID.toLowerCase().includes(searchTerm) ||
+                    monsterName.includes(searchTerm) ||
+                    itemKey.includes(searchTerm) || // Matches "14_13"
+                    itemName.toLowerCase().includes(searchTerm) || // Matches "jewel"
+                    fullItemName.toLowerCase().includes(searchTerm); // Matches "(14, 13)"
+                    
+                row.style.display = isVisible ? '' : 'none';
+            });
+        }
+        
+        // --- Modal & Editing Logic ---
+        function openAddModal() {
+            editingDropIndex = null;
+            document.getElementById('modalTitle').textContent = 'Add New Drop Item';
+            document.getElementById('dropForm').reset();
+            document.getElementById('monsterID').value = '';
+            document.getElementById('itemCat').value = '';
+            document.getElementById('itemIndex').value = '';
+            
+            // Set defaults from text file
+            document.getElementById('monsterElement').value = '-1';
+            document.getElementById('playerMinReset').value = '-1';
+            document.getElementById('playerMaxReset').value = '-1';
+            document.getElementById('playerMinLevel').value = '-1';
+            document.getElementById('playerMaxLevel').value = '-1';
+            document.getElementById('minLevel').value = '0';
+            document.getElementById('maxLevel').value = '0';
+            document.getElementById('durability').value = '0';
+            document.getElementById('skill').value = '-1';
+            document.getElementById('luck').value = '-1';
+            document.getElementById('option').value = '0';
+            document.getElementById('exc').value = '-1';
+            document.getElementById('element').value = '0';
+            document.getElementById('socketCount').value = '0;0';
+            document.getElementById('duration').value = '0';
+            document.getElementById('rate').value = '1000';
+            
+            document.getElementById('dropModal').classList.add('show');
+            lucide.createIcons();
+        }
+        
+        // --- NEW: Function to open modal for viewing/editing ---
+        function openViewModal(index) {
+            editingDropIndex = index;
+            const drop = currentDropData[index];
+            if (!drop) return;
+
+            document.getElementById('modalTitle').textContent = 'View / Edit Drop Item';
+            
+            // Populate Monster Search
+            const monsterName = monsterList[drop.MonsterID] || 'Unknown';
+            document.getElementById('monsterSearch').value = `[${drop.MonsterID}] ${monsterName}`;
+            document.getElementById('monsterID').value = drop.MonsterID;
+            
+            // Populate Item Search
+            // MODIFIED: Use new itemList structure
+            const catNum = parseInt(drop.Cat, 10);
+            const indexNum = parseInt(drop.Index, 10);
+            const itemName = (itemList[catNum] && itemList[catNum][indexNum]) || drop.originalName || 'Unknown';
+            document.getElementById('itemSearch').value = `[${drop.Cat}_${drop.Index}] ${itemName}`;
+            document.getElementById('itemCat').value = drop.Cat;
+            document.getElementById('itemIndex').value = drop.Index;
+
+            // Populate other fields
+            document.getElementById('monsterElement').value = drop.MonsterElement;
+            document.getElementById('playerMinReset').value = drop.PlayerMinReset;
+            document.getElementById('playerMaxReset').value = drop.PlayerMaxReset;
+            document.getElementById('playerMinLevel').value = drop.PlayerMinLevel;
+            document.getElementById('playerMaxLevel').value = drop.PlayerMaxLevel;
+            document.getElementById('minLevel').value = drop.MinLevel;
+            document.getElementById('maxLevel').value = drop.MaxLevel;
+            document.getElementById('durability').value = drop.Durability;
+            document.getElementById('skill').value = drop.Skill;
+            document.getElementById('luck').value = drop.Luck;
+            document.getElementById('option').value = drop.Option;
+            document.getElementById('exc').value = drop.Exc;
+            document.getElementById('element').value = drop.Element;
+            document.getElementById('socketCount').value = drop.SocketCount;
+            document.getElementById('duration').value = drop.Duration;
+            document.getElementById('rate').value = drop.Rate;
+            
+            document.getElementById('dropModal').classList.add('show');
+            lucide.createIcons();
+        }
+        
+        function closeModal() {
+            document.getElementById('dropModal').classList.remove('show');
+        }
+        
+        // --- NEW: Bulk Edit Modal Logic ---
+        function openBulkModal() {
+            if (!currentFile) {
+                showStatus('Please select a map file first.', true);
+                return;
+            }
+            document.getElementById('bulkEditForm').reset();
+            document.getElementById('bulkFindMonsterID').value = '';
+            document.getElementById('bulkFindItemCat').value = '';
+            document.getElementById('bulkFindItemIndex').value = '';
+            document.getElementById('bulkReplaceItemCat').value = '';
+            document.getElementById('bulkReplaceItemIndex').value = '';
+
+            document.getElementById('bulkEditModal').classList.add('show');
+            lucide.createIcons();
+        }
+        
+        function closeBulkModal() {
+            document.getElementById('bulkEditModal').classList.remove('show');
+        }
+        // --- End Bulk Edit Modal Logic ---
+
+        // --- NEW: Rate Adjust Modal Logic ---
+        
+        function openRateAdjustModal() {
+            if (!currentFile) {
+                showStatus('Please select a map file first.', true);
+                return;
+            }
+            document.getElementById('rateAdjustForm').reset();
+            document.getElementById('rateAdjustFileName').textContent = currentFile;
+            calculateRateChange(); // Calculate initial state
+            document.getElementById('rateAdjustModal').classList.add('show');
+            lucide.createIcons();
+        }
+        
+        function closeRateAdjustModal() {
+            document.getElementById('rateAdjustModal').classList.remove('show');
+        }
+
+        function calculateRateChange() {
+            const percentInput = document.getElementById('rateAdjustPercent');
+            const previewEl = document.getElementById('rateAdjustPreview');
+            const percent = parseFloat(percentInput.value);
+
+            let currentTotal = 0;
+            currentDropData.forEach(drop => {
+                currentTotal += parseInt(drop.Rate, 10) || 0;
+            });
+
+            if (isNaN(percent) || percent <= 0) {
+                previewEl.innerHTML = `
+                    <p style="font-weight: 600; color: var(--text-primary);">Current Total Rate: <span style="font-family: var(--font-data);">${currentTotal.toLocaleString()}</span></p>
+                    <p style="color: var(--text-secondary);">Enter a valid percentage (e.g., '50' or '150') to see the new total.</p>
+                `;
+                return;
+            }
+
+            const multiplier = percent / 100;
+            // Calculate rounded new total
+            let newTotal = 0;
+            const GLOBAL_MAX_TOTAL = 100000000; // New limit: 100,000,000
+            
+            currentDropData.forEach(drop => {
+                const oldRate = parseInt(drop.Rate, 10) || 0;
+                if (oldRate > 0) {
+                    let newRate = Math.round(oldRate * multiplier);
+                    if (newRate === 0) newRate = 1; // Minimum rate of 1 if it was > 0
+                    if (newRate > 1000000) newRate = 1000000; // Cap at 1M (Individual Item Cap)
+                    newTotal += newRate;
+                } else {
+                    newTotal += oldRate; // Include 0 rates in total for accurate calculation if they are not adjusted
+                }
+            });
+
+            let warningHtml = '';
+            if (newTotal > GLOBAL_MAX_TOTAL) {
+                warningHtml = `<p style="font-weight: 600; color: var(--accent-pink); margin-top: 10px;"><i data-lucide="alert-triangle" style="width: 14px; height: 14px; vertical-align: -2px;"></i> WARNING: New total exceeds the ${GLOBAL_MAX_TOTAL.toLocaleString()} limit!</p>`;
+            }
+
+            previewEl.innerHTML = `
+                <p style="font-weight: 600; color: var(--text-primary);">Current Total Rate: <span style="font-family: var(--font-data);">${currentTotal.toLocaleString()}</span></p>
+                <p style="font-weight: 600; color: var(--accent-blue);">New Estimated Total Rate: <span style="font-family: var(--font-data);">${newTotal.toLocaleString()}</span></p>
+                ${warningHtml}
+            `;
+            if (warningHtml) lucide.createIcons();
+        }
+
+        document.getElementById('rateAdjustForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            // Store current state for potential undo
+            updateHistory(currentDropData); 
+
+            const percentInput = document.getElementById('rateAdjustPercent');
+            const percent = parseFloat(percentInput.value);
+
+            if (isNaN(percent) || percent <= 0) {
+                showStatus("Please enter a valid percentage greater than 0.", true);
+                return;
+            }
+            
+            const multiplier = percent / 100;
+            let newTotal = 0;
+            let itemsChanged = 0;
+            const GLOBAL_MAX_TOTAL = 100000000; // New limit: 100,000,000
+
+            currentDropData.forEach(drop => {
+                const oldRate = parseInt(drop.Rate, 10) || 0;
+                if (oldRate > 0) {
+                    let newRate = Math.round(oldRate * multiplier);
+                    if (newRate === 0) newRate = 1; // Don't allow rate to become 0 if it was positive
+                    if (newRate > 1000000) newRate = 1000000; // Cap at 1,000,000 (Individual Item Cap)
+                    
+                    if (oldRate !== newRate) {
+                        drop.Rate = newRate;
+                        if (!drop.isNew) {
+                            drop.isModified = true;
+                        }
+                        itemsChanged++;
+                    }
+                    newTotal += newRate;
+                } else {
+                    newTotal += oldRate; // Add 0 rates to total
+                }
+            });
+
+            if (newTotal > GLOBAL_MAX_TOTAL) {
+                showStatus(`Warning: Rates adjusted by ${percent}%. New total ${newTotal.toLocaleString()} exceeds ${GLOBAL_MAX_TOTAL.toLocaleString()}.`, false, true);
+            } else {
+                showStatus(`✓ Rates for ${itemsChanged} items adjusted by ${percent}%. New total: ${newTotal.toLocaleString()}.`, false);
+            }
+            
+            closeRateAdjustModal();
+            renderEditorPanel(); // Re-render table to show new values and modified status
+            updateHistory(currentDropData); // Final history state after bulk operation
+        });
+
+        function deleteDrop(index) {
+            confirmAction(
+                'Delete Drop?',
+                'Are you sure you want to delete this drop item?',
+                () => {
+                    // Store current state for potential undo
+                    updateHistory(currentDropData); 
+                    currentDropData.splice(index, 1);
+                    renderEditorPanel(); // Re-render to update indices
+                    updateHistory(currentDropData); // Final history state
+                }
+            );
+        }
+        
+        function duplicateDrop(index) {
+            // Store current state for potential undo
+            updateHistory(currentDropData); 
+
+            const originalDrop = currentDropData[index];
+            const newDrop = JSON.parse(JSON.stringify(originalDrop));
+            newDrop.isNew = true;
+            delete newDrop.isModified;
+            currentDropData.splice(index + 1, 0, newDrop);
+            renderEditorPanel(); // Re-render to show new row
+            updateHistory(currentDropData); // Final history state
+        }
+
+        // --- Search Suggestions ---
+        document.getElementById('monsterSearch').addEventListener('input', function(e) {
+            const searchTerm = e.target.value.toLowerCase();
+            const suggestionsDiv = document.getElementById('monsterSuggestions');
+            let html = '';
+            let count = 0;
+            if (searchTerm.length > 0) {
+                for (const [id, name] of Object.entries(monsterList)) {
+                    if (count >= 10) break;
+                    if (id.includes(searchTerm) || name.toLowerCase().includes(searchTerm)) {
+                        html += `<div class="suggestion-item" onclick="selectMonster('${id}', '${name.replace(/'/g, "\\'")}')"><span class="suggestion-item-id">${id}</span> ${name}</div>`;
+                        count++;
+                    }
+                }
+            }
+            suggestionsDiv.innerHTML = html;
+            suggestionsDiv.classList.toggle('show', !!html);
+        });
+
+        function selectMonster(id, name) {
+            document.getElementById('monsterSearch').value = `[${id}] ${name}`;
+            document.getElementById('monsterID').value = id;
+            document.getElementById('monsterSuggestions').classList.remove('show');
+        }
+        
+        // --- MODIFIED: Item Search Suggestions (Modal) ---
+        document.getElementById('itemSearch').addEventListener('input', function(e) {
+            let html = '';
+            let count = 0;
+            const searchTerm = e.target.value.toLowerCase();
+            const suggestions = document.getElementById('itemSuggestions');
+            
+            if (searchTerm.length < 2) {
+                suggestions.classList.remove('show');
+                return;
+            }
+            
+            for (const [catIndex, items] of Object.entries(itemList)) {
+                if (count >= 50) break;
+                for (const [itemIndex, itemName] of Object.entries(items)) {
+                    if (count >= 50) break;
+                    const fullItemName = `(${catIndex}, ${itemIndex}) ${itemName}`;
+                    if (fullItemName.toLowerCase().includes(searchTerm)) {
+                        const escapedName = itemName.replace(/'/g, "\\'").replace(/"/g, "&quot;");
+                        const catName = itemCategories[catIndex] || 'Cat ' + catIndex;
+                        html += `<div class="suggestion-item" onclick="selectItem('${catIndex}', '${itemIndex}', '${escapedName}')">
+                                    <span class="suggestion-item-cat">${catName}</span> 
+                                    <span class="suggestion-item-id">(${catIndex}, ${itemIndex})</span> ${itemName}
+                                   </div>`;
+                        count++;
+                    }
+                }
+            }
+            suggestions.innerHTML = html;
+            suggestions.classList.toggle('show', !!html);
+        });
+
+        function selectItem(cat, index, name) {
+            document.getElementById('itemSearch').value = `[${cat}_${index}] ${name}`;
+            document.getElementById('itemCat').value = cat;
+            document.getElementById('itemIndex').value = index;
+            document.getElementById('itemSuggestions').classList.remove('show');
+        }
+        
+        // --- NEW: Search Suggestions for Bulk Edit Modal ---
+        // Find Monster
+        document.getElementById('bulkFindMonsterSearch').addEventListener('input', function(e) {
+            const searchTerm = e.target.value.toLowerCase();
+            const suggestionsDiv = document.getElementById('bulkFindMonsterSuggestions');
+            let html = '';
+            let count = 0;
+            if (searchTerm.length > 0) {
+                for (const [id, name] of Object.entries(monsterList)) {
+                    if (count >= 10) break;
+                    if (id.includes(searchTerm) || name.toLowerCase().includes(searchTerm)) {
+                        html += `<div class="suggestion-item" onclick="selectBulkMonster('Find', '${id}', '${name.replace(/'/g, "\\'")}')"><span class="suggestion-item-id">${id}</span> ${name}</div>`;
+                        count++;
+                    }
+                }
+            }
+            suggestionsDiv.innerHTML = html;
+            suggestionsDiv.classList.toggle('show', !!html);
+        });
+
+        // --- MODIFIED: Find Item (Bulk) ---
+        document.getElementById('bulkFindItemSearch').addEventListener('input', function(e) {
+            let html = '';
+            let count = 0;
+            const searchTerm = e.target.value.toLowerCase();
+            const suggestions = document.getElementById('bulkFindItemSuggestions');
+            
+            if (searchTerm.length < 2) {
+                suggestions.classList.remove('show');
+                return;
+            }
+            
+            for (const [catIndex, items] of Object.entries(itemList)) {
+                if (count >= 10) break;
+                for (const [itemIndex, itemName] of Object.entries(items)) {
+                    if (count >= 10) break;
+                    const fullItemName = `(${catIndex}, ${itemIndex}) ${itemName}`;
+                    if (fullItemName.toLowerCase().includes(searchTerm)) {
+                        const escapedName = itemName.replace(/'/g, "\\'").replace(/"/g, "&quot;");
+                        const catName = itemCategories[catIndex] || 'Cat ' + catIndex;
+                        html += `<div class="suggestion-item" onclick="selectBulkItem('Find', '${catIndex}', '${itemIndex}', '${escapedName}')">
+                                    <span class="suggestion-item-cat">${catName}</span> 
+                                    <span class="suggestion-item-id">(${catIndex}, ${itemIndex})</span> ${itemName}
+                                   </div>`;
+                        count++;
+                    }
+                }
+            }
+            suggestions.innerHTML = html;
+            suggestions.classList.toggle('show', !!html);
+        });
+
+        // --- MODIFIED: Replace Item (Bulk) ---
+        document.getElementById('bulkReplaceItemSearch').addEventListener('input', function(e) {
+            let html = '';
+            let count = 0;
+            const searchTerm = e.target.value.toLowerCase();
+            const suggestions = document.getElementById('bulkReplaceItemSuggestions');
+            
+            if (searchTerm.length < 2) {
+                suggestions.classList.remove('show');
+                return;
+            }
+            
+            for (const [catIndex, items] of Object.entries(itemList)) {
+                if (count >= 10) break;
+                for (const [itemIndex, itemName] of Object.entries(items)) {
+                    if (count >= 10) break;
+                    const fullItemName = `(${catIndex}, ${itemIndex}) ${itemName}`;
+                    if (fullItemName.toLowerCase().includes(searchTerm)) {
+                        const escapedName = itemName.replace(/'/g, "\\'").replace(/"/g, "&quot;");
+                        const catName = itemCategories[catIndex] || 'Cat ' + catIndex;
+                        html += `<div class="suggestion-item" onclick="selectBulkItem('Replace', '${catIndex}', '${itemIndex}', '${escapedName}')">
+                                    <span class="suggestion-item-cat">${catName}</span> 
+                                    <span class="suggestion-item-id">(${catIndex}, ${itemIndex})</span> ${itemName}
+                                   </div>`;
+                        count++;
+                    }
+                }
+            }
+            suggestions.innerHTML = html;
+            suggestions.classList.toggle('show', !!html);
+        });
+
+        function selectBulkMonster(type, id, name) {
+            document.getElementById(`bulk${type}MonsterSearch`).value = `[${id}] ${name}`;
+            document.getElementById(`bulk${type}MonsterID`).value = id;
+            document.getElementById(`bulk${type}MonsterSuggestions`).classList.remove('show');
+        }
+
+        function selectBulkItem(type, cat, index, name) {
+            document.getElementById(`bulk${type}ItemSearch`).value = `[${cat}_${index}] ${name}`;
+            document.getElementById(`bulk${type}ItemCat`).value = cat;
+            document.getElementById(`bulk${type}ItemIndex`).value = index;
+            document.getElementById(`bulk${type}ItemSuggestions`).classList.remove('show');
+        }
+        // --- End Bulk Edit Search Suggestions ---
+
+
+        // --- Form Submission ---
+        document.getElementById('dropForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            // Store current state for potential undo
+            updateHistory(currentDropData); 
+
+            const monsterID = document.getElementById('monsterID').value;
+            let itemCat = document.getElementById('itemCat').value;
+            let itemIndex = document.getElementById('itemIndex').value;
+            
+            if (!monsterID) {
+                showStatus('You must select a monster.', true);
+                return;
+            }
+            if (itemCat === '' || itemIndex === '') {
+                // Fallback for manual item entry if search not selected
+                const itemSearchText = document.getElementById('itemSearch').value;
+                const match = itemSearchText.match(/\[(\d+)_(\d+)\]/); // Try to parse [14_13]
+                if (match) {
+                    itemCat = match[1];
+                    itemIndex = match[2];
+                } else {
+                    showStatus('You must select a valid item from the search.', true);
+                    return;
+                }
+            }
+
+            const dropData = {
+                MonsterID: document.getElementById('monsterID').value,
+                MonsterElement: document.getElementById('monsterElement').value,
+                PlayerMinReset: document.getElementById('playerMinReset').value,
+                PlayerMaxReset: document.getElementById('playerMaxReset').value,
+                PlayerMinLevel: document.getElementById('playerMinLevel').value,
+                PlayerMaxLevel: document.getElementById('playerMaxLevel').value,
+                Cat: itemCat,
+                Index: itemIndex,
+                MinLevel: document.getElementById('minLevel').value,
+                MaxLevel: document.getElementById('maxLevel').value,
+                Durability: document.getElementById('durability').value,
+                Skill: document.getElementById('skill').value,
+                Luck: document.getElementById('luck').value,
+                Option: document.getElementById('option').value,
+                Exc: document.getElementById('exc').value,
+                Element: document.getElementById('element').value,
+                SocketCount: document.getElementById('socketCount').value,
+                Duration: document.getElementById('duration').value,
+                Rate: document.getElementById('rate').value
+            };
+
+            if (editingDropIndex !== null) {
+                // This is an EDIT
+                const originalDrop = currentDropData[editingDropIndex];
+                currentDropData[editingDropIndex] = {
+                    ...originalDrop, // Preserve originalName
+                    ...dropData,     // Overwrite with new data
+                    isModified: !originalDrop.isNew, // Mark as modified if it wasn't new
+                    isNew: originalDrop.isNew // Preserve isNew status
+                };
+            } else {
+                // This is a NEW drop
+                currentDropData.unshift({
+                    ...dropData,
+                    isNew: true,
+                    isModified: false
+                }); 
+            }
+            
+            renderEditorPanel();
+            closeModal();
+            updateHistory(currentDropData); // Final history state
+        });
+
+        // --- NEW: Bulk Edit Form Submission ---
+        document.getElementById('bulkEditForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            // Store current state for potential undo
+            updateHistory(currentDropData); 
+
+            // 1. Get Find criteria
+            const findMonsterID = document.getElementById('bulkFindMonsterID').value;
+            const findItemCat = document.getElementById('bulkFindItemCat').value;
+            const findItemIndex = document.getElementById('bulkFindItemIndex').value;
+            const findItemKey = (findItemCat && findItemIndex) ? `${findItemCat}_${findItemIndex}` : null;
+
+            // 2. Get Replace criteria (These are now OPTIONAL)
+            const replaceItemCat = document.getElementById('bulkReplaceItemCat').value;
+            const replaceItemIndex = document.getElementById('bulkReplaceItemIndex').value;
+            const replaceItemSet = (replaceItemCat !== "" && replaceItemIndex !== "");
+            
+            // 3. Get Optional new values
+            const newValues = {
+                MinLevel: document.getElementById('bulkMinLevel').value,
+                MaxLevel: document.getElementById('bulkMaxLevel').value,
+                Durability: document.getElementById('bulkDurability').value,
+                Skill: document.getElementById('bulkSkill').value,
+                Luck: document.getElementById('bulkLuck').value,
+                Option: document.getElementById('bulkOption').value,
+                Exc: document.getElementById('bulkExc').value,
+                SocketCount: document.getElementById('bulkSocketCount').value,
+                Duration: document.getElementById('bulkDuration').value,
+                Rate: document.getElementById('bulkRate').value
+            };
+            
+            // Check if any modification at all is being attempted (either item replacement OR value change)
+            const isValueChange = Object.values(newValues).some(v => v !== null && v !== "");
+            
+            // 4. Validate required fields
+            if (!findMonsterID) {
+                showStatus('You must select a Monster to find.', true);
+                return;
+            }
+            if (!replaceItemSet && !isValueChange) {
+                 showStatus('You must either select a New Item or fill out at least one new value.', true);
+                 return;
+            }
+
+            let updatedCount = 0;
+
+            // 5. Loop through data and apply changes
+            currentDropData.forEach(drop => {
+                let monsterMatch = (drop.MonsterID === findMonsterID);
+                let itemMatch = true; // Assume match if no item is specified
+
+                if (findItemKey) {
+                    itemMatch = (drop.Cat === findItemCat && drop.Index === findItemIndex);
+                }
+
+                // If this is a row we want to edit...
+                if (monsterMatch && itemMatch) {
+                    updatedCount++;
+
+                    // A. Replace the item (ONLY if new item is set)
+                    if (replaceItemSet) {
+                        drop.Cat = replaceItemCat;
+                        drop.Index = replaceItemIndex;
+                    }
+
+                    // B. Apply optional new values
+                    for (const [key, value] of Object.entries(newValues)) {
+                        if (value !== null && value !== "") { // Check if user entered anything
+                            drop[key] = value;
+                        }
+                    }
+
+                    // C. Mark as modified
+                    if (!drop.isNew) {
+                        drop.isModified = true;
+                    }
+                }
+            });
+
+            if (updatedCount > 0) {
+                showStatus(`✓ Bulk edit complete. Updated ${updatedCount} drop(s).`, false);
+                renderEditorPanel(); // Re-render the table to show changes
+            } else {
+                showStatus('No matching drops found for that criteria.', false, true); // Warning
+            }
+
+            closeBulkModal();
+            updateHistory(currentDropData); // Final history state
+        });
+
+
+        // --- Guide Modal Logic ---
+        function openGuideModal() { document.getElementById('guideModal').classList.add('show'); lucide.createIcons(); }
+        function closeGuideModal() { document.getElementById('guideModal').classList.remove('show'); }
+        
+        // Close modals on outside click
+        document.getElementById('dropModal').addEventListener('click', function (e) { if (e.target === this) closeModal(); }); 
+        document.getElementById('guideModal').addEventListener('click', function (e) { if (e.target === this) closeGuideModal(); }); 
+        document.getElementById('confirmModal').addEventListener('click', function (e) { if (e.target === this) closeConfirmModal(); }); 
+        document.getElementById('bulkEditModal').addEventListener('click', function (e) { if (e.target === this) closeBulkModal(); }); // NEW
+        document.getElementById('rateAdjustModal').addEventListener('click', function (e) { if (e.target === this) closeRateAdjustModal(); }); // NEW ADJUST RATES LISTENER
+
+        
+        // --- Dummy implementation of updateRowValue (Needed for jewel/lucky tabs, but not used in this iteration) ---
+        document.addEventListener('click', function (e) { 
+            if (!e.target.closest('.monster-search')) {
+                document.getElementById('monsterSuggestions').classList.remove('show');
+                if (document.getElementById('bulkFindMonsterSuggestions')) {
+                    document.getElementById('bulkFindMonsterSuggestions').classList.remove('show'); // NEW
+                }
+            }
+            if (!e.target.closest('.item-search')) {
+                document.getElementById('itemSuggestions').classList.remove('show');
+                if (document.getElementById('bulkFindItemSuggestions')) {
+                    document.getElementById('bulkFindItemSuggestions').classList.remove('show'); // NEW
+                }
+                if (document.getElementById('bulkReplaceItemSuggestions')) {
+                    document.getElementById('bulkReplaceItemSuggestions').classList.remove('show'); // NEW
+                }
+            }
+        });
+        
+        // --- Save to Server ---
+        function buildXmlFromData() {
+            let xml = originalXMLHeaders[currentFile] || '<?xml version="1.0" encoding="utf-8"?>\n';
+            xml += '<MonsterMapItemDrop>\n';
+            
+            for (const drop of currentDropData) {
+                // MODIFIED: Use new itemList structure
+                const catNum = parseInt(drop.Cat, 10);
+                const indexNum = parseInt(drop.Index, 10);
+                const itemName = (itemList[catNum] && itemList[catNum][indexNum]) || drop.originalName || 'Unknown Item';
+                // Add a comment with the item name for readability, like in the original file
+                xml += `  <!-- ${itemName} -->\n`;
+                // NOTE: We MUST write out the attributes EXACTLY as they are expected by the server file format, 
+                // including the potentially redundant PlayerMinReset/PlayerMaxReset pair, if the server expects it.
+                // Since the client side doesn't know which is correct, we will write the structure that matches the sample,
+                // ensuring the core attributes are correct.
+                xml += `  <DropItem MonsterID="${drop.MonsterID}" MonsterElement="${drop.MonsterElement}" PlayerMinReset="${drop.PlayerMinReset}" PlayerMaxReset="${drop.PlayerMaxReset}" PlayerMinLevel="${drop.PlayerMinLevel}" PlayerMaxLevel="${drop.PlayerMaxLevel}" Cat="${drop.Cat}" Index="${drop.Index}" MinLevel="${drop.MinLevel}" MaxLevel="${drop.MaxLevel}" Durability="${drop.Durability}" Skill="${drop.Skill}" Luck="${drop.Luck}" Option="${drop.Option}" Exc="${drop.Exc}" Element="${drop.Element}" SocketCount="${drop.SocketCount}" Duration="${drop.Duration}" Rate="${drop.Rate}" />\n`;
+            }
+            
+            xml += '</MonsterMapItemDrop>';
+            return xml;
+        }
+        
+        async function saveChangesToServer() { 
+            if (!currentFile) {
+                showStatus('No file selected to save.', true);
+                return;
+            }
+            
+            const saveButton = document.querySelector('.btn-success'); 
+            saveButton.disabled = true; 
+            saveButton.innerHTML = `<i data-lucide="loader-2" class="spin"></i> Saving...`; 
+            lucide.createIcons(); 
+            document.querySelectorAll('.spin').forEach(el => el.animate([{ transform: 'rotate(0deg)' }, { transform: 'rotate(360deg)' }], { duration: 1000, iterations: Infinity }));
+            
+            const newXmlContent = buildXmlFromData();
+            
+            try { 
+                const response = await fetch(`${SERVER_URL}/api/save-map-drop-file`, { 
+                    method: 'POST', 
+                    headers: { 'Content-Type': 'application/json' }, 
+                    body: JSON.stringify({ 
+                        filename: currentFile,
+                        newXmlContent: newXmlContent 
+                    }), 
+                }); 
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error('Server error on save:', errorText);
+                    throw new Error(`Server responded with status: ${response.status}. Message: ${errorText.substring(0, 200)}...`);
+                }
+                
+                showStatus(`✓ ${currentFile} saved successfully to the server!`, false);
+                
+                // Reload data for this file to clear 'new'/'modified' status
+                
+                // --- Update cache and re-parse ---
+                fileContentCache[currentFile] = newXmlContent;
+                currentDropData = parseMapDropXML(newXmlContent); // Re-parse
+                currentVisibleRows = ROWS_PER_PAGE; // Reset pagination
+                
+                // After successful save, reset history since the file is now in its saved state
+                history = [];
+                historyIndex = -1;
+                updateHistory(currentDropData);
+
+                renderEditorPanel(); // Re-render
+                
+            } catch (error) { 
+                console.error('Failed to save changes:', error); 
+                showStatus(`✗ Error: Could not save ${currentFile}. ${error.message}`, true); 
+            } finally { 
+                saveButton.disabled = false; 
+                saveButton.innerHTML = `<i data-lucide="save"></i> Save Changes`; 
+                lucide.createIcons(); 
+            } 
+        }
+    </script>
+</body>
+</html>

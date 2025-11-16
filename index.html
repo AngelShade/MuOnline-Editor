@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard</title>
+
+    <!-- Fonts and Icons (from existing editor) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@500&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <style>
+        /* Root variables from existing editor */
+        :root {
+            --bg-dark: #0a0f1e;
+            --bg-glass: rgba(26, 34, 63, 0.6);
+            --text-primary: #e0e0e0;
+            --text-secondary: #a0a0c0;
+            --text-bright: #ffffff;
+            --font-ui: 'Inter', sans-serif;
+            --font-data: 'Fira Code', monospace;
+            
+            --accent-blue: #00aaff;
+            --accent-green: #00ff9b;
+            --accent-amber: #ffc107;
+            --accent-pink: #ff0055;
+        }
+        
+        /* Base styles from existing editor */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: var(--font-ui);
+            background: linear-gradient(135deg, #1a223f 0%, var(--bg-dark) 100%);
+            color: var(--text-primary);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1600px; /* Widened for more cards */
+            margin: 0 auto;
+            padding: 30px;
+        }
+
+        .glass-effect {
+            background: var(--bg-glass);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(0, 170, 255, 0.2);
+            border-radius: 12px;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+        }
+        
+        /* Header from existing editor, slightly modified */
+        .header { 
+            padding: 30px; 
+            text-align: center; 
+            margin-bottom: 30px;
+        }
+        .header h1 { 
+            font-size: 32px; 
+            margin-bottom: 10px; 
+            color: var(--text-bright); 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            gap: 15px; 
+        }
+        .header p { 
+            color: var(--text-secondary); 
+            font-size: 18px;
+        }
+        .header h1 i {
+            width: 36px;
+            height: 36px;
+            color: var(--accent-blue);
+        }
+
+        /* NEW: Module Grid Styles */
+        .module-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 25px;
+        }
+
+        .module-card {
+            display: flex;
+            flex-direction: column;
+            text-decoration: none;
+            color: var(--text-primary);
+            padding: 25px;
+            transition: all 0.3s ease;
+            overflow: hidden;
+            position: relative;
+        }
+        .module-card:before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, rgba(0, 170, 255, 0) 0%, rgba(0, 170, 255, 0.1) 100%);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .module-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 40px 0 rgba(0, 0, 0, 0.5);
+            border-color: rgba(0, 170, 255, 0.5);
+        }
+        .module-card:hover:before {
+            opacity: 1;
+        }
+
+        .module-card-icon {
+            margin-bottom: 20px;
+            color: var(--accent-blue);
+        }
+        .module-card-icon i {
+            width: 48px;
+            height: 48px;
+        }
+        
+        .module-card h2 {
+            font-size: 22px;
+            color: var(--text-bright);
+            margin-bottom: 10px;
+        }
+
+        .module-card p {
+            font-size: 15px;
+            color: var(--text-secondary);
+            line-height: 1.6;
+            flex-grow: 1;
+            margin-bottom: 20px;
+        }
+
+        .module-card-footer {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-weight: 600;
+            color: var(--accent-green);
+        }
+        .module-card-footer span {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        /* Styles for disabled/coming soon cards */
+        .module-card.disabled {
+            filter: grayscale(80%);
+            opacity: 0.6;
+            pointer-events: none;
+        }
+        .module-card.disabled .module-card-icon {
+            color: var(--text-secondary);
+        }
+        .module-card.disabled .module-card-footer {
+            color: var(--accent-amber);
+        }
+        
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <!-- Main Dashboard Header -->
+        <header class="header glass-effect">
+            <h1><i data-lucide="server"></i>Game Administrator Dashboard</h1>
+            <p>Select a module to begin managing server data</p>
+        </header>
+
+        <!-- Grid of Tool Modules -->
+        <main class="module-grid">
+
+            <!-- Module 1: Monster Spawn Editor (Active) -->
+            <a href="monsterspawneditor.html" class="module-card glass-effect">
+                <div class="module-card-icon">
+                    <i data-lucide="siren"></i>
+                </div>
+                <h2>Monster Spawn Editor</h2>
+                <p>Data-centric interface for managing all monster spawn points across every map. Supports inline editing, undo, and multi-user merging.</p>
+                <div class="module-card-footer">
+                    <span>Launch Editor <i data-lucide="arrow-right"></i></span>
+                </div>
+            </a>
+            
+            <!-- NEW: Module 2: Monster Drop Editor (Active) -->
+            <a href="monsterdropeditor.html" class="module-card glass-effect">
+                <div class="module-card-icon">
+                    <i data-lucide="package"></i>
+                </div>
+                <h2>Monster Drop Editor</h2>
+                <p>Manage item drops from <code>EachMonsterMapDrop</code> files. Edit drops for each map bag individually.</p>
+                <div class="module-card-footer">
+                    <span>Launch Editor <i data-lucide="arrow-right"></i></span>
+                </div>
+            </a>
+
+            <!-- Module 3: Zen & Drop Editor (Active) -->
+            <a href="zendropeditor.html" class="module-card glass-effect">
+                <div class="module-card-icon">
+                    <i data-lucide="droplets"></i>
+                </div>
+                <h2>Drop Rate Editor</h2>
+                <p>Manage server-wide Zen drop rates per map and configure Excellent Option drop rates for items and wings.</p>
+                <div class="module-card-footer">
+                    <span>Launch Editor <i data-lucide="arrow-right"></i></span>
+                </div>
+            </a>
+
+            <!-- Module 4: Shop Manager (Active) -->
+            <a href="shopeditor.html" class="module-card glass-effect">
+                <div class="module-card-icon">
+                    <i data-lucide="store"></i>
+                </div>
+                <h2>Shop Manager</h2>
+                <p>Configure NPC shop inventories, item prices, and stock levels. Visually add/remove items from shop tabs.</p>
+                <div class="module-card-footer">
+                    <span>Launch Editor <i data-lucide="arrow-right"></i></span>
+                </div>
+            </a>
+            
+            <!-- Module 5: Chaos Mix Editor (Active) -->
+            <a href="mixeditor.html" class="module-card glass-effect">
+                <div class="module-card-icon">
+                    <i data-lucide="flask-conical"></i>
+                </div>
+                <h2>Chaos Mix Editor</h2>
+                <p>Manage all Chaos Machine recipes, from item upgrades and jewel packing to mastery items and lucky tickets.</p>
+                <div class="module-card-footer">
+                    <span>Launch Editor <i data-lucide="arrow-right"></i></span>
+                </div>
+            </a>
+
+            <!-- Module 6: Event Scheduler (Coming Soon) -->
+            <a href="#" class="module-card glass-effect disabled" onclick="return false;">
+                <div class="module-card-icon">
+                    <i data-lucide="calendar-clock"></i>
+                </div>
+                <h2>Event Scheduler</h2>
+                <p>Visually schedule invasions, blood castle, devil square, and other server events. Set times and monster configurations.</p>
+                <div class="module-card-footer">
+                    <span>Coming Soon...</span>
+                </div>
+            </a>
+
+        </main>
+    </div>
+
+    <script>
+        // Render all icons on load
+        document.addEventListener('DOMContentLoaded', () => {
+            lucide.createIcons();
+        });
+    </script>
+</body>
+</html>

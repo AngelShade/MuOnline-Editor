@@ -1,0 +1,2394 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chaos Mix Editor (Web Edition)</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@500&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- NEW: Import the separate module for Main Mixes -->
+    <script src="mix_main_mix.js"></script>
+
+    <style>
+        :root {
+            --bg-dark: #0a0f1e;
+            --bg-glass: rgba(26, 34, 63, 0.6);
+            --text-primary: #e0e0e0;
+            --text-secondary: #a0a0c0;
+            --text-bright: #ffffff;
+            --font-ui: 'Inter', sans-serif;
+            --font-data: 'Fira Code', monospace;
+            
+            --accent-blue: #00aaff;
+            --accent-green: #00ff9b;
+            --accent-amber: #ffc107;
+            --accent-pink: #ff0055;
+            --accent-purple: #6f42c1;
+        }
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: var(--font-ui);
+            background: linear-gradient(135deg, #1a223f 0%, var(--bg-dark) 100%);
+            color: var(--text-primary);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            background: transparent;
+            border-radius: 12px;
+            padding: 30px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .glass-effect {
+            background: var(--bg-glass);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(0, 170, 255, 0.2);
+            border-radius: 12px;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+        }
+        
+        .header { position: relative; padding: 30px; text-align: center; }
+        .header .header-controls { position: absolute; top: 25px; left: 30px; display: flex; align-items: center; gap: 10px; background: rgba(0, 170, 255, 0.1); padding: 8px 12px; border-radius: 6px; }
+        .header .header-controls label { font-weight: 600; font-size: 14px; }
+        .header h1 { font-size: 28px; margin-bottom: 10px; color: var(--text-bright); display: flex; align-items: center; justify-content: center; gap: 15px; }
+        .header p { color: var(--text-secondary); }
+        
+        /* Status Bar Variants */
+        .status-bar { display: none; padding: 15px; border-radius: 8px; font-weight: 600; }
+        .status-bar-success { background: rgba(0, 255, 155, 0.2); color: var(--accent-green); border: 1px solid var(--accent-green); }
+        .status-bar-error { background: rgba(255, 0, 85, 0.2); color: var(--accent-pink); border: 1px solid var(--accent-pink); }
+        .status-bar-warning { background: rgba(255, 193, 7, 0.2); color: var(--accent-amber); border: 1px solid var(--accent-amber); }
+        .status-bar-info { background: rgba(0, 170, 255, 0.2); color: var(--accent-blue); border: 1px solid var(--accent-blue); }
+        .status-bar-controls { display: flex; gap: 10px; margin-top: 10px; }
+        
+        .data-management-section h3 { display: flex; align-items: center; gap: 10px; margin-bottom: 15px; color: var(--text-bright); }
+        
+        /* Layout */
+        .main-content { display: grid; grid-template-columns: 1fr; gap: 20px; }
+        
+        .btn { padding: 10px 18px; border: none; border-radius: 6px; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.3s; display: inline-flex; align-items: center; gap: 8px; }
+        .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+        .btn-primary { background: var(--accent-blue); color: var(--bg-dark); }
+        .btn-primary:hover:not(:disabled) { background: #fff; }
+        .btn-success { background: var(--accent-green); color: var(--bg-dark); }
+        .btn-success:hover:not(:disabled) { background: #fff; }
+        .btn-danger { background: var(--accent-pink); color: #fff; }
+        .btn-danger:hover:not(:disabled) { background: #fff; color: var(--accent-pink); }
+        .btn-undo { background: var(--accent-purple); color: white; }
+        .btn-undo:hover:not(:disabled) { background: #5a32a3; }
+        .btn-outline { background: transparent; border: 1px solid rgba(0, 170, 255, 0.5); color: var(--accent-blue); }
+        .btn-outline:hover { background: rgba(0, 170, 255, 0.1); }
+        .btn-sm { padding: 4px 8px; font-size: 12px; }
+        
+        /* Tab Navigation */
+        .tab-nav { display: flex; gap: 5px; margin-bottom: 20px; border-bottom: 2px solid rgba(0, 170, 255, 0.2); overflow-x: auto; padding-bottom: 2px; }
+        .tab-btn { padding: 12px 20px; border: none; border-bottom: 3px solid transparent; background: transparent; color: var(--text-secondary); font-size: 15px; font-weight: 600; cursor: pointer; transition: all 0.2s; border-radius: 6px 6px 0 0; white-space: nowrap; }
+        .tab-btn:hover { background: rgba(0, 170, 255, 0.1); color: var(--text-primary); }
+        .tab-btn.active { background: rgba(0, 170, 255, 0.1); border-bottom-color: var(--accent-green); color: var(--text-bright); }
+        .tab-btn i { width: 16px; height: 16px; margin-right: 2px; }
+        
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+
+        /* Controls inside tab */
+        .tab-controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding: 15px;
+            background: rgba(0,0,0,0.2);
+            border-radius: 8px;
+        }
+        .tab-controls h2 { color: var(--text-bright); }
+        .tab-controls p { color: var(--text-secondary); font-size: 14px; margin-top: 4px; }
+        
+        .table-container { 
+            background: rgba(0,0,0,0.2); 
+            border-radius: 8px; 
+            overflow: hidden; 
+            margin-bottom: 20px; 
+        }
+        .table-header { display: flex; align-items: center; justify-content: space-between; transition: background-color 0.2s; padding: 15px; background: rgba(0,0,0,0.2); border-bottom: 1px solid rgba(0, 170, 255, 0.2); cursor: pointer; user-select: none; }
+        .table-header:hover { background-color: rgba(0, 170, 255, 0.1) !important; }
+        .table-header h3 { display: flex; align-items: center; gap: 10px; color: var(--text-bright); }
+        .toggle-icon { transition: transform 0.3s ease; }
+        .table-container.collapsed .toggle-icon { transform: rotate(-90deg); }
+        .table-container.collapsed table { display: none; }
+
+        table { width: 100%; border-collapse: collapse; }
+        th { 
+            background: rgba(0, 170, 255, 0.1); 
+            color: var(--text-bright); 
+            padding: 10px 12px; 
+            text-align: left; 
+            font-weight: 600; 
+            font-size: 13px; 
+            vertical-align: top; 
+        }
+        td { padding: 8px 12px; border-bottom: 1px solid rgba(0, 170, 255, 0.1); vertical-align: middle; }
+        tr:hover { background: rgba(0, 170, 255, 0.05); }
+
+        .row-new { background-color: rgba(0, 255, 155, 0.1) !important; }
+        .row-modified { background-color: rgba(255, 193, 7, 0.1) !important; }
+        .row-empty { background-color: rgba(255, 0, 85, 0.1) !important; }
+        
+        .item-name { font-weight: 600; color: var(--text-primary); font-size: 14px; }
+        .item-id { font-family: var(--font-data); color: var(--text-secondary); }
+        .item-name-cell { min-width: 200px; }
+
+        /* NEW: Style for displaying requirements in Main Mix tab */
+        .req-item-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            border-left: 2px solid var(--accent-blue);
+            padding-left: 8px;
+            margin-bottom: 10px;
+        }
+        .req-item {
+            display: block;
+            font-size: 13px;
+            color: var(--text-secondary);
+            /* margin-left: 10px; */ /* Removed to allow flex/grid inside */
+            font-family: var(--font-data);
+            line-height: 1.5; /* Added for better readability */
+        }
+        .req-item-name {
+            font-weight: 600;
+            color: var(--text-primary);
+            font-family: var(--font-ui);
+            margin-right: 5px;
+        }
+        .req-item-flags {
+            color: var(--accent-amber); 
+            margin-left: 5px;
+        }
+        /* END NEW */
+        
+        .inline-input { width: 100%; padding: 4px 6px; border: 1px solid transparent; background: rgba(0,0,0,0.3); border-radius: 4px; font-family: var(--font-data); font-size: 14px; transition: all 0.2s; color: var(--text-primary); }
+        .inline-input:hover, .inline-input:focus { border-color: var(--accent-blue); background: var(--bg-dark); }
+        .inline-input.inline-input-invalid { border-color: var(--accent-pink); background-color: rgba(255, 0, 85, 0.2); }
+        .inline-input-small { width: 80px; text-align: center; }
+        
+        input[type=number]::-webkit-inner-spin-button, input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+        input[type=number] { -moz-appearance: textfield; }
+        
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.7); z-index: 1000; align-items: center; justify-content: center; }
+        .modal.show { display: flex; }
+        
+        .modal-content { box-shadow: 0 8px 32px 0 rgba(0,0,0,0.5); color: var(--text-primary); max-width: 900px; width: 90%; max-height: 90vh; overflow-y: auto; }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; padding: 20px 25px; border-bottom: 1px solid rgba(0, 170, 255, 0.2); }
+        .modal-header h2 { color: var(--text-bright); }
+        .modal-body { padding: 25px; }
+        .modal-footer { display: flex; gap: 10px; justify-content: flex-end; padding: 20px 25px; border-top: 1px solid rgba(0, 170, 255, 0.2); }
+        .close-btn { color: var(--text-secondary); transition: all 0.2s; background: none; border: none; cursor: pointer;}
+        .close-btn:hover { color: var(--text-bright); transform: rotate(90deg); }
+        
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 15px; }
+        .form-group.full-width { grid-column: 1 / -1; }
+        .form-group.span-2 { grid-column: span 2; }
+        .form-group label { display: block; margin-bottom: 5px; font-weight: 600; color: var(--text-secondary); }
+        .form-group input, .form-group select { width: 100%; padding: 10px; border: 1px solid rgba(0, 170, 255, 0.2); border-radius: 6px; font-size: 14px; background-color: rgba(0,0,0,0.3); color: var(--text-primary); }
+        .form-group input:focus, .form-group select:focus { outline: none; border-color: var(--accent-blue); }
+        
+        /* Item Search in Modal */
+        .item-search { position: relative; }
+        .item-suggestions { background: var(--bg-dark); border: 1px solid var(--accent-blue); position: absolute; top: 100%; left: 0; right: 0; max-height: 250px; overflow-y: auto; z-index: 100; display: none; }
+        .item-suggestions.show { display: block; }
+        .suggestion-item { padding: 10px; cursor: pointer; border-bottom: 1px solid rgba(0, 170, 255, 0.1); }
+        .suggestion-item:hover { background: rgba(0, 170, 255, 0.1); }
+        .suggestion-item-id { color: var(--accent-blue); font-family: var(--font-data); margin-right: 8px; }
+        .suggestion-item-cat { color: var(--accent-amber); font-family: var(--font-data); margin-right: 8px; }
+        
+        .action-btn { padding: 5px; border-radius: 4px; cursor: pointer; background: transparent; border: none; color: var(--text-secondary); }
+        .action-btn:hover { color: var(--text-bright); }
+        .btn-edit:hover { color: var(--accent-amber); }
+        .btn-delete:hover { color: var(--accent-pink); }
+        
+        .empty-state { text-align: center; padding: 60px 20px; color: var(--text-secondary); }
+        
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: var(--accent-blue); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #fff; }
+
+        .btn i, .action-btn i, h1 i, h3 i { width: 16px; height: 16px; stroke-width: 2.5; }
+        .action-btn i { width: 18px; height: 18px; }
+        .header h1 i { width: 32px; height: 32px; color: var(--accent-green); }
+
+        /* Author/Confirm Modals */
+        #authorModal { z-index: 2000; }
+        .author-modal-content { background: var(--bg-glass); backdrop-filter: blur(10px); border: 1px solid rgba(0, 170, 255, 0.2); box-shadow: 0 8px 32px 0 rgba(0,0,0,0.5); text-align: center; padding: 40px; border-radius: 12px; }
+        .author-modal-content h2 { color: var(--text-bright); }
+        .author-modal-content p { color: var(--text-secondary); }
+        .author-modal-content input { background-color: rgba(0,0,0,0.3); color: var(--text-primary); border-color: rgba(0, 170, 255, 0.2); text-align: center; width: 100%; padding: 12px; font-size: 16px; border-radius: 6px; margin-bottom: 20px;}
+
+        #confirmModal .modal-content { max-width: 500px; }
+        
+        /* Guide Modal */
+        #guideContent { line-height: 1.7; color: var(--text-secondary); }
+        #guideContent h3 { color: var(--text-bright); margin-top: 20px; margin-bottom: 10px; border-bottom: 1px solid rgba(0, 170, 255, 0.2); padding-bottom: 5px; }
+        #guideContent h3:first-child { margin-top: 0; }
+        #guideContent ul { list-style-position: inside; padding-left: 10px; }
+        #guideContent li { margin-bottom: 10px; }
+        #guideContent code { background-color: rgba(0,0,0,0.3); padding: 3px 6px; border-radius: 4px; font-family: var(--font-data); color: var(--accent-green); }
+        
+        /* Special styles for Mastery Mix */
+        .mastery-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        .materials-list, .pools-list, .mixes-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .list-item {
+            background: rgba(0,0,0,0.2);
+            padding: 12px 15px;
+            border-radius: 6px;
+            border-left: 3px solid var(--accent-blue);
+        }
+        .list-item-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: 600;
+        }
+        .list-item-header .item-name { color: var(--accent-green); }
+        .list-item-body {
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin-top: 8px;
+            padding-left: 10px;
+            border-left: 2px solid rgba(0, 170, 255, 0.2);
+        }
+        .list-item-body span {
+            display: inline-block;
+            margin-right: 15px;
+            font-family: var(--font-data);
+        }
+
+        /* NEW: Styles for editable mastery tab */
+        .mastery-section {
+            background: rgba(0,0,0,0.2);
+            border-radius: 8px;
+            margin-bottom: 25px;
+            border: 1px solid rgba(0, 170, 255, 0.1);
+        }
+        .mastery-section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 20px;
+            background: rgba(0, 170, 255, 0.1);
+            border-bottom: 1px solid rgba(0, 170, 255, 0.2);
+        }
+        .mastery-section-header h3 {
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: var(--text-bright);
+        }
+        .mastery-section-body {
+            padding: 20px;
+        }
+        .mastery-section-body .table-container {
+            margin-bottom: 0;
+        }
+        
+        /* Styles for pool list */
+        .pool-list-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+        .pool-card {
+            background: rgba(0,0,0,0.3);
+            border-radius: 8px;
+            border: 1px solid rgba(0, 170, 255, 0.1);
+        }
+        .pool-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 15px;
+            border-bottom: 1px solid rgba(0, 170, 255, 0.2);
+        }
+        .pool-card-header .form-group {
+            margin: 0;
+            flex-grow: 1;
+        }
+        .pool-card-header label {
+            font-size: 12px;
+            margin-right: 8px;
+        }
+        .pool-card-header input {
+            padding: 4px 8px;
+            width: 100px;
+            font-family: var(--font-data);
+        }
+        .pool-card-body {
+            padding: 15px;
+        }
+        .pool-card-body table {
+            width: 100%;
+        }
+        .pool-card-body th, .pool-card-body td {
+            font-size: 13px;
+            padding: 6px 8px;
+        }
+        .pool-card-body .item-name-cell {
+            min-width: 150px;
+        }
+        .pool-card-body .item-name {
+            font-size: 13px;
+        }
+        .pool-card-footer {
+            padding: 10px 15px;
+            border-top: 1px solid rgba(0, 170, 255, 0.1);
+            text-align: right;
+        }
+
+        /* NEW: Sub-tab Navigation */
+        .sub-tab-nav { 
+            display: flex; 
+            gap: 4px; 
+            margin-bottom: 20px; 
+            border-bottom: 1px solid rgba(0, 170, 255, 0.2); 
+        }
+        .sub-tab-btn { 
+            padding: 8px 16px; 
+            border: none; 
+            border-bottom: 2px solid transparent; 
+            background: transparent; 
+            color: var(--text-secondary); 
+            font-size: 14px; 
+            font-weight: 600; 
+            cursor: pointer; 
+            transition: all 0.2s; 
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .sub-tab-btn:hover { 
+            background: rgba(0, 170, 255, 0.1); 
+            color: var(--text-primary); 
+        }
+        .sub-tab-btn.active { 
+            border-bottom-color: var(--accent-amber); 
+            color: var(--text-bright); 
+        }
+        .sub-tab-btn i { 
+            width: 14px; 
+            height: 14px; 
+        }
+
+        /* NEW: Styles for the inline material details */
+        .material-detail-row {
+            background-color: rgba(0,0,0,0.3) !important;
+        }
+        .material-detail-cell {
+            padding: 20px !important;
+            border-bottom: 1px solid rgba(0, 170, 255, 0.1);
+        }
+        .material-detail-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr); /* Two columns: ID/Count per material */
+            gap: 10px 20px;
+        }
+        .material-group {
+            border: 1px solid rgba(0, 170, 255, 0.2);
+            padding: 10px;
+            border-radius: 6px;
+            background: rgba(0,0,0,0.1);
+        }
+        .material-group label {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--accent-amber);
+            margin-bottom: 5px;
+            display: block;
+        }
+        .material-input-group {
+            display: flex;
+            gap: 5px;
+        }
+        .material-input-group .inline-input {
+            flex-grow: 1;
+        }
+        .material-input-group .btn-sm {
+            flex-shrink: 0;
+            padding: 4px 6px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Author Modal -->
+    <div class="modal" id="authorModal"><div class="author-modal-content"><h2>Welcome</h2><p>Please enter your name to track your changes.</p><input type="text" id="initialAuthorName" placeholder="Your Name..." oninput="this.value ? document.getElementById('saveInitialAuthorBtn').disabled=false : document.getElementById('saveInitialAuthorBtn').disabled=true"><button id="saveInitialAuthorBtn" class="btn btn-primary" onclick="saveInitialAuthorName()" disabled>Save & Begin</button></div></div>
+    
+    <!-- Confirmation Modal -->
+    <div class="modal" id="confirmModal">
+        <div class="modal-content glass-effect">
+            <div class="modal-header">
+                <h2 id="confirmTitle">Are you sure?</h2>
+                <button class="close-btn" onclick="closeConfirmModal()"><i data-lucide="x"></i></button>
+            </div>
+            <div class="modal-body">
+                <p id="confirmMessage" style="color: var(--text-secondary); line-height: 1.6;">This action cannot be undone.</p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" onclick="closeConfirmModal()">Cancel</button>
+                <button id="confirmButton" class="btn btn-danger">Confirm</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Main Container -->
+    <div class="container glass-effect">
+        <!-- Header -->
+        <div class="header">
+            <div class="header-controls">
+                <label>Author:</label>
+                <div id="authorDisplayView" style="display: flex; align-items: center;">
+                    <span id="authorNameDisplay" style="color: var(--accent-amber); font-weight: bold; font-family: var(--font-data);"></span>
+                    <button class="btn btn-outline btn-sm" onclick="toggleAuthorEdit(true)" style="padding: 4px 8px; margin-left: 8px;">Change</button>
+                </div>
+                <div id="authorEditView" style="display: none;">
+                    <input type="text" id="authorNameInput" placeholder="Enter name..." style="padding: 4px 8px; font-size: 14px; border-radius: 4px; border: 1px solid var(--accent-blue); background: var(--bg-dark); color: var(--text-primary);">
+                    <button class="btn btn-success btn-sm" onclick="saveAuthorName()" style="padding: 4px 8px; margin-left: 8px;">Save</button>
+                </div>
+            </div>
+            <h1><i data-lucide="flask-conical"></i>Chaos Mix Editor<i data-lucide="flask-conical"></i></h1>
+            <p>Manage all Chaos Machine recipes and configurations</p>
+            <button class="btn btn-outline" style="position: absolute; top: 25px; right: 30px;" onclick="openGuideModal()"><i data-lucide="help-circle"></i>Guide</button>
+        </div>
+        
+        <!-- Status Bar -->
+        <div id="statusBar" class="status-bar"></div>
+        
+        <!-- Data Management (Cache) -->
+        <div id="dataManagementSection" class="glass-effect" style="display: none; padding: 20px;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <h3><i data-lucide="database"></i>Data Management</h3>
+                    <p style="font-size: 14px; color: var(--text-secondary);">Your edits are saved locally. Server merging is handled on save.</p>
+                </div>
+                <button class="btn btn-danger" onclick="confirmClearCache()">
+                    <i data-lucide="trash-2"></i> Clear Local Cache
+                </button>
+            </div>
+        </div>
+        
+        <!-- Main Content -->
+        <div class="main-content" id="mainContent" style="display: none;">
+            <div class="editor-panel glass-effect" style="padding: 25px;">
+                <!-- Tab Navigation -->
+                <div class="tab-nav">
+                    <button class="tab-btn active" data-tab-name="main" onclick="setActiveTab('main')"><i data-lucide="boxes"></i> Main Mixes</button>
+                    <button class="tab-btn" data-tab-name="mastery" onclick="setActiveTab('mastery')"><i data-lucide="shield"></i> Mastery Items</button>
+                    <button class="tab-btn" data-tab-name="angel" onclick="setActiveTab('angel')"><i data-lucide="sword"></i> Angel Weapon</button>
+                    <button class="tab-btn" data-tab-name="jewel" onclick="setActiveTab('jewel')"><i data-lucide="gem"></i> Jewel Packs</button>
+                    <button class="tab-btn" data-tab-name="lucky" onclick="setActiveTab('lucky')"><i data-lucide="ticket"></i> Lucky Tickets</button>
+                    <button class="tab-btn" data-tab-name="spell" onclick="setActiveTab('spell')"><i data-lucide="sparkles"></i> Spell Stone</button>
+                    <button class="tab-btn" data-tab-name="disable" onclick="setActiveTab('disable')"><i data-lucide="ban"></i> Disabled Items</button>
+                </div>
+
+                <div id="editorContent"><div class="empty-state"><h3>Loading data...</h3><p>Ensure the back-end server is running.</p></div></div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Item Search Modal (reused from shop editor) -->
+    <div class="modal" id="itemModal">
+        <div class="modal-content glass-effect" style="max-width: 600px;">
+            <div class="modal-header">
+                <h2 id="itemModalTitle">Select an Item</h2>
+                <button class="close-btn" onclick="closeItemModal()"><i data-lucide="x"></i></button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group item-search">
+                    <label>Search Item</label>
+                    <input type="text" id="itemSearch" autocomplete="off" oninput="filterItemSuggestions()">
+                    <div class="item-suggestions" id="itemSuggestions" style="position: relative; max-height: 400px;"></div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline" onclick="closeItemModal()">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- NEW: Material Search Modal -->
+    <div class="modal" id="materialSearchModal">
+        <div class="modal-content glass-effect" style="max-width: 600px;">
+            <div class="modal-header">
+                <h2 id="materialModalTitle">Select a Material</h2>
+                <button class="close-btn" onclick="closeMaterialSearchModal()"><i data-lucide="x"></i></button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group item-search">
+                    <label>Search Material by ID or Name</label>
+                    <input type="text" id="materialSearch" autocomplete="off" oninput="filterMaterialSuggestions()">
+                    <div class="item-suggestions" id="materialSuggestions" style="position: relative; max-height: 400px;"></div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline" onclick="closeMaterialSearchModal()">Cancel</button>
+            </div>
+        </div>
+    </div>
+    <!-- END NEW MODAL -->
+
+    <!-- Guide Modal -->
+    <div class="modal" id="guideModal">
+        <div class="modal-content glass-effect">
+            <div class="modal-header">
+                <h2><i data-lucide="help-circle"></i> How to Use the Chaos Mix Editor</h2>
+                <button class="close-btn" onclick="closeGuideModal()"><i data-lucide="x"></i></button>
+            </div>
+            <div class="modal-body" id="guideContent">
+                <h3>1. Overview</h3>
+                <p>This editor manages all 7 configuration files related to the Chaos Machine. Each file has its own tab and its own <strong>Save</strong> button.</p>
+                
+                <h3>2. Item Lookups</h3>
+                <p>All item fields in this editor (e.g., <code>(12, 15)</code> or flat IDs like <code>7181</code>) will automatically show the item's name from <code>ItemList.xml</code>. You can click on most item fields to open an item search modal.</p>
+                
+                <h3>3. Tab Guide</h3>
+                <ul>
+                    <li><strong>Main Mixes (Mix.xml):</strong> The primary file for most Chaos Machine recipes. This is a complex file and is now editable for core parameters.</li>
+                    <li><strong>Mastery Items (MasteryItemMix.xml):</strong> Manages Blood Angel, Dark Angel, etc. This is now fully editable. It's split into 3 sections: Final Mixes, Random Pools, and Materials.</li>
+                    <li><strong>Angel Weapon (AngelWeaponUpgrade.xml):</strong> Manages Archangel weapon upgrades. Click an item name to change the input or output item.</li>
+                    <li><strong>Jewel Packs (MixJewelTemplate.xml):</strong> Manages packing/unpacking jewels. Click an item name to change the jewel or the bundle.</li>
+                    <li><strong>Lucky Tickets (MixLuckyTemplate.xml):</strong> Manages lucky ticket drop pools. Click an item name to change the ticket or a reward item.</li>
+                    <li><strong>Spell Stone (MixSpellStone.xml):</strong> Manages success rates for item upgrades using spell stones. All rates are out of 10,000.</li>
+                    <li><strong>Disabled Items (MixDisable.xml):</strong> A list of items banned from the Chaos Machine. Use the "Add Item" button to find and add items to this list.</li>
+                </ul>
+                
+                <h3>4. Saving Your Work</h3>
+                 <ul>
+                    <li><strong>IMPORTANT:</strong> Each tab has its own <strong>Save</strong> button (e.g., <code>Save AngelWeaponUpgrade.xml</code>).</li>
+                    <li>Changes are only saved for the tab you are currently on when you click its save button.</li>
+                    <li>Your work is saved in your browser's local cache automatically.</li>
+                 </ul>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-primary" onclick="closeGuideModal()">Got it!</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const SERVER_URL = 'http://149.202.139.156:3000'; 
+        const CACHE_KEY = 'mixEditorCache';
+        
+        // --- Application State ---
+        let itemList = {}; // Format: { 12: { 15: "Jewel of Chaos" } }
+        let itemCategories = {}; // Format: { 12: "Jewels" }
+        let mixData = {
+            main: [],
+            mastery: {},
+            angel: [],
+            jewel: [],
+            lucky: [],
+            spell: [],
+            disable: []
+        };
+        let originalXmlHeaders = {};
+        let isDataLoaded = false;
+        
+        // --- UI State ---
+        let activeTab = 'main';
+        let activeMasterySubTab = 'finalMixes'; 
+        let undoHistory = {}; // One undo stack per tab
+        let itemModalCallback = null; 
+ 
+        // --- State for Final Mixes tab ---
+        let materialSearchCallback = null; 
+        let masteryMixSearchTerm = ''; 
+        let collapsedMixGroups = new Set(); 
+        let finalMixRenderLimit = 300; 
+        const FINAL_MIX_BATCH_SIZE = 300; 
+        let expandedMixRowIndex = null; // NEW: Tracks which mix row has its details expanded
+        // --- END STATE ---
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            lucide.createIcons();
+            initializeAuthorLock();
+        });
+
+        // --- Confirmation Modal Logic (reused) ---
+        function confirmAction(title, message, onConfirm, buttonClass = 'btn-danger') {
+            document.getElementById('confirmTitle').textContent = title;
+            document.getElementById('confirmMessage').textContent = message;
+            const confirmButton = document.getElementById('confirmButton');
+            confirmButton.className = `btn ${buttonClass}`;
+            confirmButton.onclick = () => {
+                onConfirm();
+                closeConfirmModal();
+            };
+            document.getElementById('confirmModal').classList.add('show');
+            lucide.createIcons();
+        }
+        function closeConfirmModal() { closeModal('confirmModal'); }
+        function closeModal(id) { document.getElementById(id).classList.remove('show'); }
+
+        // --- Author Logic (reused) ---
+        function initializeAuthorLock() {
+            const authorName = localStorage.getItem('mixEditorAuthor'); 
+            if (authorName && authorName.trim() !== '') {
+                renderAuthorControls();
+                loadData();
+            } else {
+                document.getElementById('authorModal').classList.add('show');
+                lucide.createIcons();
+            }
+        }
+        function saveInitialAuthorName() {
+            const authorInput = document.getElementById('initialAuthorName');
+            const authorName = authorInput.value.trim();
+            if (authorName) {
+                localStorage.setItem('mixEditorAuthor', authorName);
+                closeModal('authorModal');
+                renderAuthorControls();
+                loadData();
+            }
+        }
+        function renderAuthorControls() {
+            const authorName = localStorage.getItem('mixEditorAuthor') || 'Unknown';
+            document.getElementById('authorNameDisplay').textContent = authorName;
+            document.getElementById('authorNameInput').value = authorName;
+            toggleAuthorEdit(false);
+            lucide.createIcons();
+        }
+        function toggleAuthorEdit(isEditing) {
+            document.getElementById('authorDisplayView').style.display = isEditing ? 'none' : 'flex';
+            document.getElementById('authorEditView').style.display = isEditing ? 'flex' : 'none';
+            if (isEditing) document.getElementById('authorNameInput').focus();
+        }
+        function saveAuthorName() {
+            const authorName = document.getElementById('authorNameInput').value.trim();
+            if (authorName) {
+                localStorage.setItem('mixEditorAuthor', authorName);
+                renderAuthorControls();
+            } else {
+                showStatus("Author name cannot be empty.", true);
+            }
+        }
+        function getAuthorName() { return localStorage.getItem('mixEditorAuthor') || 'Unknown Editor'; }
+
+        // --- Status & Cache Logic (reused) ---
+        function showStatus(message, isError = false, isWarning = false, isInfo = false, controls = null) {
+            const statusBar = document.getElementById('statusBar');
+            statusBar.innerHTML = '';
+            const messageEl = document.createElement('span');
+            messageEl.textContent = message;
+            statusBar.appendChild(messageEl);
+            let typeClass = 'status-bar-success';
+            if (isError) typeClass = 'status-bar-error';
+            else if (isWarning) typeClass = 'status-bar-warning';
+            else if (isInfo) typeClass = 'status-bar-info';
+            statusBar.className = `status-bar ${typeClass}`;
+            statusBar.style.display = 'block';
+            if (controls) {
+                const controlsEl = document.createElement('div');
+                controlsEl.className = 'status-bar-controls';
+                controls.forEach(control => {
+                    const btn = document.createElement('button');
+                    btn.textContent = control.text;
+                    btn.className = control.className;
+                    btn.onclick = control.onClick;
+                    controlsEl.appendChild(btn);
+                    lucide.createIcons();
+                });
+                statusBar.appendChild(controlsEl);
+            } else {
+                setTimeout(() => { statusBar.style.display = 'none'; }, 5000);
+            }
+        }
+        function confirmClearCache() {
+            confirmAction(
+                'Clear Local Cache?',
+                'This will delete all your unsaved local changes and reload the latest data from the server. This action cannot be undone.',
+                () => {
+                    localStorage.removeItem(CACHE_KEY);
+                    showStatus('Local cache cleared. Reloading from server...', false, false, true);
+                    location.reload();
+                }
+            );
+        }
+        function saveToCache() {
+            if (!isDataLoaded) return;
+            try {
+                const cache = {
+                    mixData: mixData,
+                    undoHistory: undoHistory,
+                    activeTab: activeTab,
+                    activeMasterySubTab: activeMasterySubTab, 
+                    collapsedMixGroups: Array.from(collapsedMixGroups),
+                    finalMixRenderLimit: finalMixRenderLimit,
+                    expandedMixRowIndex: expandedMixRowIndex, // NEW: Save expanded row index
+                    timestamp: new Date().toISOString()
+                };
+                localStorage.setItem(CACHE_KEY, JSON.stringify(cache));
+            } catch (e) {
+                console.error('Failed to parse cache:', e);
+                localStorage.removeItem(CACHE_KEY);
+            }
+        }
+        function loadFromCache() {
+            try {
+                const cache = JSON.parse(localStorage.getItem(CACHE_KEY));
+                if (cache && cache.mixData) {
+                    mixData = cache.mixData;
+                    undoHistory = cache.undoHistory || {};
+                    activeTab = cache.activeTab || 'main';
+                    activeMasterySubTab = cache.activeMasterySubTab || 'finalMixes'; 
+                    collapsedMixGroups = new Set(cache.collapsedMixGroups || []); 
+                    finalMixRenderLimit = cache.finalMixRenderLimit || 300; 
+                    expandedMixRowIndex = cache.expandedMixRowIndex || null; // NEW: Load expanded row index
+                    return true;
+                }
+            } catch (e) {
+                console.error('Failed to parse cache:', e);
+                localStorage.removeItem(CACHE_KEY);
+            }
+            return false;
+        }
+
+        // --- Data Loading & Parsing ---
+        async function loadData() {
+            let serverData;
+            try {
+                const response = await fetch(`${SERVER_URL}/api/mix-data`); 
+                if (!response.ok) throw new Error(`Server responded with status: ${response.status}`);
+                serverData = await response.json();
+            } catch (error) {
+                console.error('Failed to load mix data from server:', error);
+                showStatus(`✗ Error: Could not load Mix Editor data from the server.`, true);
+                document.getElementById('editorContent').innerHTML = `<div class="empty-state"><h3>Connection Failed</h3><p>Could not connect to the server at <strong>${SERVER_URL}</strong>.</p></div>`;
+                return;
+            }
+            
+            // Check for local cache
+            const hasCache = loadFromCache();
+            if (hasCache) {
+                showStatus('You have unsaved changes from a previous session.', false, true, false, [
+                    { text: 'Load My Changes', className: 'btn btn-warning btn-sm', onClick: () => {
+                        // Need to parse item list from server data regardless
+                        parseItemList(serverData.itemListXml);
+                        // Headers are not in cache, so we must get them from server data
+                        parseAllHeaders(serverData);
+                        finishLoading(true); // true = use cached data
+                        showStatus('Loaded changes from local cache.', false, false, true);
+                    }},
+                    { text: 'Discard (Load from Server)', className: 'btn btn-outline btn-sm', onClick: () => {
+                        localStorage.removeItem(CACHE_KEY);
+                        parseAllData(serverData); // Full parse from server
+                        finishLoading(false); // false = use server data
+                        showStatus('Discarded local changes. Loaded fresh data from server.', false);
+                    }}
+                ]);
+            } else {
+                // No cache, just parse server data and finish
+                parseAllData(serverData);
+                finishLoading(false);
+            }
+        }
+        
+        function parseAllHeaders(serverData) {
+            originalXmlHeaders.main = serverData.mixXml.match(/^[\s\S]*?(?=<Mixes>)/i)?.[0] || '<?xml version="1.0" encoding="utf-8"?>\n';
+            originalXmlHeaders.mastery = serverData.masteryItemMixXml.match(/^[\s\S]*?(?=<MasteryItemMix>)/i)?.[0] || '<?xml version="1.0" encoding="utf-8"?>\n';
+            originalXmlHeaders.angel = serverData.angelWeaponUpgradeXml.match(/^[\s\S]*?(?=<ArchangelWeapon>)/i)?.[0] || '<?xml version="1.0" encoding="utf-8"?>\n';
+            originalXmlHeaders.jewel = serverData.mixJewelTemplateXml.match(/^[\s\S]*?(?=<MixJewelTemplate>)/i)?.[0] || '<?xml version="1.0" encoding="utf-8"?>\n';
+            originalXmlHeaders.lucky = serverData.mixLuckyTemplateXml.match(/^[\s\S]*?(?=<MixLuckyTemplate>)/i)?.[0] || '<?xml version="1.0" encoding="utf-8"?>\n';
+            originalXmlHeaders.spell = serverData.mixSpellStoneXml.match(/^[\s\S]*?(?=<MixSpellStone>)/i)?.[0] || '<?xml version="1.0" encoding="utf-8"?>\n';
+            originalXmlHeaders.disable = serverData.mixDisableXml.match(/^[\s\S]*?(?=<MixDisable>)/i)?.[0] || '<?xml version="1.0" encoding="utf-8"?>\n';
+        }
+        
+        function parseAllData(serverData) {
+            // Parse all headers first
+            parseAllHeaders(serverData);
+            
+            // Parse all data
+            parseItemList(serverData.itemListXml);
+            // DELEGATE: Call the parser function from the new module
+            MixMainMix.parseMix(serverData.mixXml); 
+            parseMasteryItemMix(serverData.masteryItemMixXml);
+            parseAngelWeaponUpgrade(serverData.angelWeaponUpgradeXml);
+            parseMixJewelTemplate(serverData.mixJewelTemplateXml);
+            parseMixLuckyTemplate(serverData.mixLuckyTemplateXml);
+            parseMixSpellStone(serverData.mixSpellStoneXml);
+            parseMixDisable(serverData.mixDisableXml);
+        }
+        
+        function finishLoading(usedCache) {
+            isDataLoaded = true;
+            document.getElementById('mainContent').style.display = 'grid';
+            document.getElementById('dataManagementSection').style.display = 'block';
+            
+            // Ensure undoHistory object has keys for all tabs
+            ['main', 'mastery', 'angel', 'jewel', 'lucky', 'spell', 'disable'].forEach(tab => {
+                if (!undoHistory[tab]) undoHistory[tab] = [];
+            });
+            
+            setActiveTab(activeTab); // Render the active tab
+            
+            if (usedCache) saveToCache();
+            lucide.createIcons();
+        }
+        
+        // --- Parsers for each file (Only retaining non-main parsers) ---
+        
+        function parseItemList(xmlText) {
+            const parser = new DOMParser();
+            const xmlDoc = parser.parseFromString(xmlText, "text/xml");
+            itemList = {};
+            itemCategories = {};
+            for (let category of xmlDoc.getElementsByTagName('Category')) {
+                const catIndex = parseInt(category.getAttribute('Index'), 10);
+                if (isNaN(catIndex)) continue; 
+                
+                itemCategories[catIndex] = category.getAttribute('Name');
+                itemList[catIndex] = {};
+                
+                for (let item of category.getElementsByTagName('Item')) {
+                    const itemIndex = parseInt(item.getAttribute('Index'), 10);
+                    if (isNaN(itemIndex)) continue; 
+                    itemList[catIndex][itemIndex] = item.getAttribute('Name');
+                }
+            }
+        }
+
+        // REMOVED: parseMix logic (now in mix_main_mix.js)
+        
+        function parseMasteryItemMix(xmlText) {
+            // NOTE: This file is also extremely complex. Parsing for read-only.
+            mixData.mastery = { materials: [], results: [], randomPools: [], settings: {} }; // <-- MODIFIED: Added settings object
+            const parser = new DOMParser();
+            const xmlDoc = parser.parseFromString(xmlText, "text/xml");
+
+            // Parse Materials
+            const materialsNode = xmlDoc.getElementsByTagName('CombinationMaterials')[0];
+            if (materialsNode) {
+                for (let mat of materialsNode.getElementsByTagName('Material')) {
+                    mixData.mastery.materials.push({
+                        ID: mat.getAttribute('ID'),
+                        Cat: mat.getAttribute('Cat'),
+                        Index: mat.getAttribute('Index'),
+                        MinLevel: mat.getAttribute('MinLevel'),
+                        MaxLevel: mat.getAttribute('MaxLevel'),
+                        Option: mat.getAttribute('Option'),
+                        Durability: mat.getAttribute('Durability'),
+                        Type: mat.getAttribute('Type'),
+                        Name: mat.getAttribute('Name'),
+                    });
+                }
+            }
+            
+            // Parse Mixes
+            const resultsNode = xmlDoc.getElementsByTagName('CombinationResult')[0];
+            if (resultsNode) {
+                // --- NEW: Parse the parent tag's attributes ---
+                mixData.mastery.settings.AncientHeroSoulLuckRate = resultsNode.getAttribute('AncientHeroSoulLuckRate') || 0;
+                mixData.mastery.settings.NoAncientHeroSoulLuckRate = resultsNode.getAttribute('NoAncientHeroSoulLuckRate') || 0;
+                // --- End New ---
+
+                for (let mix of resultsNode.getElementsByTagName('Mix')) {
+                    // --- MODIFIED: Parse all new attributes based on user-provided comment ---
+                    mixData.mastery.results.push({
+                        ID: mix.getAttribute('ID'),
+                        RandomID: mix.getAttribute('RandomID'),
+                        Cat: mix.getAttribute('Cat'),
+                        Index: mix.getAttribute('Index'),
+                        Level: mix.getAttribute('Level'),
+                        Name: mix.getAttribute('Name'),
+                        OptKeepType: mix.getAttribute('OptKeepType'),
+                        UpgradeOptMaxCnt: mix.getAttribute('UpgradeOptMaxCnt'),
+                        SuccessRate: mix.getAttribute('SuccessRate'),
+                        Money: mix.getAttribute('Money'),
+                        MaterialID1: mix.getAttribute('MaterialID1'),
+                        MaterialCnt1: mix.getAttribute('MaterialCnt1'),
+                        MaterialID2: mix.getAttribute('MaterialID2'),
+                        MaterialCnt2: mix.getAttribute('MaterialCnt2'),
+                        MaterialID3: mix.getAttribute('MaterialID3'),
+                        MaterialCnt3: mix.getAttribute('MaterialCnt3'),
+                        MaterialID4: mix.getAttribute('MaterialID4'),
+                        MaterialCnt4: mix.getAttribute('MaterialCnt4'),
+                        MaterialID5: mix.getAttribute('MaterialID5'),
+                        MaterialCnt5: mix.getAttribute('MaterialCnt5'),
+                        MaterialID6: mix.getAttribute('MaterialID6'),
+                        MaterialCnt6: mix.getAttribute('MaterialCnt6'),
+                    });
+                    // --- END MODIFIED ---
+                }
+            }
+            
+            // Parse Random Pools
+            const randomResultsNode = xmlDoc.getElementsByTagName('RandomCombinationResult')[0];
+            if (randomResultsNode) {
+                for (let pool of randomResultsNode.getElementsByTagName('Result')) {
+                    const poolEntry = {
+                        ID: pool.getAttribute('ID'),
+                        items: []
+                    };
+                    for (let item of pool.getElementsByTagName('Item')) {
+                        poolEntry.items.push({
+                            Cat: item.getAttribute('Cat'),
+                            Index: item.getAttribute('Index'),
+                            Name: item.getAttribute('Name'),
+                            Rate: item.getAttribute('Rate'),
+                        });
+                    }
+                    mixData.mastery.randomPools.push(poolEntry);
+                }
+            }
+        }
+
+        function parseAngelWeaponUpgrade(xmlText) {
+            mixData.angel = [];
+            const parser = new DOMParser();
+            const xmlDoc = parser.parseFromString(xmlText, "text/xml");
+            const upgradeNode = xmlDoc.getElementsByTagName('Upgrade')[0];
+            if (upgradeNode) {
+                mixData.angel.push({
+                    isSettings: true,
+                    SuccessRate: upgradeNode.getAttribute('SuccessRate'),
+                    OptionUpgradeType: upgradeNode.getAttribute('OptionUpgradeType')
+                });
+                
+                for (let item of upgradeNode.getElementsByTagName('Item')) {
+                    mixData.angel.push({
+                        isSettings: false,
+                        NeedCat: item.getAttribute('NeedCat'),
+                        NeedIndex: item.getAttribute('NeedIndex'),
+                        ResultCat: item.getAttribute('ResultCat'),
+                        ResultIndex: item.getAttribute('ResultIndex'),
+                    });
+                }
+            }
+        }
+        
+        function parseMixJewelTemplate(xmlText) {
+            mixData.jewel = [];
+            const parser = new DOMParser();
+            const xmlDoc = parser.parseFromString(xmlText, "text/xml");
+            for (let mix of xmlDoc.getElementsByTagName('Mix')) {
+                const mixEntry = {
+                    ID: mix.getAttribute('ID'),
+                    recipes: []
+                };
+                for (let data of mix.getElementsByTagName('Data')) {
+                    mixEntry.recipes.push({
+                        ItemCat: data.getAttribute('ItemCat'),
+                        ItemIndex: data.getAttribute('ItemIndex'),
+                        Level: data.getAttribute('Level'),
+                        Count: data.getAttribute('Count'),
+                        MixCost: data.getAttribute('MixCost'),
+                        PackCat: data.getAttribute('PackCat'),
+                        PackIndex: data.getAttribute('PackIndex'),
+                    });
+                }
+                mixData.jewel.push(mixEntry);
+            }
+        }
+        
+        function parseMixLuckyTemplate(xmlText) {
+            mixData.lucky = [];
+            const parser = new DOMParser();
+            const xmlDoc = parser.parseFromString(xmlText, "text/xml");
+            for (let mix of xmlDoc.getElementsByTagName('Mix')) {
+                mixData.lucky.push({
+                    TicketCat: mix.getAttribute('TicketCat'),
+                    TicketIndex: mix.TicketIndex, // Fixed: use attribute
+                    TicketLevel: mix.getAttribute('TicketLevel'),
+                    ItemCat: mix.getAttribute('ItemCat'),
+                    ItemIndex: mix.getAttribute('ItemIndex'),
+                    Duration: mix.getAttribute('Duration'),
+                });
+            }
+        }
+        
+        function parseMixSpellStone(xmlText) {
+            // This is read-only for now due to complexity
+            mixData.spell = [];
+            const parser = new DOMParser();
+            const xmlDoc = parser.parseFromString(xmlText, "text/xml");
+            for (let mix of xmlDoc.getElementsByTagName('Mix')) {
+                const mixEntry = {
+                    Type: mix.getAttribute('Type'),
+                    PriceDivision: mix.getAttribute('PriceDivision'),
+                    StoneRate: mix.getAttribute('StoneRate'),
+                    rates: []
+                };
+                for (let data of mix.getElementsByTagName('Data')) {
+                    const rateEntry = { Count: data.getAttribute('Count') };
+                    for (let i = 0; i <= 15; i++) {
+                        rateEntry[`Rate${i}`] = data.getAttribute(`Rate${i}`);
+                    }
+                    mixEntry.rates.push(rateEntry);
+                }
+                mixData.spell.push(mixEntry);
+            }
+        }
+        
+        function parseMixDisable(xmlText) {
+            mixData.disable = [];
+            const parser = new DOMParser();
+            const xmlDoc = parser.parseFromString(xmlText, "text/xml");
+            for (let mix of xmlDoc.getElementsByTagName('Mix')) {
+                mixData.disable.push({
+                    ItemCat: mix.getAttribute('ItemCat'),
+                    ItemIndex: mix.getAttribute('ItemIndex'),
+                });
+            }
+        }
+
+        // --- NEW: Helper function to decode OptKeepType flags (GLOBAL DEPENDENCY) ---
+        function decodeOptKeepType(type) {
+            const val = parseInt(type, 10);
+            if (isNaN(val) || val === 0) return 'None';
+            const flags = {
+                1: 'Keep exc',
+                2: 'Keep luck',
+                4: 'Keep set',
+                8: 'New set opt',
+                16: 'New JoL opt',
+                32: 'Keep Mastery',
+                128: 'Copy all (level,dur)',
+                256: 'Upg to Legendary'
+            };
+            let parts = [];
+            for (const [key, value] of Object.entries(flags)) {
+                if ((val & key) === parseInt(key)) parts.push(value);
+            }
+            return parts.length > 0 ? parts.join(', ') : 'None';
+        }
+
+        // --- Item Name Helpers (GLOBAL DEPENDENCIES) ---
+        
+        function parseItemType(type) {
+            const itemType = parseInt(type, 10);
+            if (itemType === 0) return 'no limit';
+            
+            const flags = {
+                1: 'exc item',
+                2: '380 item',
+                4: 'set item',
+                8: 'ancient item', 
+                16: 'socket item',
+                32: 'pentagram',
+                64: 'earring', 
+                128: 'other item/wings'
+            };
+            
+            let parts = [];
+            for (const [key, value] of Object.entries(flags)) {
+                if ((itemType & key) === parseInt(key)) {
+                    parts.push(value);
+                }
+            }
+            
+            return parts.length > 0 ? parts.join(', ') : 'unknown type';
+        }
+        
+        function getItemName(cat, index) {
+            // FIX: Check for the common placeholder ID (0, 0) which is often "Kris" or "Sword"
+            if (parseInt(cat, 10) === 0 && parseInt(index, 10) === 0) {
+                return 'Any Item (Placeholder ID 0)';
+            }
+
+            const name = itemList[cat]?.[index];
+            if (name) return name;
+
+            const catName = itemCategories[cat] || `Category ${cat}`;
+            return `Unknown Item in ${catName}`;
+        }
+        
+        function getItemNameFlat(flatId) {
+            const cat = Math.floor(flatId / 512);
+            const index = flatId % 512;
+            return getItemName(cat, index);
+        }
+        
+        function getCatAndIndex(flatId) {
+            const cat = Math.floor(flatId / 512);
+            const index = flatId % 512;
+            return { cat, index };
+        }
+        
+        function getItemDisplay(cat, index, isEditable = false, callbackContext = '') {
+            const name = getItemName(cat, index);
+            const onClick = isEditable ? `onclick="openItemModal(${callbackContext})"` : '';
+            const cursor = isEditable ? 'pointer' : 'default';
+            const hover = isEditable ? 'background: rgba(0, 170, 255, 0.1);' : '';
+            
+            // If it's an "Any Item" or "Unknown Item", display the name in var(--accent-pink) for visibility
+            const isSpecialName = name.includes('Any Item') || name.includes('Unknown Item');
+            const nameClass = isSpecialName ? 'item-name' : 'item-name';
+            const nameStyle = isSpecialName ? 'color: var(--accent-pink);' : '';
+
+            return `<div class="item-name-cell" style="cursor: ${cursor}; border-radius: 4px; transition: background 0.2s;" onmouseover="this.style.cssText += '${hover}'" onmouseout="this.style.cssText = this.style.cssText.replace('${hover}', '')" ${onClick}>
+                <span class="${nameClass}" style="${nameStyle}">${name}</span>
+                <span class="item-id">(${cat}, ${index})</span>
+            </div>`;
+        }
+
+        // --- Undo System (GLOBAL DEPENDENCIES) ---
+        function pushUndo() {
+            if (!activeTab || !mixData[activeTab]) return;
+            
+            // Ensure array exists for this tab
+            if (!undoHistory[activeTab]) undoHistory[activeTab] = [];
+            
+            const history = undoHistory[activeTab];
+            
+            // Reduced max history size to 10 to prevent QuotaExceededError
+            if (history.length >= 10) history.shift(); 
+            
+            // Deep copy the current state for this tab
+            history.push(JSON.parse(JSON.stringify(mixData[activeTab])));
+            updateUndoButton();
+            saveToCache();
+        }
+
+        function executeUndo() {
+            if (!activeTab || !undoHistory[activeTab] || undoHistory[activeTab].length === 0) return;
+            
+            const lastState = undoHistory[activeTab].pop();
+            if (lastState) {
+                mixData[activeTab] = lastState;
+                // Reset render limit on undo in mastery mix tab
+                if (activeTab === 'mastery' && activeMasterySubTab === 'finalMixes') {
+                    finalMixRenderLimit = FINAL_MIX_BATCH_SIZE;
+                }
+                expandedMixRowIndex = null; // NEW: Close any expanded detail rows on undo
+                renderEditor(); // Full re-render
+            }
+            updateUndoButton();
+            saveToCache();
+        }
+
+        function updateUndoButton() {
+            const btn = document.getElementById(`undoBtn-${activeTab}`);
+            if (btn) {
+                const count = undoHistory[activeTab] ? undoHistory[activeTab].length : 0;
+                btn.disabled = count === 0;
+                btn.innerHTML = `<i data-lucide="undo-2"></i> ${count > 0 ? `Undo (${count})` : 'Undo'}`;
+                lucide.createIcons();
+            }
+        }
+
+        // --- UI Rendering ---
+        function setActiveTab(tabName) {
+            activeTab = tabName;
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.toggle('active', btn.dataset.tabName === tabName));
+            // Reset state when switching tabs
+            if (activeTab === 'mastery' && activeMasterySubTab === 'finalMixes') {
+                finalMixRenderLimit = FINAL_MIX_BATCH_SIZE;
+            }
+            expandedMixRowIndex = null; // NEW: Close any expanded row when switching tabs
+            renderEditor();
+        }
+
+        // NEW: Function to control mastery sub-tabs
+        function setMasterySubTab(subTabName) {
+            activeMasterySubTab = subTabName;
+            // Reset state when switching sub-tabs
+            if (activeMasterySubTab === 'finalMixes') {
+                 finalMixRenderLimit = FINAL_MIX_BATCH_SIZE;
+            }
+            expandedMixRowIndex = null; // NEW: Close any expanded row when switching sub-tabs
+            renderEditor(); // Re-render the tab
+        }
+        
+        function renderEditor() {
+            let html = '';
+            switch (activeTab) {
+                // DELEGATE: Call the rendering function from the new module
+                case 'main':    html = MixMainMix.renderMainMixTab(); break; 
+                case 'mastery': html = renderMasteryMixTab(); break;
+                case 'angel':   html = renderAngelWeaponTab(); break;
+                case 'jewel':   html = renderJewelTemplateTab(); break;
+                case 'lucky':   html = renderLuckyTemplateTab(); break;
+                case 'spell':   html = renderSpellStoneTab(); break;
+                case 'disable': html = renderDisableTab(); break;
+                default:        html = '<div class="empty-state"><h3>Select a tab</h3></div>';
+            }
+            document.getElementById('editorContent').innerHTML = html;
+            updateUndoButton();
+            lucide.createIcons();
+        }
+        
+        // --- Tab Renderers (Only non-main ones retained) ---
+        
+        // REMOVED: renderMainMixTab logic (now in mix_main_mix.js)
+        
+        function renderMasteryMixTab() {
+            let html = `
+                ${renderTabControls('Mastery Items (MasteryItemMix.xml)', 'Manages Blood Angel, Dark Angel, etc. This file is complex but is now editable.', 'MasteryItemMix.xml', false)}
+                
+                <!-- NEW Sub-Tab Navigation -->
+                <div class="sub-tab-nav">
+                    <button class="sub-tab-btn ${activeMasterySubTab === 'finalMixes' ? 'active' : ''}" onclick="setMasterySubTab('finalMixes')">
+                        <i data-lucide="flask-conical"></i> Final Mixes
+                    </button>
+                    <button class="sub-tab-btn ${activeMasterySubTab === 'randomPools' ? 'active' : ''}" onclick="setMasterySubTab('randomPools')">
+                        <i data-lucide="boxes"></i> Random Pools
+                    </button>
+                    <button class="sub-tab-btn ${activeMasterySubTab === 'materials' ? 'active' : ''}" onclick="setMasterySubTab('materials')">
+                        <i data-lucide="box"></i> Materials
+                    </button>
+                </div>
+
+                <!-- NEW Sub-Tab Content Area -->
+                <div class="sub-tab-content active">
+            `;
+            
+            // Render only the active sub-tab's content
+            switch(activeMasterySubTab) {
+                case 'finalMixes':
+                    html += renderMasteryFinalMixes();
+                    break;
+                case 'randomPools':
+                    html += renderMasteryRandomPools();
+                    break;
+                case 'materials':
+                    html += renderMasteryMaterials();
+                    break;
+            }
+
+            html += `</div>`; // Close .sub-tab-content
+            return html;
+        }
+
+        // --- NEW: Toggle for mix group details ---
+        function toggleMixGroup(groupName) {
+            if (collapsedMixGroups.has(groupName)) {
+                collapsedMixGroups.delete(groupName);
+            } else {
+                collapsedMixGroups.add(groupName);
+            }
+            // NO PUSH UNDO HERE
+            renderEditor(); // Just re-render the current tab
+        }
+        
+        // NEW: Toggle visibility of the material details row
+        function toggleMaterialDetails(mixIndex) {
+            if (expandedMixRowIndex === mixIndex) {
+                expandedMixRowIndex = null;
+            } else {
+                expandedMixRowIndex = mixIndex;
+            }
+            saveToCache();
+            renderEditor(); // Re-render to show/hide the row
+        }
+
+        // Function to determine the grouping prefix
+        function getMixPrefix(mix) {
+            // Priority list of common set/item names
+            const name = mix.Name;
+            if (!name) return 'Unknown Mixes';
+            
+            const prefixes = [
+                'Blood Angel', 'Dark Angel', 'Holy Angel', 'Soul', 'Blue Eye', 'Silver Heart', 
+                'Manticore', 'Phoenix', 'Brilliant', 'Excellent', 'Archangel', 'Rage', 
+                'Ignis', 'Anubis', 'Horus'
+            ];
+            
+            for (const prefix of prefixes) {
+                if (name.startsWith(prefix)) {
+                    return prefix + ' Items';
+                }
+            }
+            return 'Miscellaneous Items';
+        }
+
+        // NEW: Helper function to render just the Final Mixes part
+        function renderMasteryFinalMixes() {
+            // --- NEW: Filter and Group logic ---
+            const searchTerm = masteryMixSearchTerm.toLowerCase();
+            
+            // 1. Filter based on search term
+            const filteredMixes = mixData.mastery.results.filter(mix => {
+                if (searchTerm.length === 0) return true;
+                return (
+                    mix.ID.toString().includes(searchTerm) || 
+                    mix.Name.toLowerCase().includes(searchTerm) ||
+                    (mix.RandomID && mix.RandomID.toString().includes(searchTerm))
+                );
+            });
+            
+            // 2. Group by prefix
+            const groupedMixes = filteredMixes.reduce((acc, mix) => {
+                const groupName = getMixPrefix(mix);
+                if (!acc[groupName]) {
+                    acc[groupName] = [];
+                }
+                acc[groupName].push(mix);
+                return acc;
+            }, {});
+            
+            // Sort groups alphabetically
+            const sortedGroupNames = Object.keys(groupedMixes).sort();
+            
+            // --- NEW: Apply render limit ---
+            let totalRendered = 0;
+            let outputHtml = '';
+            
+            // Iterate over groups and apply the limit
+            for (const groupName of sortedGroupNames) {
+                let mixesInGroup = groupedMixes[groupName];
+                const isCollapsed = collapsedMixGroups.has(groupName);
+
+                // Only render up to the limit, but complete the current group if it was started
+                if (totalRendered >= finalMixRenderLimit && !isCollapsed) {
+                    // Do nothing for this group, it will be handled by remainingCount later
+                } else {
+                    const mixesToRender = isCollapsed ? mixesInGroup.slice(0, 10) : mixesInGroup; // Render small preview if collapsed
+                    const currentBatch = mixesToRender.slice(0, finalMixRenderLimit - totalRendered);
+                    
+                    if (currentBatch.length > 0 || isCollapsed) {
+                        outputHtml += `
+                            <div class="table-container ${isCollapsed ? 'collapsed' : ''}" style="border-radius: 0; margin-bottom: 0; border: none; border-bottom: 1px solid rgba(0, 170, 255, 0.2);">
+                                <div class="table-header" onclick="toggleMixGroup('${groupName}')" style="background: rgba(0,0,0,0.3); border-radius: 0;">
+                                    <h3>
+                                        <span class="toggle-icon"><i data-lucide="${isCollapsed ? 'chevron-down' : 'chevron-up'}"></i></span>
+                                        ${groupName} (${mixesInGroup.length} Mixes)
+                                    </h3>
+                                </div>
+                                <div>
+                                    <table>
+                                        <thead>
+                                            <tr>
+                                                <th style="width: 50px;">Del</th> 
+                                                <th style="width: 60px;">ID</th>
+                                                <th style="width: 250px;">Name</th>
+                                                <th style="width: 100px;">Type</th>
+                                                <th style="width: 250px;">Result Item/Pool</th>
+                                                <th style="width: 60px;">Lvl</th>
+                                                <th style="width: 60px;">Success (%)</th>
+                                                <th style="width: 80px;">Money</th>
+                                                <th style="width: 100px;">OptKeepType</th>
+                                                <th style="width: 100px;">Materials</th> <!-- NEW: Materials Column -->
+                                                <th style="width: 80px;">UpgOptCnt</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            ${currentBatch.map(mix => {
+                                                const originalIndex = mixData.mastery.results.indexOf(mix); // Get original index for editing
+                                                const isExpanded = expandedMixRowIndex === originalIndex;
+                                                
+                                                const resultInput = mix.RandomID ? 
+                                                    `<input type="number" class="inline-input" style="width: 100%;" value="${mix.RandomID}" onchange="updateMasteryValue('results', ${originalIndex}, 'RandomID', this.value)" title="Matches Pool ID from 'Random Pools' tab">` :
+                                                    getItemDisplay(mix.Cat, mix.Index, true, `{ type: 'mastery', section: 'results', index: ${originalIndex} }`);
+
+                                                return `
+                                                    <!-- Main Recipe Row -->
+                                                    <tr class="${mix.isNew ? 'row-new' : (mix.isModified ? 'row-modified' : '')}">
+                                                        <td>
+                                                            <button class="action-btn btn-delete" title="Delete Mix" onclick="deleteMasteryRow('results', ${originalIndex})">
+                                                                <i data-lucide="trash-2"></i>
+                                                            </button>
+                                                        </td>
+                                                        <td><input type="number" class="inline-input" style="width: 100%;" value="${mix.ID}" onchange="updateMasteryValue('results', ${originalIndex}, 'ID', this.value)"></td>
+                                                        <td><input type="text" class="inline-input" style="width: 100%;" value="${mix.Name}" onchange="updateMasteryValue('results', ${originalIndex}, 'Name', this.value)"></td>
+                                                        <td>
+                                                            <select class="inline-input" onchange="updateMasteryResultType(${originalIndex}, this.value)" style="width: 100%;">
+                                                                <option value="item" ${mix.RandomID ? '' : 'selected'}>Single Item</option>
+                                                                <option value="pool" ${mix.RandomID ? 'selected' : ''}>Random Pool</option>
+                                                            </select>
+                                                        </td>
+                                                        <td>${resultInput}</td>
+                                                        <td><input type="number" class="inline-input" style="width: 100%;" value="${mix.Level || 0}" onchange="updateMasteryValue('results', ${originalIndex}, 'Level', this.value)"></td>
+                                                        <td><input type="number" class="inline-input" style="width: 100%;" value="${mix.SuccessRate || 0}" onchange="updateMasteryValue('results', ${originalIndex}, 'SuccessRate', this.value)"></td>
+                                                        <td><input type="number" class="inline-input" style="width: 100%;" value="${mix.Money || 0}" onchange="updateMasteryValue('results', ${originalIndex}, 'Money', this.value)"></td>
+                                                        <td><input type="number" class="inline-input" style="width: 100%;" value="${mix.OptKeepType || 0}" onchange="updateMasteryValue('results', ${originalIndex}, 'OptKeepType', this.value); this.title = decodeOptKeepType(this.value);" title="${decodeOptKeepType(mix.OptKeepType)}"></td>
+                                                        
+                                                        <!-- NEW: Materials Toggle -->
+                                                        <td>
+                                                            <button class="btn btn-sm btn-outline" onclick="toggleMaterialDetails(${originalIndex})" title="${isExpanded ? 'Hide Materials' : 'Show Materials'}">
+                                                                <i data-lucide="${isExpanded ? 'eye-off' : 'eye'}" style="width: 14px; height: 14px;"></i> ${isExpanded ? 'Hide' : 'View'}
+                                                            </button>
+                                                        </td>
+                                                        <!-- END NEW -->
+                                                        
+                                                        <td><input type="number" class="inline-input" style="width: 100%;" value="${mix.UpgradeOptMaxCnt || 0}" onchange="updateMasteryValue('results', ${originalIndex}, 'UpgradeOptMaxCnt', this.value)"></td>
+                                                    </tr>
+                                                    
+                                                    <!-- Detailed Materials Row (Expanded view) -->
+                                                    ${isExpanded ? `
+                                                        <tr class="material-detail-row">
+                                                            <td colspan="11" class="material-detail-cell">
+                                                                <div class="material-detail-grid">
+                                                                    ${[...Array(6).keys()].map(i => {
+                                                                        const matId = mix[`MaterialID${i+1}`] || -1;
+                                                                        const matCnt = mix[`MaterialCnt${i+1}`] || 0;
+                                                                        return `
+                                                                            <div class="material-group">
+                                                                                <label>Material ${i+1}</label>
+                                                                                <div class="material-input-group">
+                                                                                    <input type="number" class="inline-input" placeholder="ID" value="${matId}" onchange="updateMasteryValue('results', ${originalIndex}, 'MaterialID${i+1}', this.value)" id="mat-input-${mix.ID}-${i+1}" style="width: 50%;">
+                                                                                    <input type="number" class="inline-input" placeholder="Count" value="${matCnt}" onchange="updateMasteryValue('results', ${originalIndex}, 'MaterialCnt${i+1}', this.value)" style="width: 50%;">
+                                                                                    <button class="btn btn-outline btn-sm" title="Search Material" onclick="openMaterialSearchModal(${originalIndex}, ${i+1})">
+                                                                                        <i data-lucide="search" style="width: 12px; height: 12px;"></i>
+                                                                                    </button>
+                                                                                </div>
+                                                                            </div>
+                                                                        `;
+                                                                    }).join('')}
+                                                                </div>
+                                                            </td>
+                                                        </tr>
+                                                    ` : ''}
+                                                `;
+                                            }).join('')}
+                                        </tbody>
+                                    </table>
+                                </div>
+                                ${mixesToRender.length > currentBatch.length && !isCollapsed ? `<div class="table-footer" style="padding: 15px; text-align: center; color: var(--text-secondary);">Only showing ${currentBatch.length} of ${mixesToRender.length} items in this group.</div>` : ''}
+                            </div>
+                        `;
+                        totalRendered += currentBatch.length;
+                    }
+                }
+            }
+            
+            // Calculate remaining items
+            const totalFiltered = filteredMixes.length;
+            const remainingCount = totalFiltered - finalMixRenderLimit;
+
+            return `
+                <!-- NEW: Settings for this section -->
+                <div class="glass-effect" style="padding: 20px; margin-bottom: 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                    <div class="form-group">
+                        <label>Ancient Hero Soul Luck Rate (0-100)</label>
+                        <input type="number" class="inline-input" value="${mixData.mastery.settings.AncientHeroSoulLuckRate}" onchange="updateMasterySettings('AncientHeroSoulLuckRate', this.value)">
+                    </div>
+                    <div class="form-group">
+                        <label>No Hero Soul Luck Rate (0-100)</label>
+                        <input type="number" class="inline-input" value="${mixData.mastery.settings.NoAncientHeroSoulLuckRate}" onchange="updateMasterySettings('NoAncientHeroSoulLuckRate', this.value)">
+                    </div>
+                </div>
+
+                <!-- Section 1: Final Mixes -->
+                <div class="mastery-section">
+                    <div class="mastery-section-header">
+                        <h3><i data-lucide="flask-conical"></i> Final Mixes (The Recipes)</h3>
+                        <div style="display: flex; gap: 15px; align-items: center;">
+                            <button class="btn btn-primary btn-sm" onclick="addMasteryRow('results')"><i data-lucide="plus"></i> Add New Mix</button>
+                            <div class="form-group" style="margin: 0;">
+                                <input type="text" class="inline-input" style="background-color: rgba(0,0,0,0.4); width: 250px;" value="${masteryMixSearchTerm}" oninput="masteryMixSearchTerm = this.value; finalMixRenderLimit = FINAL_MIX_BATCH_SIZE; renderEditor();" placeholder="Search by Name or ID...">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mastery-section-body" style="padding: 0;">
+                        
+                        <!-- Output the rendered HTML -->
+                        ${outputHtml}
+
+                        <!-- Fallback for no mixes -->
+                        ${sortedGroupNames.length === 0 ? `
+                            <div class="empty-state">
+                                <h3>No Mixes Found</h3>
+                                <p>Try clearing the search bar or add a new mix to get started.</p>
+                            </div>
+                        ` : ''}
+
+                        <!-- Load More Button -->
+                        ${remainingCount > 0 ? `
+                            <div style="text-align: center; padding: 20px; border-top: 1px solid rgba(0, 170, 255, 0.2);">
+                                <button class="btn btn-outline" onclick="loadMoreFinalMixes()">
+                                    <i data-lucide="chevrons-down"></i> Load More (${remainingCount} remaining)
+                                </button>
+                            </div>
+                        ` : ''}
+
+                    </div>
+                </div>
+            `;
+        } // End of renderMasteryFinalMixes
+
+        // NEW: Load More Function
+        function loadMoreFinalMixes() {
+            finalMixRenderLimit += FINAL_MIX_BATCH_SIZE;
+            saveToCache();
+            renderEditor();
+        }
+
+        // NEW: Helper function to render just the Random Pools part
+        function renderMasteryRandomPools() {
+            return `
+                <!-- Section 2: Random Item Pools -->
+                <div class="mastery-section">
+                    <div class="mastery-section-header">
+                        <h3><i data-lucide="boxes"></i> Random Item Pools (The Loot Tables)</h3>
+                        <button class="btn btn-primary btn-sm" onclick="addMasteryRow('randomPools')"><i data-lucide="plus"></i> Add New Pool</button>
+                    </div>
+                    <div class="mastery-section-body pool-list-container">
+                        ${mixData.mastery.randomPools.map((pool, poolIndex) => `
+                            <div class="pool-card ${pool.isNew ? 'row-new' : (pool.isModified ? 'row-modified' : '')}">
+                                <div class="pool-card-header">
+                                    <div class="form-group">
+                                        <label>Pool ID:</label>
+                                        <input type="number" class="inline-input" value="${pool.ID}" onchange="updateMasteryValue('randomPools', ${poolIndex}, 'ID', this.value)">
+                                    </div>
+                                    <button class="action-btn btn-delete" title="Delete Pool" onclick="deleteMasteryRow('randomPools', ${poolIndex})"><i data-lucide="trash-2"></i></button>
+                                </div>
+                                <div class="pool-card-body">
+                                    <table>
+                                        <thead><tr><th>Item</th><th>Rate</th><th>Del</th></tr></thead>
+                                        <tbody>
+                                            ${pool.items.map((item, itemIndex) => `
+                                                <tr class="${item.isNew ? 'row-new' : (item.isModified ? 'row-modified' : '')}">
+                                                    <td>${getItemDisplay(item.Cat, item.Index, true, `{ type: 'mastery', section: 'randomPools', index: ${poolIndex}, itemIndex: ${itemIndex} }`)}</td>
+                                                    <td><input type="number" class="inline-input inline-input-small" value="${item.Rate}" onchange="updateMasteryPoolItem(${poolIndex}, ${itemIndex}, 'Rate', this.value)"></td>
+                                                    <td><button class="action-btn btn-delete" title="Delete Item" onclick="deleteMasteryPoolItem(${poolIndex}, ${itemIndex})"><i data-lucide="x-circle"></i></button></td>
+                                                </tr>
+                                            `).join('')}
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <div class="pool-card-footer">
+                                    <button class="btn btn-outline btn-sm" onclick="addMasteryPoolItem(${poolIndex})"><i data-lucide="plus"></i> Add Item to Pool</button>
+
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+        }
+
+        // NEW: Helper function to render just the Materials part
+        function renderMasteryMaterials() {
+            return `
+                <!-- Section 3: Materials -->
+                <div class="mastery-section">
+                    <div class="mastery-section-header">
+                        <h3><i data-lucide="box"></i> Materials (The Ingredients)</h3>
+                        <button class="btn btn-primary btn-sm" onclick="addMasteryRow('materials')"><i data-lucide="plus"></i> Add New Material</button>
+                    </div>
+                    <div class="mastery-section-body">
+                        <div class="table-container">
+                            <table style="min-width: 1200px;">
+                                <thead>
+                                    <tr>
+                                        <th>Mat ID</th>
+                                        <th>Name</th>
+                                        <th>Item</th>
+                                        <th>Lvl (Min-Max)</th>
+                                        <th>Option</th>
+                                        <th>Durability</th>
+                                        <th>Type</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${mixData.mastery.materials.map((mat, index) => `
+                                        <tr class="${mat.isNew ? 'row-new' : (mat.isModified ? 'row-modified' : '')}">
+                                            <td><input type="number" class="inline-input inline-input-small" value="${mat.ID}" onchange="updateMasteryValue('materials', ${index}, 'ID', this.value)"></td>
+                                            <td><input type="text" class="inline-input" value="${mat.Name}" onchange="updateMasteryValue('materials', ${index}, 'Name', this.value)"></td>
+                                            <td>${getItemDisplay(mat.Cat, mat.Index, true, `{ type: 'mastery', section: 'materials', index: ${index} }`)}</td>
+                                            <td>
+                                                <input type="number" class="inline-input inline-input-small" value="${mat.MinLevel}" onchange="updateMasteryValue('materials', ${index}, 'MinLevel', this.value)" title="Min Level">
+                                                <input type="number" class="inline-input inline-input-small" value="${mat.MaxLevel}" onchange="updateMasteryValue('materials', ${index}, 'MaxLevel', this.value)" title="Max Level">
+                                            </td>
+                                            <td><input type="number" class="inline-input inline-input-small" value="${mat.Option}" onchange="updateMasteryValue('materials', ${index}, 'Option', this.value)"></td>
+                                            <td><input type="number" class="inline-input inline-input-small" value="${mat.Durability}" onchange="updateMasteryValue('materials', ${index}, 'Durability', this.value)"></td>
+                                            <td>
+                                                <select class="inline-input" onchange="updateMasteryValue('materials', ${index}, 'Type', this.value)" style="width: 120px;">
+                                                    <option value="0" ${mat.Type == 0 ? 'selected' : ''}>Non-Exc</option>
+                                                    <option value="1" ${mat.Type == 1 ? 'selected' : ''}>Excellent</option>
+                                                    <option value="2" ${mat.Type == 2 ? 'selected' : ''}>Set Item</option>
+                                                    <option value="3" ${mat.Type == 3 ? 'selected' : ''}>Earring</option>
+                                                </select>
+                                            </td>
+                                            <td>
+                                                <button class="action-btn btn-delete" title="Delete" onclick="deleteMasteryRow('materials', ${index})"><i data-lucide="trash-2"></i></button>
+                                            </td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderAngelWeaponTab() {
+            const settings = mixData.angel.find(r => r.isSettings) || { SuccessRate: 100, OptionUpgradeType: 0 };
+            const items = mixData.angel.filter(r => !r.isSettings);
+            
+            let html = `
+                ${renderTabControls('Angel Weapon (AngelWeaponUpgrade.xml)', 'Manages Archangel weapon upgrades.', 'AngelWeaponUpgrade.xml')}
+                <div class="glass-effect" style="padding: 20px; margin-bottom: 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                    <div class="form-group">
+                        <label>Success Rate (0-100)</label>
+                        <input type="number" class="inline-input" value="${settings.SuccessRate}" onchange="updateAngelSettings('SuccessRate', this.value)">
+                    </div>
+                    <div class="form-group">
+                        <label>Option Upgrade Type (0 or 1)</label>
+                        <input type="number" class="inline-input" value="${settings.OptionUpgradeType}" onchange="updateAngelSettings('OptionUpgradeType', this.value)">
+                    </div>
+                </div>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Input Item</th>
+                                <th>Result Item</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${items.map((item, index) => `
+                                <tr class="${item.isNew ? 'row-new' : (item.isModified ? 'row-modified' : '')}">
+                                    <td>${getItemDisplay(item.NeedCat, item.NeedIndex, true, `{ type: 'angel', index: ${index}, field: 'Need' }`)}</td>
+                                    <td>${getItemDisplay(item.ResultCat, item.ResultIndex, true, `{ type: 'angel', index: ${index}, field: 'Result' }`)}</td>
+                                    <td>
+                                        <button class="action-btn btn-delete" title="Delete" onclick="deleteRow('angel', ${index})"><i data-lucide="trash-2"></i></button>
+                                    </td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+                <button class="btn btn-primary" onclick="addRow('angel')"><i data-lucide="plus"></i> Add Weapon Upgrade</button>
+            `;
+            return html;
+        }
+        
+        function renderJewelTemplateTab() {
+            let html = `
+                ${renderTabControls('Jewel Packs (MixJewelTemplate.xml)', 'Manages packing and unpacking jewels.', 'MixJewelTemplate.xml')}
+                ${mixData.jewel.map((mix, mixIndex) => `
+                    <div class="table-container">
+                        <div class="table-header" onclick="toggleTable(this.parentElement)">
+                            <h3><i data-lucide="gem"></i> Jewel Mix ID: ${mix.ID} (e.g., Jewel of Bless)</h3>
+                            <span class="toggle-icon"><i data-lucide="chevron-down"></i></span>
+                        </div>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Input Jewel</th>
+                                    <th>Level</th>
+                                    <th>Count</th>
+                                    <th>Cost</th>
+                                    <th>Result Bundle</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${mix.recipes.map((rec, recIndex) => `
+                                    <tr class="${rec.isNew ? 'row-new' : (rec.isModified ? 'row-modified' : '')}">
+                                        <td>${getItemDisplay(rec.ItemCat, rec.ItemIndex, true, `{ type: 'jewel', mixIndex: ${mixIndex}, recIndex: ${recIndex}, field: 'Item' }`)}</td>
+                                        <td><input type="number" class="inline-input inline-input-small" value="${rec.Level}" onchange="updateRowValue('jewel', ${mixIndex}, ${recIndex}, 'Level', this.value)"></td>
+                                        <td><input type="number" class="inline-input inline-input-small" value="${rec.Count}" onchange="updateRowValue('jewel', ${mixIndex}, ${recIndex}, 'Count', this.value)"></td>
+                                        <td><input type="number" class="inline-input" style="width: 120px;" value="${rec.MixCost}" onchange="updateRowValue('jewel', ${mixIndex}, ${recIndex}, 'MixCost', this.value)"></td>
+                                        <td>${getItemDisplay(rec.PackCat, rec.PackIndex, true, `{ type: 'jewel', mixIndex: ${mixIndex}, recIndex: ${recIndex}, field: 'Pack' }`)}</td>
+                                        <td>
+                                            <button class="action-btn btn-delete" title="Delete" onclick="deleteRow('jewel', ${mixIndex}, ${recIndex})"><i data-lucide="trash-2"></i></button>
+                                        </td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                `).join('')}
+            `;
+            return html;
+        }
+
+        function renderLuckyTemplateTab() {
+            let html = `
+                ${renderTabControls('Lucky Tickets (MixLuckyTemplate.xml)', 'Manages item pools for lucky tickets.', 'MixLuckyTemplate.xml')}
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Ticket Item</th>
+                                <th>Reward Item</th>
+                                <th>Duration</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${mixData.lucky.map((item, index) => `
+                                <tr class="${item.isNew ? 'row-new' : (item.isModified ? 'row-modified' : '')}">
+                                    <td>${getItemDisplay(item.TicketCat, item.TicketIndex, true, `{ type: 'lucky', index: ${index}, field: 'Ticket' }`)}</td>
+                                    <td>${getItemDisplay(item.ItemCat, item.ItemIndex, true, `{ type: 'lucky', index: ${index}, field: 'Item' }`)}</td>
+                                    <td><input type="number" class="inline-input" style="width: 120px;" value="${item.Duration}" onchange="updateRowValue('lucky', ${index}, null, 'Duration', this.value)"></td>
+                                    <td>
+                                        <button class="action-btn btn-delete" title="Delete" onclick="deleteRow('lucky', ${index})"><i data-lucide="trash-2"></i></button>
+                                    </td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+                <button class="btn btn-primary" onclick="addRow('lucky')"><i data-lucide="plus"></i> Add Lucky Ticket Item</button>
+            `;
+            return html;
+        }
+        
+        function renderSpellStoneTab() {
+             let html = `
+                ${renderTabControls('Spell Stone (MixSpellStone.xml)', 'Manages upgrade rates for Spell Stones. All rates are / 10000.', 'MixSpellStone.xml')}
+                ${mixData.spell.map((mix, mixIndex) => `
+                    <div class="table-container">
+                        <div class="table-header" onclick="toggleTable(this.parentElement)">
+                            <h3><i data-lucide="sparkles"></i> Stone Type: ${mix.Type} (Price Div: ${mix.PriceDivision}, Stone Rate: ${mix.StoneRate})</h3>
+                            <span class="toggle-icon"><i data-lucide="chevron-down"></i></span>
+                        </div>
+                        <div style="overflow-x: auto;">
+                            <table style="min-width: 1200px;">
+                                <thead>
+                                    <tr>
+                                        <th>Count</th>
+                                        ${[...Array(16).keys()].map(i => `<th>Rate +${i}</th>`).join('')}
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${mix.rates.map((rate, rateIndex) => `
+                                        <tr>
+                                            <td><input type="number" class="inline-input" style="width: 60px;" value="${rate.Count}"></td>
+                                            ${[...Array(16).keys()].map(i => `
+                                                <td><input type="number" class="inline-input" style="width: 70px;" value="${rate[`Rate${i}`]}"></td>
+                                            `).join('')}
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                `).join('')}
+            `;
+            return html;
+        }
+        
+        function renderDisableTab() {
+            let html = `
+                ${renderTabControls('Disabled Items (MixDisable.xml)', 'Items in this list are banned from the Chaos Machine.', 'MixDisable.xml')}
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Item</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${mixData.disable.map((item, index) => `
+                                <tr class="${item.isNew ? 'row-new' : (item.isModified ? 'row-modified' : '')}">
+                                    <td>${getItemDisplay(item.ItemCat, item.ItemIndex)}</td>
+                                    <td>
+                                        <button class="action-btn btn-delete" title="Delete" onclick="deleteRow('disable', ${index})"><i data-lucide="trash-2"></i></button>
+                                    </td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+                <button class="btn btn-primary" onclick="addRow('disable')"><i data-lucide="plus"></i> Add Disabled Item</button>
+            `;
+            return html;
+        }
+        
+        function renderTabControls(title, description, fileName, isReadOnly = false) {
+            return `
+                <div class="tab-controls">
+                    <div>
+                        <h2>${title}</h2>
+                        <p>${description}</p>
+                    </div>
+                    <div class="controls" style="display: flex; gap: 10px;">
+                        <button id="undoBtn-${activeTab}" class="btn btn-undo" onclick="executeUndo()" disabled><i data-lucide="undo-2"></i> Undo</button>
+                        <button class="btn btn-success" onclick="saveData('${fileName}')" ${isReadOnly ? 'disabled' : ''}>
+                            <i data-lucide="save"></i> ${isReadOnly ? 'Read-Only' : `Save ${fileName}`}
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+        
+        function toggleTable(tableElement) {
+            tableElement.classList.toggle('collapsed');
+        }
+
+        // --- Item Modal Logic (UPDATED) ---
+        function openItemModal(callbackContext) {
+            // callbackContext is an object like { type: 'angel', index: 0, field: 'Need', callback?: function }
+            itemModalCallback = (cat, index) => {
+                const { type, index: rowIndex, mixIndex, recIndex, field, section, itemIndex, callback } = callbackContext;
+
+                if (callback) {
+                    // Specific callback for complex structures (like Main Mix Flat IDs)
+                    callback(cat, index, callbackContext);
+                } else {
+                    // Standard update logic (Cat/Index pairs)
+                    pushUndo(); 
+                    let item;
+                    if (type === 'jewel') {
+                        item = mixData.jewel[mixIndex].recipes[recIndex];
+                    } else if (type === 'disable') {
+                        item = mixData.disable[rowIndex];
+                    } else if (type === 'mastery') {
+                        if (section === 'randomPools') {
+                            item = mixData.mastery.randomPools[rowIndex].items[itemIndex];
+                            item.Cat = cat;
+                            item.Index = index;
+                            mixData.mastery.randomPools[rowIndex].isModified = true;
+                        } else if (section === 'results') {
+                            item = mixData.mastery.results[rowIndex];
+                            item.Cat = cat;
+                            item.Index = index;
+                        } else if (section === 'materials') {
+                            item = mixData.mastery.materials[rowIndex];
+                            item.Cat = cat;
+                            item.Index = index;
+                        }
+                    } else {
+                        item = mixData[type][rowIndex];
+                    }
+
+                    if (field === 'Item' || type === 'disable') {
+                        item.ItemCat = cat;
+                        item.ItemIndex = index;
+                    } else if (field === 'Ticket') {
+                        item.TicketCat = cat;
+                        item.TicketIndex = index;
+                    } else if (field === 'Pack') {
+                        item.PackCat = cat;
+                        item.PackIndex = index;
+                    } else { // Need or Result (Angel Weapon)
+                        item[`${field}Cat`] = cat;
+                        item[`${field}Index`] = index;
+                    }
+
+                    if (type !== 'mastery') {
+                        item.isModified = true;
+                        delete item.isNew;
+                    } else if (item) {
+                        item.isModified = true;
+                        delete item.isNew;
+                    }
+                    
+                    renderEditor();
+                    saveToCache();
+                }
+                
+                closeItemModal();
+            };
+            
+            document.getElementById('itemSearch').value = '';
+            filterItemSuggestions(); // Show all items initially
+            document.getElementById('itemModal').classList.add('show');
+            lucide.createIcons();
+        }
+        
+        function closeItemModal() {
+            itemModalCallback = null;
+            closeModal('itemModal');
+        }
+        
+        // --- NEW: Material Search Modal Logic ---
+        function openMaterialSearchModal(rowIndex, slotIndex) {
+            materialSearchCallback = (materialID) => {
+                // We have the row and slot index, update the data
+                updateMasteryValue('results', rowIndex, `MaterialID${slotIndex}`, materialID);
+                closeMaterialSearchModal();
+                // Render is handled by the updateMasteryValue -> pushUndo -> saveToCache
+                // However, since updateMasteryValue doesn't call renderEditor, we must do it here
+                renderEditor();
+            };
+
+            document.getElementById('materialSearch').value = '';
+            filterMaterialSuggestions(); // Show all
+            document.getElementById('materialSearchModal').classList.add('show');
+            lucide.createIcons();
+        }
+
+        function closeMaterialSearchModal() {
+            materialSearchCallback = null;
+            closeModal('materialSearchModal');
+        }
+
+        function filterMaterialSuggestions() {
+            let html = '';
+            let count = 0;
+            const searchTerm = document.getElementById('materialSearch').value.toLowerCase();
+            const suggestions = document.getElementById('materialSuggestions');
+            
+            // Search the materials list
+            const materials = mixData.mastery.materials || [];
+            
+            for (const mat of materials) {
+                if (count >= 100) break;
+                const matId = mat.ID.toString();
+                const matName = mat.Name.toLowerCase();
+                const itemName = getItemName(mat.Cat, mat.Index).toLowerCase();
+                
+                if (searchTerm.length === 0 || matId.includes(searchTerm) || matName.includes(searchTerm) || itemName.includes(searchTerm)) {
+                    html += `<div class="suggestion-item" onclick="selectMaterial(${mat.ID})">
+                                <span class="suggestion-item-cat">${matName}</span> 
+                                <span class="suggestion-item-id">[ID: ${matId}]</span> 
+                                ${getItemName(mat.Cat, mat.Index)}
+                             </div>`;
+                    count++;
+                }
+            }
+            suggestions.innerHTML = html;
+        }
+
+        function selectMaterial(materialID) {
+            if (materialSearchCallback) {
+                materialSearchCallback(materialID);
+            }
+        }
+        // --- END NEW ---
+
+        function filterItemSuggestions() {
+            let html = '';
+            let count = 0;
+            const searchTerm = document.getElementById('itemSearch').value.toLowerCase();
+            const suggestions = document.getElementById('itemSuggestions');
+            
+            for (const [catIndex, items] of Object.entries(itemList)) {
+                if (count >= 100) break;
+                for (const [itemIndex, itemName] of Object.entries(items)) {
+                    if (count >= 100) break;
+                    const fullItemName = `(${catIndex}, ${itemIndex}) ${itemName}`;
+                    if (searchTerm.length < 2 || fullItemName.toLowerCase().includes(searchTerm)) {
+                        html += `<div class="suggestion-item" onclick="selectItem(${catIndex}, ${itemIndex})">
+                                    <span class="suggestion-item-cat">${itemCategories[catIndex] || 'Cat ' + catIndex}</span> 
+                                    <span class="suggestion-item-id">(${catIndex}, ${itemIndex})</span> 
+                                    ${itemName}
+                                 </div>`;
+                        count++;
+                    }
+                }
+            }
+            suggestions.innerHTML = html;
+            suggestions.classList.add('show');
+        }
+        
+        function selectItem(cat, index) {
+            if (itemModalCallback) {
+                // itemModalCallback is now a function that accepts (cat, index, context)
+                itemModalCallback(cat, index);
+            }
+        }
+        
+        // --- Data Manipulation ---
+        
+        function updateAngelSettings(field, value) {
+            pushUndo();
+            let settings = mixData.angel.find(r => r.isSettings);
+            if (!settings) {
+                settings = { isSettings: true };
+                mixData.angel.unshift(settings); // Add to start
+            }
+            settings[field] = value;
+            settings.isModified = true;
+            renderEditor();
+            saveToCache();
+        }
+
+        function updateMasterySettings(field, value) {
+            pushUndo();
+            mixData.mastery.settings[field] = value;
+            mixData.mastery.settings.isModified = true;
+            // No renderEditor call to preserve focus on input fields
+            saveToCache();
+        }
+
+        function updateMasteryValue(section, index, field, value) {
+            pushUndo();
+            const item = mixData.mastery[section][index];
+            if (item) {
+                item[field] = value;
+                item.isModified = true;
+                delete item.isNew;
+                saveToCache();
+                // No re-render here to keep input focus, relying on pushUndo to save state
+            }
+        }
+        
+        function updateMasteryResultType(index, type) {
+            pushUndo();
+            const mix = mixData.mastery.results[index];
+            if (type === 'item') {
+                delete mix.RandomID;
+                mix.Cat = mix.Cat || 0;
+                mix.Index = mix.Index || 0;
+            } else { // pool
+                delete mix.Cat;
+                delete mix.Index;
+                mix.RandomID = mix.RandomID || 0;
+            }
+            mix.isModified = true;
+            renderEditor(); // Re-render to show correct inputs
+            saveToCache();
+        }
+
+        function updateMasteryPoolItem(poolIndex, itemIndex, field, value) {
+            pushUndo();
+            const item = mixData.mastery.randomPools[poolIndex].items[itemIndex];
+            if (item) {
+                item[field] = value;
+                item.isModified = true;
+                delete item.isNew;
+                mixData.mastery.randomPools[poolIndex].isModified = true;
+                saveToCache();
+            }
+        }
+        
+        function addMasteryRow(section) {
+            pushUndo();
+            const data = mixData.mastery[section];
+            let newObj;
+            if (section === 'results') {
+                newObj = { 
+                    ID: 0, Name: "New Mix", Cat: 0, Index: 0, Level: 0, 
+                    OptKeepType: 0, UpgradeOptMaxCnt: 0, SuccessRate: 100, Money: 0,
+                    MaterialID1: -1, MaterialCnt1: 0,
+                    MaterialID2: -1, MaterialCnt2: 0,
+                    MaterialID3: -1, MaterialCnt3: 0,
+                    MaterialID4: -1, MaterialCnt4: 0,
+                    MaterialID5: -1, MaterialCnt5: 0,
+                    MaterialID6: -1, MaterialCnt6: 0,
+                    isNew: true 
+                };
+            } else if (section === 'randomPools') {
+                newObj = { ID: 0, items: [], isNew: true };
+            } else if (section === 'materials') {
+                newObj = { ID: 0, Name: "New Material", Cat: 0, Index: 0, MinLevel: 0, MaxLevel: 0, Option: 0, Durability: 0, Type: 0, isNew: true };
+            }
+            
+            // MODIFIED: Use unshift to add new items to the top (requested by user)
+            if (newObj) mixData.mastery[section].unshift(newObj); 
+            renderEditor();
+            saveToCache();
+        }
+        
+        function deleteMasteryRow(section, index) {
+             confirmAction('Delete Row?', 'Are you sure you want to delete this row? This cannot be undone.', () => {
+                pushUndo();
+                mixData.mastery[section].splice(index, 1);
+                expandedMixRowIndex = null; // NEW: Close expanded row if deleted
+                renderEditor();
+                saveToCache();
+            });
+        }
+        
+        function addMasteryPoolItem(poolIndex) {
+            pushUndo();
+            const pool = mixData.mastery.randomPools[poolIndex];
+            pool.items.push({ Cat: 0, Index: 0, Rate: 100, isNew: true });
+            pool.isModified = true;
+            // Open item modal immediately
+            openItemModal({ type: 'mastery', section: 'randomPools', index: poolIndex, itemIndex: pool.items.length - 1 });
+            renderEditor();
+            saveToCache();
+        }
+        
+        function deleteMasteryPoolItem(poolIndex, itemIndex) {
+            // No confirm for this, it's minor
+            pushUndo();
+            const pool = mixData.mastery.randomPools[poolIndex];
+            pool.items.splice(itemIndex, 1);
+            pool.isModified = true;
+            renderEditor();
+            saveToCache();
+        }
+        // --- End of Mastery Updaters ---
+
+
+        function addRow(type) {
+            pushUndo();
+            let newItem;
+            if (type === 'angel') {
+                newItem = { isSettings: false, NeedCat: 0, NeedIndex: 0, ResultCat: 0, ResultIndex: 0, isNew: true };
+            } else if (type === 'lucky') {
+                newItem = { TicketCat: 13, TicketIndex: 0, TicketLevel: 0, ItemCat: 0, ItemIndex: 0, Duration: 3600, isNew: true };
+            } else if (type === 'disable') {
+                newItem = { ItemCat: 0, ItemIndex: 0, isNew: true };
+            }
+            
+            if (newItem) {
+                if (type === 'angel') {
+                    // Add to the list, after the settings object
+                    mixData.angel.push(newItem);
+                } else {
+                    // Simple push for other lists
+                    mixData[type].push(newItem);
+                }
+            }
+
+            // MODIFIED: Add to the top for the disable list as well
+            if (type === 'disable' && newItem) {
+                // Remove the push above and add unshift for consistency
+                mixData.disable.pop(); 
+                mixData.disable.unshift(newItem);
+                // Open item modal immediately for 'disable'
+                openItemModal({ type: 'disable', index: 0 }); // New item is always at index 0
+            }
+            
+            renderEditor();
+            saveToCache();
+        }
+        
+        function deleteRow(type, index, recIndex = null) {
+            confirmAction('Delete Row?', 'Are you sure you want to delete this row? This cannot be undone.', () => {
+                pushUndo();
+                if (recIndex !== null) {
+                    mixData[type][index].recipes.splice(recIndex, 1);
+                } else {
+                    // Handle angel list where settings is first element
+                    let actualIndex = index;
+                    if (type === 'angel') {
+                        // Account for settings row if present
+                        if (mixData.angel[0].isSettings) actualIndex = index + 1;
+                    }
+                    mixData[type].splice(actualIndex, 1);
+                }
+                renderEditor();
+                saveToCache();
+            });
+        }
+        
+        // --- XML Generators ---
+        // DELEGATE: Mix.xml generation to the new module
+        // function generateMixXml() { return MixMainMix.generateMixXml(); } 
+        
+        function generateAngelWeaponXml() {
+            let xml = originalXmlHeaders.angel;
+            const settings = mixData.angel.find(r => r.isSettings) || { SuccessRate: 100, OptionUpgradeType: 0 };
+            xml += `<ArchangelWeapon>\n<Upgrade SuccessRate="${settings.SuccessRate}" OptionUpgradeType="${settings.OptionUpgradeType}">\n`;
+            
+            mixData.angel.filter(r => !r.isSettings).forEach(item => {
+                xml += `\t<Item NeedCat="${item.NeedCat}" NeedIndex="${item.NeedIndex}" ResultCat="${item.ResultCat}" ResultIndex="${item.ResultIndex}" />\n`;
+            });
+            
+            xml += `</Upgrade>\n</ArchangelWeapon>\n`;
+            return xml;
+        }
+
+        function generateJewelTemplateXml() {
+            let xml = originalXmlHeaders.jewel + '<MixJewelTemplate>\n';
+            mixData.jewel.forEach(mix => {
+                xml += `    <Mix ID="${mix.ID}">\n`;
+                mix.recipes.forEach(rec => {
+                    xml += `\t\t<Data ItemCat="${rec.ItemCat}" ItemIndex="${rec.ItemIndex}" Level="${rec.Level}" Count="${rec.Count}" MixCost="${rec.MixCost}" PackCat="${rec.PackCat}" PackIndex="${rec.PackIndex}" />\n`;
+                });
+                xml += `    </Mix>\n\n`;
+            });
+            xml += '</MixJewelTemplate>\n';
+            return xml;
+        }
+        
+        function generateLuckyTemplateXml() {
+            let xml = originalXmlHeaders.lucky + '<MixLuckyTemplate>\n';
+            mixData.lucky.forEach(mix => {
+                xml += `\t<Mix TicketCat="${mix.TicketCat}" TicketIndex="${mix.TicketIndex}" TicketLevel="${mix.TicketLevel}" ItemCat="${mix.ItemCat}" ItemIndex="${mix.ItemIndex}" Duration="${mix.Duration}" />\n`;
+            });
+            xml += '</MixLuckyTemplate>\n';
+            return xml;
+        }
+        
+        function generateMixDisableXml() {
+            let xml = originalXmlHeaders.disable + '<MixDisable>\n';
+            mixData.disable.forEach(mix => {
+                xml += `    <Mix ItemCat="${mix.ItemCat}" ItemIndex="${mix.ItemIndex}" />\n`;
+            });
+            xml += '</MixDisable>\n';
+            return xml;
+        }
+        
+        // --- NEW: XML Generator for Mastery Items ---
+        function generateMasteryItemMixXml() {
+            let xml = originalXmlHeaders.mastery + '<MasteryItemMix>\n';
+            
+            // Part 1: Materials
+            xml += '    <CombinationMaterials>\n';
+            mixData.mastery.materials.forEach(mat => {
+                xml += `        <Material ID="${mat.ID}" Cat="${mat.Cat}" Index="${mat.Index}" MinLevel="${mat.MinLevel}" MaxLevel="${mat.MaxLevel}" Option="${mat.Option}" Durability="${mat.Durability}" Type="${mat.Type}" Name="${mat.Name}" />\n`;
+            });
+            xml += '    </CombinationMaterials>\n\n';
+            
+            // Part 2: Final Mixes (Results)
+            // --- MODIFIED ---
+            const settings = mixData.mastery.settings || { AncientHeroSoulLuckRate: 0, NoAncientHeroSoulLuckRate: 0 };
+            xml += `    <CombinationResult AncientHeroSoulLuckRate="${settings.AncientHeroSoulLuckRate}" NoAncientHeroSoulLuckRate="${settings.NoAncientHeroSoulLuckRate}">\n`;
+            // --- END MODIFIED ---
+            
+            mixData.mastery.results.forEach(mix => {
+                // --- MODIFIED: Rebuild the entire tag generator ---
+                let attributes = ` ID="${mix.ID}" Name="${mix.Name}"`;
+                
+                if (mix.RandomID) {
+                    attributes += ` RandomID="${mix.RandomID}"`;
+                } else {
+                    attributes += ` Cat="${mix.Cat || 0}" Index="${mix.Index || 0}"`;
+                }
+                
+                attributes += ` Level="${mix.Level || 0}"`;
+                attributes += ` OptKeepType="${mix.OptKeepType || 0}"`;
+                attributes += ` UpgradeOptMaxCnt="${mix.UpgradeOptMaxCnt || 0}"`;
+                attributes += ` SuccessRate="${mix.SuccessRate || 0}"`;
+                attributes += ` Money="${mix.Money || 0}"`;
+                
+                for (let i = 1; i <= 6; i++) {
+                    attributes += ` MaterialID${i}="${mix[`MaterialID${i}`] || -1}"`;
+                    attributes += ` MaterialCnt${i}="${mix[`MaterialCnt${i}`] || 0}"`;
+                }
+
+                xml += `        <Mix${attributes} />\n`;
+                // --- END MODIFIED ---
+            });
+            xml += '    </CombinationResult>\n\n';
+            
+            // Part 3: Random Pools
+            xml += '    <RandomCombinationResult>\n';
+            mixData.mastery.randomPools.forEach(pool => {
+                xml += `        <Result ID="${pool.ID}">\n`;
+                pool.items.forEach(item => {
+                    // Find the item name, default to "Item"
+                    const itemName = getItemName(item.Cat, item.Index) || "Item";
+                    xml += `            <Item Cat="${item.Cat}" Index="${item.Index}" Name="${itemName}" Rate="${item.Rate}" />\n`;
+                });
+                xml += `        </Result>\n`;
+            });
+            xml += '    </RandomCombinationResult>\n\n';
+            
+            xml += '</MasteryItemMix>\n';
+            return xml;
+        }
+        
+        // --- Save to Server ---
+        async function saveData(fileName) {
+            const saveButton = document.querySelector(`.tab-controls .btn-success`);
+            if (!saveButton) return;
+            
+            saveButton.disabled = true;
+            saveButton.innerHTML = `<i data-lucide="loader-2" class="spin"></i> Saving...`;
+            lucide.createIcons();
+            document.querySelectorAll('.spin').forEach(el => el.animate([{ transform: 'rotate(0deg)' }, { transform: 'rotate(360deg)' }], { duration: 1000, iterations: Infinity }));
+
+            let xmlContent = '';
+            let currentTab = activeTab; // Store active tab in case it changes
+            
+            try {
+                // Generate XML based on the file name
+                switch (fileName) {
+                    case 'Mix.xml': xmlContent = MixMainMix.generateMixXml(); break; // DELEGATED
+                    case 'AngelWeaponUpgrade.xml': xmlContent = generateAngelWeaponXml(); break;
+                    case 'MixJewelTemplate.xml': xmlContent = generateJewelTemplateXml(); break;
+                    case 'MixLuckyTemplate.xml': xmlContent = generateLuckyTemplateXml(); break;
+                    case 'MixDisable.xml': xmlContent = generateMixDisableXml(); break;
+                    case 'MasteryItemMix.xml': xmlContent = generateMasteryItemMixXml(); break; 
+                    default:
+                        throw new Error(`No generator found for ${fileName}`);
+                }
+
+                const response = await fetch(`${SERVER_URL}/api/save-mix-file`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ filename: fileName, newXmlContent: xmlContent }),
+                });
+
+                if (!response.ok) throw new Error(`Server responded with status: ${response.status}`);
+
+                showStatus(`✓ ${fileName} saved successfully!`, false);
+                
+                // Clear undo history for this tab on success
+                undoHistory[currentTab] = [];
+                // Clear modified/new flags for this tab's data
+                if (Array.isArray(mixData[currentTab])) {
+                    mixData[currentTab].forEach(item => {
+                        delete item.isNew;
+                        delete item.isModified;
+                    });
+                } else if (typeof mixData[currentTab] === 'object') {
+                    // Handle mastery object
+                    Object.values(mixData[currentTab]).forEach(arr => {
+                        if (Array.isArray(arr)) {
+                            arr.forEach(item => {
+                                delete item.isNew;
+                                delete item.isModified;
+                                if (item.items) { // for pools
+                                    item.items.forEach(subItem => {
+                                        delete subItem.isNew;
+                                        delete subItem.isModified;
+                                    });
+                                }
+                            });
+                        }
+                    });
+                }
+                
+                saveToCache();
+                renderEditor(); // Re-render to clear highlights and update undo button
+                
+            } catch (error) {
+                console.error(`Failed to save ${fileName}:`, error);
+                saveButton.disabled = false;
+                saveButton.innerHTML = `<i data-lucide="save"></i> Save ${fileName}`;
+                lucide.createIcons();
+                // Check if the current tab is the one being saved to avoid overwriting a concurrent successful save status
+                if (activeTab === currentTab) {
+                    showStatus(`✗ Error: Could not save ${fileName}. Your work is still cached locally.`, true);
+                }
+            }
+        }
+        
+        // --- Modal & Guide Logic ---
+        function openGuideModal() { document.getElementById('guideModal').classList.add('show'); lucide.createIcons(); }
+        function closeGuideModal() { closeModal('guideModal'); }
+        
+        document.getElementById('guideModal').addEventListener('click', function (e) { if (e.target === this) closeGuideModal(); }); 
+        document.getElementById('confirmModal').addEventListener('click', function (e) { if (e.target === this) closeConfirmModal(); }); 
+        document.getElementById('itemModal').addEventListener('click', function (e) { if (e.target === this) closeItemModal(); }); 
+        document.getElementById('materialSearchModal').addEventListener('click', function (e) { if (e.target === this) closeMaterialSearchModal(); }); 
+        
+        
+        // --- Dummy implementation of updateRowValue (Needed for jewel/lucky tabs, but not used in this iteration) ---
+        function updateRowValue(type, mixIndex, recIndex, field, value) {
+            pushUndo();
+            let item;
+            if (type === 'jewel') {
+                item = mixData.jewel[mixIndex].recipes[recIndex];
+            } else if (type === 'lucky') {
+                item = mixData.lucky[mixIndex];
+            } else if (type === 'angel') {
+                item = mixData.angel.filter(r => !r.isSettings)[mixIndex];
+            }
+            
+            if (item) {
+                item[field] = value;
+                item.isModified = true;
+                delete item.isNew;
+                saveToCache();
+            }
+            // No re-render here to keep focus on the input field
+        }
+    </script>
+</body>
+</html>
