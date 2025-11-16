@@ -43,7 +43,32 @@ const MIX_SPELL_STONE_PATH = path.join(MIX_DIR, 'MixSpellStone.xml');
 // Middleware
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
-app.use(express.static('public'));
+
+// --- Static File Serving ---
+// Serve static assets from the 'public' directory
+app.use(express.static(path.join(__dirname, 'public')));
+
+// Explicitly serve the HTML files from the root directory
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'index.html'));
+});
+
+app.get('/index.html', (req, res) => {
+    res.sendFile(path.join(__dirname, 'index.html'));
+});
+
+app.get('/monsterspawneditor.html', (req, res) => {
+    res.sendFile(path.join(__dirname, 'monsterspawneditor.html'));
+});
+
+app.get('/shopeditor.html', (req, res) => {
+    res.sendFile(path.join(__dirname, 'shopeditor.html'));
+});
+
+app.get('/mixeditor.html', (req, res) => {
+    res.sendFile(path.join(__dirname, 'mixeditor.html'));
+});
+
 
 // --- Helper Functions ---
 /**
