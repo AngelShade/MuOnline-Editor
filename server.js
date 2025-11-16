@@ -2,30 +2,36 @@ const express = require('express');
 const fs = require('fs').promises;
 const cors = require('cors');
 const path = require('path');
+const config = require('./config.json');
 
 const app = express();
 const PORT = 3000; // The port your server will run on. Ensure it's open.
 
-// --- MonsterSpawn Editor Paths ---
-const MONSTER_SPAWN_PATH = 'C:\\Server\\Data\\Monster\\MonsterSpawn.xml';
-const MONSTER_LIST_PATH = 'C:\\Server\\Data\\Monster\\MonsterList.xml';
-const MONSTER_BACKUP_DIR = 'C:\\Server\\Data\\Monster\\Backups';
+// --- Path Resolution ---
+// Resolve all paths from config.json relative to the application's root directory
+const resolvePath = (relativePath) => path.resolve(__dirname, relativePath);
 
-// --- Drop Editor Paths ---
-const ZEN_DROP_PATH = 'C:\\Server\\Data\\Item\\Drop\\ZenDrop.xml';
-const ZEN_BACKUP_DIR = 'C:\\Server\\Data\\Item\\Drop\\Backups';
-const ITEM_EXCELLENT_OPTIONS_PATH = 'C:\\Server\\Data\\Item\\ItemExcellentOptions.xml';
-
-// --- Shop Editor Paths ---
-const ITEM_LIST_PATH = 'C:\\Server\\Data\\Item\\ItemList.xml';
-const SHOP_LIST_PATH = 'C:\\Server\\Data\\Shops\\ShopList.xml';
-const SHOPS_DIR = 'C:\\Server\\Data\\Shops\\Scripts';
-const SHOPS_BACKUP_DIR = 'C:\\Server\\Data\\Shops\\Backups';
-const ITEM_STACK_PATH = 'C:\\Server\\Data\\Item\\ItemStack.xml';
+const MONSTER_SPAWN_PATH = resolvePath(config.MONSTER_SPAWN_PATH);
+const MONSTER_LIST_PATH = resolvePath(config.MONSTER_LIST_PATH);
+const MONSTER_BACKUP_DIR = resolvePath(config.MONSTER_BACKUP_DIR);
+const ZEN_DROP_PATH = resolvePath(config.ZEN_DROP_PATH);
+const ZEN_BACKUP_DIR = resolvePath(config.ZEN_BACKUP_DIR);
+const ITEM_EXCELLENT_OPTIONS_PATH = resolvePath(config.ITEM_EXCELLENT_OPTIONS_PATH);
+const ITEM_LIST_PATH = resolvePath(config.ITEM_LIST_PATH);
+const SHOP_LIST_PATH = resolvePath(config.SHOP_LIST_PATH);
+const SHOPS_DIR = resolvePath(config.SHOPS_DIR);
+const SHOPS_BACKUP_DIR = resolvePath(config.SHOPS_BACKUP_DIR);
+const ITEM_STACK_PATH = resolvePath(config.ITEM_STACK_PATH);
+const MIX_DIR = resolvePath(config.MIX_DIR);
+const MIX_BACKUP_DIR = resolvePath(config.MIX_BACKUP_DIR);
+const EACH_MONSTER_MAP_DROP_DIR = resolvePath(config.EACH_MONSTER_MAP_DROP_DIR);
+const MAP_DROP_BACKUP_DIR = resolvePath(config.MAP_DROP_BACKUP_DIR);
+const MASTERY_EXC_OPTIONS_PATH = resolvePath(config.MASTERY_EXC_OPTIONS_PATH);
+const PENTAGRAM_DROP_RATE_PATH = resolvePath(config.PENTAGRAM_DROP_RATE_PATH);
+const SOCKET_ITEM_DROP_RATES_PATH = resolvePath(config.SOCKET_ITEM_DROP_RATES_PATH);
+const ITEM_DROP_RATE_CONTROL_PATH = resolvePath(config.ITEM_DROP_RATE_CONTROL_PATH);
 
 // --- Mix Editor Paths ---
-const MIX_DIR = 'C:\\Server\\Data\\Mix';
-const MIX_BACKUP_DIR = 'C:\\Server\\Data\\Mix\\Backups';
 const MIX_PATH = path.join(MIX_DIR, 'Mix.xml');
 const ANGEL_WEAPON_UPGRADE_PATH = path.join(MIX_DIR, 'AngelWeaponUpgrade.xml');
 const MASTERY_ITEM_MIX_PATH = path.join(MIX_DIR, 'MasteryItemMix.xml');
@@ -33,17 +39,6 @@ const MIX_DISABLE_PATH = path.join(MIX_DIR, 'MixDisable.xml');
 const MIX_JEWEL_TEMPLATE_PATH = path.join(MIX_DIR, 'MixJewelTemplate.xml');
 const MIX_LUCKY_TEMPLATE_PATH = path.join(MIX_DIR, 'MixLuckyTemplate.xml');
 const MIX_SPELL_STONE_PATH = path.join(MIX_DIR, 'MixSpellStone.xml');
-
-// --- NEW: Monster Map Drop Editor Paths ---
-const EACH_MONSTER_MAP_DROP_DIR = 'C:\\Server\\Data\\Item\\Drop\\EachMonsterMapDrop';
-const MAP_DROP_BACKUP_DIR = 'C:\\Server\\Data\\Item\\Drop\\EachMonsterMapDrop\\Backups';
-
-// --- NEW: Context file paths from user ---
-const MASTERY_EXC_OPTIONS_PATH = 'C:\\Server\\Data\\Item\\MasteryExcOptions.xml';
-const PENTAGRAM_DROP_RATE_PATH = 'C:\\Server\\Data\\Item\\Drop\\PentagramItemDropRate.xml';
-const SOCKET_ITEM_DROP_RATES_PATH = 'C:\\Server\\Data\\Item\\Drop\\SocketItemDropRates.xml';
-const ITEM_DROP_RATE_CONTROL_PATH = 'C:\\Server\\Data\\Item\\Drop\\ItemDropRateControl.ini';
-// --- End of New Paths ---
 
 // Middleware
 app.use(cors());
