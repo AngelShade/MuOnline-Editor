@@ -1,0 +1,2713 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shop Editor (Web Edition)</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@500&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        :root {
+            --bg-dark: #0a0f1e;
+            --bg-glass: rgba(26, 34, 63, 0.6);
+            --text-primary: #e0e0e0;
+            --text-secondary: #a0a0c0;
+            --text-bright: #ffffff;
+            --font-ui: 'Inter', sans-serif;
+            --font-data: 'Fira Code', monospace;
+            --accent-blue: #00aaff;
+            --accent-green: #00ff9b;
+            --accent-amber: #ffc107;
+            --accent-pink: #ff0055;
+            --accent-purple: #6f42c1;
+            --accent-red: #ff3333;
+            --grid-cols: 8;
+            --grid-rows: 15;
+            --slot-size: 48px;
+            --grid-width: calc(var(--grid-cols) * var(--slot-size));
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: var(--font-ui);
+            background: linear-gradient(135deg, #1a223f 0%, var(--bg-dark) 100%);
+            color: var(--text-primary);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            background: transparent;
+            border-radius: 12px;
+            padding: 30px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        .glass-effect {
+            background: var(--bg-glass);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(0, 170, 255, 0.2);
+            border-radius: 12px;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+        }
+        .header { position: relative; padding: 30px; text-align: center; }
+        .header .header-controls { position: absolute; top: 25px; left: 30px; display: flex; align-items: center; gap: 10px; background: rgba(0, 170, 255, 0.1); padding: 8px 12px; border-radius: 6px; }
+        .header .header-controls label { font-weight: 600; font-size: 14px; }
+        .header h1 { font-size: 28px; margin-bottom: 10px; color: var(--text-bright); display: flex; align-items: center; justify-content: center; gap: 15px; }
+        .header p { color: var(--text-secondary); }
+        .status-bar { display: none; padding: 15px; border-radius: 8px; font-weight: 600; }
+        .status-bar-success { background: rgba(0, 255, 155, 0.2); color: var(--accent-green); border: 1px solid var(--accent-green); }
+        .status-bar-error { background: rgba(255, 0, 85, 0.2); color: var(--accent-pink); border: 1px solid var(--accent-pink); }
+        .status-bar-warning { background: rgba(255, 193, 7, 0.2); color: var(--accent-amber); border: 1px solid var(--accent-amber); }
+        .status-bar-info { background: rgba(0, 170, 255, 0.2); color: var(--accent-blue); border: 1px solid var(--accent-blue); }
+        .status-bar-controls { display: flex; gap: 10px; margin-top: 10px; }
+        .data-management-section h3 { display: flex; align-items: center; gap: 10px; margin-bottom: 15px; color: var(--text-bright); }
+        .main-content { display: grid; grid-template-columns: 300px 1fr; gap: 20px; }
+        .sidebar h3 { display: flex; align-items: center; gap: 10px; margin-bottom: 15px; color: var(--text-bright); }
+        .shop-list { max-height: 600px; overflow-y: auto; }
+        .shop-item-entry { padding: 10px; margin-bottom: 5px; background: transparent; color: var(--text-secondary); border-radius: 6px; cursor: pointer; transition: all 0.2s; border-left: 3px solid transparent; font-size: 14px; }
+        .shop-item-entry:hover { background: rgba(0, 170, 255, 0.1); color: var(--text-primary); border-left-color: var(--accent-blue); }
+        .shop-item-entry.active { background: var(--accent-blue); color: var(--bg-dark); font-weight: 600; border-left-color: var(--accent-amber); }
+        .shop-item-id { font-weight: bold; margin-right: 8px; font-family: var(--font-data); }
+        .search-bar input { width: 100%; padding: 12px; border: 1px solid rgba(0, 170, 255, 0.2); border-radius: 6px; font-size: 14px; background-color: rgba(0,0,0,0.3); color: var(--text-primary); }
+        .search-bar input:focus { outline: none; border-color: var(--accent-blue); }
+        .btn { padding: 10px 18px; border: none; border-radius: 6px; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.3s; display: inline-flex; align-items: center; gap: 8px; }
+        .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+        .btn-primary { background: var(--accent-blue); color: var(--bg-dark); }
+        .btn-primary:hover:not(:disabled) { background: #fff; }
+        .btn-success { background: var(--accent-green); color: var(--bg-dark); }
+        .btn-success:hover:not(:disabled) { background: #fff; }
+        .btn-danger { background: var(--accent-pink); color: #fff; }
+        .btn-danger:hover:not(:disabled) { background: #fff; color: var(--accent-pink); }
+        .btn-undo { background: var(--accent-purple); color: white; }
+        .btn-undo:hover:not(:disabled) { background: #5a32a3; }
+        .btn-outline { background: transparent; border: 1px solid rgba(0, 170, 255, 0.5); color: var(--accent-blue); }
+        .btn-outline:hover { background: rgba(0, 170, 255, 0.1); }
+        .btn-sm { padding: 4px 8px; font-size: 12px; }
+        .item-table { background: rgba(0,0,0,0.2); border-radius: 8px; overflow: hidden; margin-bottom: 20px; }
+        table { width: 100%; border-collapse: collapse; }
+        th { background: rgba(0, 170, 255, 0.1); color: var(--text-bright); padding: 10px 12px; text-align: left; font-weight: 600; font-size: 13px; vertical-align: top; }
+        td { padding: 8px 12px; border-bottom: 1px solid rgba(0, 170, 255, 0.1); vertical-align: middle; }
+        tr:hover { background: rgba(0, 170, 255, 0.05); }
+        .item-row-new { background-color: rgba(0, 255, 155, 0.1) !important; }
+        .item-row-modified { background-color: rgba(255, 193, 7, 0.1) !important; }
+        .item-row-empty { background-color: rgba(255, 0, 85, 0.1) !important; }
+        .item-name { font-weight: 600; color: var(--text-primary); font-size: 14px; }
+        .item-name-cell { min-width: 200px; }
+        .item-id { font-family: var(--font-data); color: var(--text-secondary); }
+        .inline-input, .inline-select { width: 90%; padding: 4px 6px; border: 1px solid rgba(0, 170, 255, 0.2); border-radius: 4px; font-size: 13px; background-color: rgba(0,0,0,0.5); color: var(--text-primary); font-family: var(--font-data); }
+        .inline-input:focus, .inline-select:focus { outline: none; border-color: var(--accent-blue); }
+        .inline-select { width: 100%; }
+        .inline-input[type=number] { -moz-appearance: textfield; }
+        .inline-input[type=number]::-webkit-outer-spin-button, .inline-input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+        .inline-number-wrapper { display: flex; align-items: center; }
+        .inline-number-btn { background: rgba(0, 170, 255, 0.2); border: 1px solid rgba(0, 170, 255, 0.2); color: var(--accent-blue); cursor: pointer; padding: 4px; line-height: 1; transition: all 0.2s; font-family: var(--font-data); font-weight: bold; }
+        .inline-number-btn:hover { background: var(--accent-blue); color: var(--bg-dark); border-color: var(--accent-blue); }
+        .inline-number-btn.btn-minus { border-radius: 4px 0 0 4px; padding-left: 6px; padding-right: 6px; }
+        .inline-number-btn.btn-plus { border-radius: 0 4px 4px 0; padding-left: 6px; padding-right: 6px; }
+        .inline-input.inline-number-input { border-radius: 0; text-align: center; width: 100%; border-left: none; border-right: none; }
+        .item-checkbox { width: 18px; height: 18px; accent-color: var(--accent-blue); }
+        .clipboard-controls { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 20px; }
+        .btn-paste { background: var(--accent-purple); color: white; }
+        .btn-paste:hover:not(:disabled) { background: #5a32a3; }
+        .view-selector { display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 1px solid rgba(0, 170, 255, 0.2); padding-bottom: 10px; justify-content: flex-start; }
+        .btn-toggle { padding: 8px 14px; background: rgba(0,0,0,0.3); color: var(--text-secondary); border: 1px solid rgba(0, 170, 255, 0.2); }
+        .btn-toggle.active { background: var(--accent-blue); color: var(--bg-dark); font-weight: 700; border-color: var(--accent-amber); }
+        .tab-nav { display: flex; gap: 5px; margin-bottom: 20px; border-bottom: 2px solid rgba(0, 170, 255, 0.2); }
+        .tab-btn { padding: 12px 20px; border: none; border-bottom: 3px solid transparent; background: transparent; color: var(--text-secondary); font-size: 16px; font-weight: 600; cursor: pointer; transition: all 0.2s; border-radius: 6px 6px 0 0; }
+        .tab-btn:hover { background: rgba(0, 170, 255, 0.1); color: var(--text-primary); }
+        .tab-btn.active { background: rgba(0, 170, 255, 0.1); border-bottom-color: var(--accent-blue); color: var(--text-bright); }
+        .tab-btn .item-count { font-size: 12px; background: rgba(0,0,0,0.3); color: var(--text-secondary); padding: 2px 6px; border-radius: 4px; margin-left: 8px; font-family: var(--font-data); font-weight: normal; }
+        .tab-btn.active .item-count { background: var(--accent-blue); color: var(--bg-dark); }
+        .tab-btn .item-count.limit-reached { background: var(--accent-red); color: white; font-weight: bold; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        .grid-view-container { display: grid; grid-template-columns: var(--grid-width) 1fr; gap: 20px; min-height: calc(var(--grid-rows) * var(--slot-size)); }
+        .item-grid { display: grid; grid-template-columns: repeat(var(--grid-cols), var(--slot-size)); grid-template-rows: repeat(var(--grid-rows), var(--slot-size)); background: rgba(0,0,0,0.3); border: 2px solid rgba(0, 170, 255, 0.3); border-radius: 6px; position: relative; user-select: none; overflow: hidden; width: var(--grid-width); height: calc(var(--grid-rows) * var(--slot-size)); }
+        .grid-cell { border: 1px dashed rgba(0, 170, 255, 0.1); position: relative; z-index: 10; }
+        .grid-cell.drag-target { border: 2px solid var(--accent-amber); background-color: rgba(255, 193, 7, 0.1); }
+        .grid-cell.occupied { background-color: rgba(0, 170, 255, 0.05); cursor: default; }
+        .grid-item-wrapper { display: flex; align-items: center; justify-content: center; border-radius: 4px; cursor: pointer; transition: border 0.1s, box-shadow 0.1s; background: rgba(255, 255, 255, 0.05); border: 1px solid transparent; z-index: 50; box-shadow: 0 0 5px rgba(0, 0, 0, 0.5); }
+        .grid-item-wrapper.dragging { position: absolute; opacity: 0.8; cursor: grabbing; z-index: 1000; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8); border: 2px solid var(--accent-pink); transform: scale(1.05); }
+        .grid-item-wrapper:hover { z-index: 60; border-color: var(--accent-amber); box-shadow: 0 0 10px rgba(255, 193, 7, 0.5); }
+        .grid-item-wrapper.selected { border: 3px solid var(--accent-pink); box-shadow: 0 0 15px var(--accent-pink); z-index: 70; }
+        .visual-edit-panel { padding: 15px; border-radius: 8px; display: flex; flex-direction: column; gap: 15px; height: 100%; }
+        .visual-edit-panel h3 { color: var(--text-bright); display: flex; align-items: center; gap: 8px; border-bottom: 1px solid rgba(0, 170, 255, 0.2); padding-bottom: 8px; }
+        .suggestion-item-dim { color: var(--text-secondary); font-size: 0.8em; margin-left: 10px; font-family: var(--font-data); }
+        .placement-info-box { padding: 10px; border: 1px solid rgba(0, 170, 255, 0.3); border-radius: 6px; background: rgba(0,0,0,0.2); text-align: center; color: var(--text-secondary); }
+        .item-tooltip { position: fixed; z-index: 2000; pointer-events: none; background: #111827; border: 1px solid var(--accent-blue); padding: 10px 15px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.7); max-width: 300px; font-size: 13px; line-height: 1.5; transition: opacity 0.1s; opacity: 0; }
+        .item-tooltip.show { opacity: 1; }
+        .tooltip-header { color: var(--accent-amber); font-weight: 700; margin-bottom: 5px; border-bottom: 1px solid rgba(255, 193, 7, 0.3); padding-bottom: 3px; font-size: 16px; }
+        .tooltip-prop { color: var(--text-primary); display: flex; justify-content: space-between; align-items: center; }
+        .tooltip-prop span { color: var(--text-secondary); font-family: var(--font-data); margin-left: 5px; font-weight: 600; }
+        .tooltip-exel { color: var(--accent-green); }
+        .tooltip-ancient { color: var(--accent-purple); }
+        .tooltip-socket { color: var(--accent-red); }
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.7); z-index: 1000; align-items: center; justify-content: center; }
+        .modal.show { display: flex; }
+        .modal-content { box-shadow: 0 8px 32px 0 rgba(0,0,0,0.5); color: var(--text-primary); max-width: 900px; width: 90%; max-height: 90vh; overflow-y: auto; }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; padding: 20px 25px; border-bottom: 1px solid rgba(0, 170, 255, 0.2); }
+        .modal-header h2 { color: var(--text-bright); }
+        .modal-body { padding: 25px; }
+        .modal-footer { display: flex; gap: 10px; justify-content: flex-end; padding: 20px 25px; border-top: 1px solid rgba(0, 170, 255, 0.2); }
+        .close-btn { color: var(--text-secondary); transition: all 0.2s; background: none; border: none; cursor: pointer;}
+        .close-btn:hover { color: var(--text-bright); transform: rotate(90deg); }
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 15px; }
+        .form-group.full-width { grid-column: 1 / -1; }
+        .form-group.span-2 { grid-column: span 2; }
+        .form-group label { display: block; margin-bottom: 5px; font-weight: 600; color: var(--text-secondary); }
+        .form-group input, .form-group select { width: 100%; padding: 10px; border: 1px solid rgba(0, 170, 255, 0.2); border-radius: 6px; font-size: 14px; background-color: rgba(0,0,0,0.3); color: var(--text-primary); }
+        .form-group input:focus, .form-group select:focus { outline: none; border-color: var(--accent-blue); }
+        .item-search { position: relative; }
+        .item-suggestions { background: var(--bg-dark); border: 1px solid var(--accent-blue); position: absolute; top: 100%; left: 0; right: 0; max-height: 250px; overflow-y: auto; z-index: 100; display: none; }
+        .item-suggestions.show { display: block; }
+        .suggestion-item { padding: 10px; cursor: pointer; border-bottom: 1px solid rgba(0, 170, 255, 0.1); }
+        .suggestion-item:hover { background: rgba(0, 170, 255, 0.1); }
+        .suggestion-item-id { color: var(--accent-blue); font-family: var(--font-data); margin-right: 8px; }
+        .suggestion-item-cat { color: var(--accent-amber); font-family: var(--font-data); margin-right: 8px; }
+        .inline-item-search { position: relative; width: 100%; }
+        .inline-item-search .inline-input { width: 100%; font-weight: 600; color: var(--text-primary); font-size: 14px; }
+        .inline-item-search .inline-input:focus { background-color: rgba(0, 170, 255, 0.1); }
+        .inline-suggestions { background: var(--bg-dark); border: 1px solid var(--accent-blue); position: absolute; top: 100%; left: 0; right: 0; max-height: 250px; overflow-y: auto; z-index: 1100; display: none; }
+        .inline-suggestions.show { display: block; }
+        #exelOptionsContainer { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; background: rgba(0,0,0,0.2); padding: 15px; border-radius: 8px; max-height: 250px; overflow-y: auto; }
+        #exelOptionsContainer div { display: flex; align-items: center; gap: 8px; }
+        #exelOptionsContainer input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--accent-blue); }
+        #exelOptionsContainer label { color: var(--text-primary); font-size: 14px; font-weight: 400; margin-bottom: 0; }
+        .action-btn { padding: 5px; border-radius: 4px; cursor: pointer; background: transparent; border: none; color: var(--text-secondary); }
+        .action-btn:hover { color: var(--text-bright); }
+        .btn-edit:hover { color: var(--accent-amber); }
+        .btn-delete:hover { color: var(--accent-pink); }
+        .btn-duplicate:hover { color: var(--accent-blue); }
+        .empty-state { text-align: center; padding: 60px 20px; color: var(--text-secondary); }
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: var(--accent-blue); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #fff; }
+        .btn i, .action-btn i, h1 i, h3 i { width: 16px; height: 16px; stroke-width: 2.5; }
+        .action-btn i { width: 18px; height: 18px; }
+        .header h1 i { width: 32px; height: 32px; color: var(--accent-blue); }
+        #authorModal { z-index: 2000; }
+        .author-modal-content { background: var(--bg-glass); backdrop-filter: blur(10px); border: 1px solid rgba(0, 170, 255, 0.2); box-shadow: 0 8px 32px 0 rgba(0,0,0,0.5); text-align: center; padding: 40px; border-radius: 12px; }
+        .author-modal-content h2 { color: var(--text-bright); }
+        .author-modal-content p { color: var(--text-secondary); }
+        .author-modal-content input { background-color: rgba(0,0,0,0.3); color: var(--text-primary); border-color: rgba(0, 170, 255, 0.2); text-align: center; width: 100%; padding: 12px; font-size: 16px; border-radius: 6px; margin-bottom: 20px;}
+        #confirmModal .modal-content { max-width: 500px; }
+        #guideContent { line-height: 1.7; color: var(--text-secondary); }
+        #guideContent h3 { color: var(--text-bright); margin-top: 20px; margin-bottom: 10px; border-bottom: 1px solid rgba(0, 170, 255, 0.2); padding-bottom: 5px; }
+        #guideContent h3:first-child { margin-top: 0; }
+        #guideContent ul { list-style-position: inside; padding-left: 10px; }
+        #guideContent li { margin-bottom: 10px; }
+        #guideContent code { background-color: rgba(0,0,0,0.3); padding: 3px 6px; border-radius: 4px; font-family: var(--font-data); color: var(--accent-green); }
+        .back-button-control { position: absolute; top: 25px; right: 30px; display: flex; gap: 10px; }
+    </style>
+</head>
+<body>
+    <div id="itemTooltip" class="item-tooltip"></div>
+    
+    <div class="modal" id="authorModal"><div class="author-modal-content"><h2>Welcome</h2><p>Please enter your name to track your changes.</p><input type="text" id="initialAuthorName" placeholder="Your Name..." oninput="this.value ? document.getElementById('saveInitialAuthorBtn').disabled=false : document.getElementById('saveInitialAuthorBtn').disabled=true"><button id="saveInitialAuthorBtn" class="btn btn-primary" onclick="saveInitialAuthorName()" disabled>Save & Begin</button></div></div>
+    
+    <div class="modal" id="confirmModal">
+        <div class="modal-content glass-effect">
+            <div class="modal-header">
+                <h2 id="confirmTitle">Are you sure?</h2>
+                <button class="close-btn" onclick="closeConfirmModal()"><i data-lucide="x"></i></button>
+            </div>
+            <div class="modal-body">
+                <p id="confirmMessage" style="color: var(--text-secondary); line-height: 1.6%;">This action cannot be undone.</p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" onclick="closeConfirmModal()">Cancel</button>
+                <button id="confirmButton" class="btn btn-danger">Confirm</button>
+            </div>
+        </div>
+    </div>
+    
+    <div class="container glass-effect">
+        <div class="header">
+            <div class="header-controls">
+                <label>Author:</label>
+                <div id="authorDisplayView" style="display: flex; align-items: center;">
+                    <span id="authorNameDisplay" style="color: var(--accent-amber); font-weight: bold; font-family: var(--font-data);"></span>
+                    <button class="btn btn-outline btn-sm" onclick="toggleAuthorEdit(true)" style="padding: 4px 8px; margin-left: 8px;">Change</button>
+                </div>
+                <div id="authorEditView" style="display: none;">
+                    <input type="text" id="authorNameInput" placeholder="Enter name..." style="padding: 4px 8px; font-size: 14px; border-radius: 4px; border: 1px solid var(--accent-blue); background: var(--bg-dark); color: var(--text-primary);">
+                    <button class="btn btn-success btn-sm" onclick="saveAuthorName()" style="padding: 4px 8px; margin-left: 8px;">Save</button>
+                </div>
+            </div>
+            <h1><i data-lucide="store"></i>MU Shop Editor<i data-lucide="store"></i></h1>
+            <p>Manage NPC shop inventories across the server</p>
+            
+            <div class="back-button-control">
+                <button class="btn btn-outline" onclick="checkUnsavedChangesAndRedirect()"><i data-lucide="arrow-left"></i> Dashboard</button>
+                <button class="btn btn-outline" onclick="openGuideModal()"><i data-lucide="help-circle"></i>Guide</button>
+            </div>
+        </div>
+        
+        <div id="statusBar" class="status-bar"></div>
+        
+        <div id="dataManagementSection" class="glass-effect" style="display: none; padding: 20px;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <h3><i data-lucide="database"></i>Data Management</h3>
+                    <p style="font-size: 14px; color: var(--text-secondary);">Your edits are saved locally. Server merging is handled on save.</p>
+                </div>
+                <button class="btn btn-danger" onclick="confirmClearCache()">
+                    <i data-lucide="trash-2"></i> Clear Local Cache
+                </button>
+            </div>
+        </div>
+        
+        <div class="main-content" id="mainContent" style="display: none;">
+            <div class="sidebar glass-effect" style="padding: 20px;">
+                <h3><i data-lucide="contact"></i>Shops</h3>
+                <div class="search-bar" style="margin-bottom: 15px;"><input type="text" id="shopSearch" oninput="filterShops()" placeholder="Search shops..."></div>
+                <div class="shop-list" id="shopList"></div>
+            </div>
+            <div class="editor-panel glass-effect" style="padding: 25px;">
+                <div id="editorContent"><div class="empty-state"><h3>Select a Shop</h3><p>Choose a shop from the list on the left to start editing.</p></div></div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="modal" id="itemModal">
+        <div class="modal-content glass-effect">
+            <div class="modal-header">
+                <h2 id="modalTitle">Add New Item</h2>
+                <button class="close-btn" onclick="closeModal()"><i data-lucide="x"></i></button>
+            </div>
+            <form id="itemForm">
+                <div class="modal-body">
+                    <input type="hidden" id="modalTabId">
+                    <input type="hidden" id="modalItemIndex">
+                    
+                    <div class="form-grid">
+                        <div class="form-group span-2 item-search">
+                            <label>Search Item *</label>
+                            <input type="text" id="itemSearch" autocomplete="off" required>
+                            <div class="item-suggestions" id="itemSuggestions"></div>
+                        </div>
+                        <div class="form-group">
+                            <label>Category *</label>
+                            <input type="number" id="itemCat" required readonly>
+                        </div>
+                        <div class="form-group">
+                            <label>Index *</label>
+                            <input type="number" id="itemIndex" required readonly>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Level</label>
+                            <input type="number" id="itemLevel" value="0" min="0" max="15">
+                        </div>
+                        <div class="form-group">
+                            <label id="itemDurLabel">Durability</label>
+                            <input type="number" id="itemDur" value="0">
+                        </div>
+                        <div class="form-group">
+                            <label>Skill</label>
+                            <select id="itemSkill">
+                                <option value="0">No</option>
+                                <option value="1">Yes</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Luck</label>
+                            <select id="itemLuck">
+                                <option value="0">No</option>
+                                <option value="1">Yes</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Option (0-7)</label>
+                            <input type="number" id="itemOption" value="0" min="0" max="7">
+                        </div>
+                        <div class="form-group">
+                            <label>Ancient</label>
+                            <select id="itemAncient">
+                                <option value="0">No</option>
+                                <option value="5">Set 1 (+5)</option>
+                                <option value="6">Set 2 (+6)</option>
+                                <option value="9">Set 1 (+9)</option>
+                                <option value="10">Set 2 (+10)</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group span-2">
+                            <label>Price (0 = auto)</label>
+                            <input type="number" id="itemPrice" value="0">
+                        </div>
+                        
+                        <div class="form-group full-width">
+                            <label>Excellent Options</label>
+                            <div id="exelOptionsContainer">
+                                <p style="color: var(--text-secondary);">Loading options...</p>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group full-width" style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px;">
+                            <label style="grid-column: 1 / -1; margin-bottom: 0;">Sockets (65535 = empty)</label>
+                            <input type="number" id="socket1" value="65535">
+                            <input type="number" id="socket2" value="65535">
+                            <input type="number" id="socket3" value="65535">
+                            <input type="number" id="socket4" value="65535">
+                            <input type="number" id="socket5" value="65535">
+                        </div>
+                        
+                        <div class="form-group span-2">
+                             <label>Item Order ID (XML ID)</label>
+                             <input type="number" id="itemIdDisplay" min="0" style="font-family: var(--font-data);">
+                        </div>
+                        <div class="form-group span-2">
+                             <label>Item Slot (From ItemList.xml)</label>
+                             <input type="text" id="itemSlotDisplay" readonly style="font-family: var(--font-data);">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline" onclick="closeModal()">Cancel</button>
+                    <button type="submit" class="btn btn-success">Save Item</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <div class="modal" id="guideModal">
+        <div class="modal-content glass-effect">
+            <div class="modal-header">
+                <h2><i data-lucide="help-circle"></i> How to Use the Shop Editor</h2>
+                <button class="close-btn" onclick="closeGuideModal()"><i data-lucide="x"></i></button>
+            </div>
+            <div class="modal-body" id="guideContent">
+                <h3>1. Grid View (Auto-Arranging & Drag/Drop)</h3>
+                <ul>
+                    <li><strong>8x15 Layout:</strong> The grid visualizes the shop's inventory in an 8-column, 15-row space (120 slots total).</li>
+                    <li>**Left Click:** Click item A to **select** (pink border). Click item B to **swap** their positions (Order IDs are exchanged). Clicking the same item again deselects it.</li>
+                    <li>**Delete/Backspace Key:** Delete the **selected** item.</li>
+                    <li>**Right Click:** Right-click an item to open the complex **Edit Item Modal**.</li>
+                    <li>**Drag & Drop (Swap/Move):** <ul>
+                            <li>Dragging to an empty slot **moves** the item (re-orders the list).</li>
+                            <li>Dragging onto an **occupied** spot will **swap** positions (Order IDs) with the target item.</li>
+                            <li>Releasing out of bounds or onto an invalid placement restores the item to its **original position** (no data is lost).</li>
+                        </ul>
+                    </li>
+                    <li>**Item Order:** Items are placed in the grid automatically, ordered sequentially by their **Order ID (XML ID)**.</li>
+                </ul>
+
+                <h3>2. Table View (Sequence & Bulk Edit)</h3>
+                <ul>
+                    <li>Use this view for listing items sequentially by their **Order ID** for bulk editing, sorting, and clipboard operations.</li>
+                    <li>**Inline Editing:** You can directly edit `Lvl`, `Skill`, `Luck`, `Opt`, `Ancient`, and `Price` in the table.</li>
+                </ul>
+                
+                <h3>3. Data Caching & Saving</h3>
+                <ul>
+                    <li>All edits (in both views) are saved locally until you click <strong><i data-lucide="save" style="width:14px; height: 14px; display: inline-block; vertical-align: middle;"></i> Save Changes</strong>.</li>
+                    <li>Use the <strong>Undo</strong> button to revert recent actions.</li>
+                </ul>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-primary" onclick="closeGuideModal()">Got it!</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const SERVER_URL = 'http://149.202.139.156:3000'; 
+        const CACHE_KEY = 'shopEditorCache';
+        const MAX_SHOP_ITEMS = 120; 
+        
+        const GRID_COLS = 8;
+        const GRID_ROWS = 15;
+        const GRID_SIZE = GRID_COLS * GRID_ROWS;
+        const SLOT_SIZE = 48; 
+        
+        let shopList = [];
+        let itemList = {}; 
+        let itemCategories = {}; 
+        let excellentOptions = {}; 
+        let itemStackData = {}; 
+        let currentShopData = { tabs: [] }; 
+        let currentShopFilename = null;
+        let currentShopID = null;
+        let originalXMLHeader = '<?xml version="1.0" encoding="utf-8"?>\n';
+        let originalShopListHeader = '<?xml version="1.0" encoding="utf-8"?>\n'; 
+        
+        let activeTab = 0; 
+        let editingItemIndex = null; 
+        let undoHistory = [];
+        let itemClipboard = []; 
+        let isDataLoaded = false;
+        
+        let currentView = 'grid'; 
+        let gridState = Array(GRID_SIZE).fill(null); 
+        
+        let dragItemWrapper = null;
+        let dragOriginalIndex = null;
+        let dragOriginalId = null; 
+        let dragOriginalWrapper = null; 
+        let dragOffset = { x: 0, y: 0 };
+        let dragBounds = null; 
+        let dragItemMetadata = { width: 1, height: 1 }; 
+        let dragStartCoords = { x: 0, y: 0 };
+        
+        const DRAG_THRESHOLD = 5; 
+        let isDraggingConfirmed = false;
+
+        let selectedItemToReplaceIndex = null; 
+        
+        const transparentImage = new Image();
+        transparentImage.src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
+
+
+        document.addEventListener('DOMContentLoaded', () => {
+            lucide.createIcons();
+            initializeAuthorLock(); 
+            
+            document.addEventListener('mousemove', handleDragMove);
+            document.addEventListener('mouseup', handleDragEnd);
+        });
+        
+        function hasUnsavedChanges() {
+             const hasModifiedItems = currentShopData.tabs.some(tab => 
+                 tab.some(item => item.isModified || item.isNew)
+             );
+             
+             const shopInfo = shopList.find(s => s.id === currentShopID);
+             const isShopListModified = shopInfo && shopInfo.isModified;
+
+             return hasModifiedItems || isShopListModified;
+        }
+
+        function checkUnsavedChangesAndRedirect() {
+            if (hasUnsavedChanges()) {
+                confirmAction(
+                    'Unsaved Changes Detected!',
+                    'You have unsaved changes in this shop. Do you want to discard them and return to the dashboard?',
+                    () => {
+                        if (currentShopID) {
+                            let cache = JSON.parse(localStorage.getItem(CACHE_KEY) || '{}');
+                            delete cache[currentShopID];
+                            localStorage.setItem(CACHE_KEY, JSON.stringify(cache));
+                        }
+                        window.location.href = 'index.html';
+                    },
+                    'btn-warning'
+                );
+            } else {
+                window.location.href = 'index.html';
+            }
+        }
+        
+        document.addEventListener('keydown', (e) => { 
+            if (e.ctrlKey && e.key === 'z') { 
+                e.preventDefault(); 
+                executeUndo(); 
+            } else if ((e.key === 'Delete' || e.key === 'Backspace') && selectedItemToReplaceIndex !== null) {
+                e.preventDefault();
+                
+                if (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA') {
+                    return;
+                }
+                
+                const itemIndexToDelete = selectedItemToReplaceIndex;
+                const item = currentShopData.tabs[activeTab][itemIndexToDelete];
+                
+                if (item) {
+                    confirmAction(
+                        `Delete ${getItemName(item.cat, item.index)}?`,
+                        `Are you sure you want to delete (${item.cat}, ${item.index}) ${getItemName(item.cat, item.index)} from Tab ${activeTab + 1}? (Key: ${e.key})`,
+                        () => {
+                            pushUndo();
+                            currentShopData.tabs[activeTab].splice(itemIndexToDelete, 1);
+                            selectedItemToReplaceIndex = null; 
+                            
+                            reorganizeShopItems(null); 
+                            
+                            const shopInfo = shopList.find(s => s.id === currentShopID);
+                            renderShopEditor(shopInfo.name, shopInfo.type); 
+                            saveToCache();
+                            showStatus(`Item deleted via ${e.key} key.`, false);
+                        }
+                    );
+                }
+            }
+        });
+        
+        function handleDragStart(event, itemIndex) {
+            if (event.button !== 0 || currentView !== 'grid') return; 
+            
+            event.preventDefault(); 
+            
+            const originalWrapper = event.currentTarget;
+            const item = currentShopData.tabs[activeTab][itemIndex];
+            if (!item) return;
+            
+            if (event.dataTransfer && transparentImage) {
+                const itemRect = originalWrapper.getBoundingClientRect();
+                const offsetX = event.clientX - itemRect.left;
+                const offsetY = event.clientY - itemRect.top;
+                
+                event.dataTransfer.setDragImage(transparentImage, 0, 0);
+            }
+
+            isDraggingConfirmed = false;
+            dragItemWrapper = null;
+            dragOriginalWrapper = originalWrapper;
+            dragOriginalIndex = itemIndex;
+            dragOriginalId = item.id;
+            dragItemMetadata = getItemMetadata(item.cat, item.index);
+            dragStartCoords = { x: event.clientX, y: event.clientY };
+
+            const gridEl = document.getElementById(`shopGrid-${activeTab}`);
+            if (gridEl) {
+                dragBounds = gridEl.getBoundingClientRect();
+            }
+            
+            dragOffset.x = dragItemMetadata.width * SLOT_SIZE * 0.5;
+            dragOffset.y = dragItemMetadata.height * SLOT_SIZE * 0.5; 
+        }
+        
+        function initializeDragVisual(event) {
+             if (isDraggingConfirmed) return;
+             
+             const dx = Math.abs(event.clientX - dragStartCoords.x);
+             const dy = Math.abs(event.clientY - dragStartCoords.y);
+             if (Math.sqrt(dx * dx + dy * dy) < DRAG_THRESHOLD) {
+                 return; 
+             }
+             
+             isDraggingConfirmed = true;
+             
+             selectedItemToReplaceIndex = null;
+             document.querySelectorAll('.grid-item-wrapper').forEach(w => w.classList.remove('selected'));
+             
+             dragItemWrapper = dragOriginalWrapper.cloneNode(true);
+             dragItemWrapper.style.width = `${dragItemMetadata.width * SLOT_SIZE}px`;
+             dragItemWrapper.style.height = `${dragItemMetadata.height * SLOT_SIZE}px`;
+             dragItemWrapper.classList.add('dragging');
+
+             dragOriginalWrapper.style.opacity = '0';
+             dragOriginalWrapper.style.pointerEvents = 'none';
+
+             document.body.appendChild(dragItemWrapper);
+             clearReservation(dragOriginalIndex);
+             
+             const item = currentShopData.tabs[activeTab][dragOriginalIndex];
+             populateTooltip(item, event); 
+        }
+
+        function handleDragMove(event) {
+            if (!dragOriginalWrapper) return; 
+            
+            if (!isDraggingConfirmed) {
+                initializeDragVisual(event);
+            }
+
+            if (!dragItemWrapper) return; 
+
+            let targetClientX = event.clientX - dragOffset.x;
+            let targetClientY = event.clientY - dragOffset.y;
+
+            dragItemWrapper.style.left = `${targetClientX}px`;
+            dragItemWrapper.style.top = `${targetClientY}px`;
+            
+            updateTooltipPosition(event);
+
+            const potentialSlot = getDropSlot(event.clientX, event.clientY);
+            
+            document.querySelectorAll('.grid-cell').forEach(cell => cell.classList.remove('drag-target'));
+
+            if (potentialSlot !== null) {
+                const startCol = potentialSlot % GRID_COLS;
+                const startRow = Math.floor(potentialSlot / GRID_COLS);
+                const { width, height } = dragItemMetadata;
+                
+                const occupyingIndex = gridState[potentialSlot];
+                const isOccupiedByDifferentItem = occupyingIndex !== null && occupyingIndex !== dragOriginalIndex;
+                const isValidPlacement = checkDropValidity(potentialSlot, width, height); 
+
+                if (isValidPlacement || isOccupiedByDifferentItem) {
+                    
+                    for (let r = startRow; r < startRow + height; r++) {
+                        for (let c = startCol; c < startCol + width; c++) {
+                            const slot = r * GRID_COLS + c;
+                            const cell = document.querySelector(`.grid-cell[data-slot-index="${slot}"]`);
+                            if (cell) {
+                                cell.classList.add('drag-target');
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        function handleDragEnd(event) {
+            if (!dragOriginalWrapper || dragOriginalIndex === null) return; 
+
+            document.getElementById('itemTooltip').classList.remove('show');
+
+            if (!isDraggingConfirmed) {
+                performClickSelection(event, dragOriginalIndex);
+            } 
+            else if (dragItemWrapper) {
+                const droppedSlot = getDropSlot(event.clientX, event.clientY);
+                const { width, height } = dragItemMetadata;
+
+                const originalItem = currentShopData.tabs[activeTab][dragOriginalIndex];
+                
+                document.querySelectorAll('.grid-cell').forEach(cell => cell.classList.remove('drag-target'));
+
+                let targetItemIndex = null;
+                if (droppedSlot !== null) {
+                    const occupyingIndex = gridState[droppedSlot];
+                    if (occupyingIndex !== null && occupyingIndex !== dragOriginalIndex) {
+                        targetItemIndex = occupyingIndex;
+                    }
+                }
+
+                let actionTaken = false;
+                let statusMessage = "Invalid placement or dropped out of bounds. Item restored to original position.";
+                
+                if (targetItemIndex !== null) {
+                    // Case 1: Swap
+                    pushUndo();
+                    
+                    // We just swap position in Array
+                    const itemAIndex = dragOriginalIndex;
+                    const itemBIndex = targetItemIndex;
+                    
+                    const items = currentShopData.tabs[activeTab];
+                    const temp = items[itemAIndex];
+                    items[itemAIndex] = items[itemBIndex];
+                    items[itemBIndex] = temp;
+
+                    items[itemAIndex].isModified = true;
+                    items[itemBIndex].isModified = true;
+
+                    // Clean Re-indexing 
+                    reorganizeShopItems(null); 
+
+                    statusMessage = `Items swapped successfully.`;
+                    actionTaken = true;
+
+                } else if (droppedSlot !== null && checkDropValidity(droppedSlot, width, height)) {
+                    // Case 2: Move (Re-order array based on visual position)
+                    pushUndo();
+                    
+                    const newArrayIndex = calculateTargetArrayIndex(droppedSlot, dragOriginalIndex);
+                    
+                    const items = currentShopData.tabs[activeTab];
+                    const [movedItem] = items.splice(dragOriginalIndex, 1);
+                    items.splice(newArrayIndex, 0, movedItem);
+                    
+                    movedItem.isModified = true;
+                    delete movedItem.isNew;
+                    
+                    reorganizeShopItems(null); 
+                    
+                    statusMessage = `Item moved successfully.`;
+                    actionTaken = true;
+                    
+                } else {
+                    // Invalid Drop
+                    originalItem.id = dragOriginalId; 
+                    originalItem.isModified = false; 
+                    reorganizeShopItems(originalItem);
+                }
+                
+                // SAFE CLEANUP 
+                if (dragItemWrapper && dragItemWrapper.parentNode) {
+                    dragItemWrapper.parentNode.removeChild(dragItemWrapper);
+                }
+                
+                const shopInfo = shopList.find(s => s.id === currentShopID);
+                renderShopEditor(shopInfo.name, shopInfo.type); 
+                saveToCache();
+                
+                if (!document.getElementById('statusBar').textContent.includes('Warning')) {
+                     showStatus(statusMessage, !actionTaken, false, actionTaken);
+                }
+            }
+            
+            // Always restore original wrapper opacity to prevent ghosts
+            if (dragOriginalWrapper) {
+                dragOriginalWrapper.style.opacity = '1';
+                dragOriginalWrapper.style.pointerEvents = 'auto';
+            }
+
+            dragItemWrapper = null;
+            dragOriginalWrapper = null;
+            dragOriginalIndex = null;
+            dragOriginalId = null;
+            dragBounds = null;
+            isDraggingConfirmed = false;
+        }
+
+        function getDropSlot(clientX, clientY) {
+            if (!dragBounds) return null;
+
+            const x = clientX - dragBounds.left;
+            const y = clientY - dragBounds.top;
+
+            const col = Math.floor(x / SLOT_SIZE);
+            const row = Math.floor(y / SLOT_SIZE);
+
+            if (col < 0 || col >= GRID_COLS || row < 0 || row >= GRID_ROWS) {
+                return null; 
+            }
+
+            return row * GRID_COLS + col;
+        }
+
+        function checkDropValidity(startSlot, width, height) {
+             const startCol = startSlot % GRID_COLS;
+             const startRow = Math.floor(startSlot / GRID_COLS);
+
+            if (startCol + width > GRID_COLS || startRow + height > GRID_ROWS) {
+                return false; 
+            }
+            
+            for (let r = startRow; r < startRow + height; r++) {
+                for (let c = startCol; c < startCol + width; c++) {
+                    const slot = r * GRID_COLS + c;
+                    const occupyingIndex = gridState[slot];
+                    
+                    if (occupyingIndex !== null && occupyingIndex !== dragOriginalIndex) {
+                        return false; 
+                    }
+                }
+            }
+            return true;
+        }
+        
+        function clearReservation(itemIndex) {
+            gridState.forEach((index, slot) => {
+                if (index === itemIndex) {
+                    gridState[slot] = null;
+                }
+            });
+            const item = currentShopData.tabs[activeTab][itemIndex];
+            if (item) item.gridSlot = null;
+        }
+
+        function calculateTargetArrayIndex(droppedSlot, originalItemIndex) {
+            const items = currentShopData.tabs[activeTab];
+            
+            // Filter out the item being dragged to compare against the REST of the grid
+            const otherItems = items.map((item, index) => ({...item, originalIndex: index}))
+                                    .filter((_, index) => index !== originalItemIndex);
+            
+            let insertionIndex = otherItems.length; 
+
+            // Logic: Find the first item whose grid slot is physically AFTER the dropped slot
+            for (let i = 0; i < otherItems.length; i++) {
+                const item = otherItems[i];
+                if (typeof item.gridSlot === 'number' && item.gridSlot > droppedSlot) {
+                    insertionIndex = i;
+                    break;
+                }
+            }
+            return insertionIndex;
+        }
+
+        function reorganizeShopItems(movedItem) {
+            const items = currentShopData.tabs[activeTab];
+
+            // STRICT RE-INDEXING:
+            // In Shop Editor, the Order ID (XML ID) essentially dictates the order in the file.
+            // We enforce that the ID matches the Array Index to prevent gaps or duplicates.
+            items.forEach((item, index) => {
+                item.id = String(index);
+                
+                // Mark as modified if we just dragged it
+                if (movedItem && item === movedItem) {
+                    item.isModified = true;
+                    delete item.isNew;
+                }
+            });
+
+            initializeGridState();
+        }
+        
+        function performClickSelection(event, itemIndex) {
+            
+            event.stopPropagation();
+            event.preventDefault(); 
+
+            const currentItem = currentShopData.tabs[activeTab][itemIndex];
+            
+            document.querySelectorAll('.grid-item-wrapper').forEach(w => w.classList.remove('selected'));
+
+            if (selectedItemToReplaceIndex === null) {
+                selectedItemToReplaceIndex = itemIndex;
+                document.querySelector(`.grid-item-wrapper[data-item-index="${itemIndex}"]`)?.classList.add('selected');
+                
+                showStatus(`Item '${getItemName(currentItem.cat, currentItem.index)}' selected for swap (A). Click the target item (B) to swap.`, false, false, true);
+                return true; 
+                
+            } else if (selectedItemToReplaceIndex === itemIndex) {
+                selectedItemToReplaceIndex = null;
+                showStatus(`Selection cleared.`, false, false, true);
+                return true; 
+                
+            } else {
+                
+                const indexA = selectedItemToReplaceIndex;
+                const indexB = itemIndex;
+                
+                const itemA = currentShopData.tabs[activeTab][indexA];
+                const itemB = currentShopData.tabs[activeTab][indexB];
+
+                if (!itemA || !itemB) {
+                    selectedItemToReplaceIndex = null;
+                    showStatus('Error: Selected item for swap is invalid. Selection cleared.', true);
+                    return true;
+                }
+                
+                pushUndo();
+                
+                const itemAName = getItemName(itemA.cat, itemA.index);
+                const itemBName = getItemName(itemB.cat, itemB.index);
+                
+                // Array Swap
+                const items = currentShopData.tabs[activeTab];
+                const temp = items[indexA];
+                items[indexA] = items[indexB];
+                items[indexB] = temp;
+                
+                items[indexA].isModified = true;
+                items[indexB].isModified = true;
+                delete items[indexA].isNew;
+                delete items[indexB].isNew;
+
+                reorganizeShopItems(null); 
+                
+                selectedItemToReplaceIndex = null;
+                
+                const shopInfo = shopList.find(s => s.id === currentShopID);
+                renderShopEditor(shopInfo.name, shopInfo.type); 
+                saveToCache();
+                
+                showStatus(`Items '${itemAName}' and '${itemBName}' successfully swapped.`, false);
+                return true;
+            }
+        }
+
+        function confirmAction(title, message, onConfirm, buttonClass = 'btn-danger') {
+            document.getElementById('confirmTitle').textContent = title;
+            document.getElementById('confirmMessage').textContent = message;
+            const confirmButton = document.getElementById('confirmButton');
+            confirmButton.className = `btn ${buttonClass}`;
+            confirmButton.onclick = () => {
+                onConfirm();
+                closeConfirmModal();
+            };
+            document.getElementById('confirmModal').classList.add('show');
+            lucide.createIcons();
+        }
+
+        function closeConfirmModal() {
+            document.getElementById('confirmModal').classList.remove('show');
+        }
+
+        function initializeAuthorLock() {
+            const authorName = localStorage.getItem('shopEditorAuthor'); 
+            if (authorName && authorName.trim() !== '') {
+                renderAuthorControls();
+                loadData();
+            } else {
+                document.getElementById('authorModal').classList.add('show');
+                lucide.createIcons();
+            }
+        }
+
+        function saveInitialAuthorName() {
+            const authorInput = document.getElementById('initialAuthorName');
+            const authorName = authorInput.value.trim();
+            if (authorName) {
+                localStorage.setItem('shopEditorAuthor', authorName);
+                document.getElementById('authorModal').classList.remove('show');
+                renderAuthorControls();
+                loadData();
+            }
+        }
+
+        function renderAuthorControls() {
+            const authorName = localStorage.getItem('shopEditorAuthor') || 'Unknown';
+            document.getElementById('authorNameDisplay').textContent = authorName;
+            document.getElementById('authorNameInput').value = authorName;
+            toggleAuthorEdit(false);
+            lucide.createIcons();
+        }
+
+        function toggleAuthorEdit(isEditing) {
+            document.getElementById('authorDisplayView').style.display = isEditing ? 'none' : 'flex';
+            document.getElementById('authorEditView').style.display = isEditing ? 'flex' : 'none';
+            if (isEditing) document.getElementById('authorNameInput').focus();
+        }
+
+        function saveAuthorName() {
+            const authorName = document.getElementById('authorNameInput').value.trim();
+            if (authorName) {
+                localStorage.setItem('shopEditorAuthor', authorName);
+                renderAuthorControls();
+            } else {
+                showStatus("Author name cannot be empty.", true);
+            }
+        }
+
+        function getAuthorName() { return localStorage.getItem('shopEditorAuthor') || 'Unknown Editor'; }
+
+        function showStatus(message, isError = false, isWarning = false, isInfo = false, controls = null) {
+            const statusBar = document.getElementById('statusBar');
+            statusBar.innerHTML = '';
+            const messageEl = document.createElement('span');
+            messageEl.textContent = message;
+            statusBar.appendChild(messageEl);
+            let typeClass = 'status-bar-success';
+            if (isError) typeClass = 'status-bar-error';
+            else if (isWarning) typeClass = 'status-bar-warning';
+            else if (isInfo) typeClass = 'status-bar-info';
+            statusBar.className = `status-bar ${typeClass}`;
+            statusBar.style.display = 'block';
+            if (controls) {
+                const controlsEl = document.createElement('div');
+                controlsEl.className = 'status-bar-controls';
+                controls.forEach(control => {
+                    const btn = document.createElement('button');
+                    btn.textContent = control.text;
+                    btn.className = control.className;
+                    btn.onclick = control.onClick;
+                    controlsEl.appendChild(btn);
+                    lucide.createIcons();
+                });
+                statusBar.appendChild(controlsEl);
+            } else {
+                setTimeout(() => { statusBar.style.display = 'none'; }, 5000);
+            }
+        }
+
+        function confirmClearCache() {
+            confirmAction(
+                'Clear Local Cache?',
+                'This will delete all your unsaved local changes and reload the latest data from the server. This action cannot be undone.',
+                () => {
+                    localStorage.removeItem(CACHE_KEY);
+                    showStatus('Local cache cleared. Reloading from server...', false, false, true);
+                    location.reload();
+                }
+            );
+        }
+
+        function saveToCache() {
+            if (!isDataLoaded || !currentShopID) return;
+            let cache = JSON.parse(localStorage.getItem(CACHE_KEY) || '{}');
+            
+            cache[currentShopID] = {
+                shopData: currentShopData,
+                undoHistory: undoHistory,
+                timestamp: new Date().toISOString()
+            };
+            localStorage.setItem(CACHE_KEY, JSON.stringify(cache));
+        }
+
+        function loadFromCache(shopId) {
+            try {
+                const cache = JSON.parse(localStorage.getItem(CACHE_KEY));
+                if (cache && cache[shopId]) {
+                    currentShopData = cache[shopId].shopData;
+                    undoHistory = cache[shopId].undoHistory || [];
+                    
+                    currentShopData.tabs.forEach((tab) => {
+                        tab.forEach(item => {
+                            const dims = getItemMetadata(item.cat, item.index);
+                            item.width = dims.width;
+                            item.height = dims.height;
+                            item.slot = dims.slot;
+                        });
+                    });
+
+                    return true;
+                }
+            } catch (e) {
+                console.error('Failed to parse cache:', e);
+                localStorage.removeItem(CACHE_KEY);
+            }
+            return false;
+        }
+
+        async function loadData() {
+            let serverData;
+            try {
+                const response = await fetch(`${SERVER_URL}/api/shop-data`); 
+                if (!response.ok) throw new Error(`Server responded with status: ${response.status}`);
+                serverData = await response.json();
+
+                parseItemList(serverData.itemListXml);
+                parseShopList(serverData.shopListXml);
+                parseExcellentOptions(serverData.itemExcellentOptionsXml); 
+                parseItemStack(serverData.itemStackXml); 
+                
+            } catch (error) {
+                console.error('Failed to load files from server:', error);
+                showStatus(`✗ Error: Could not load data from the server. ${error.message}`, true);
+                document.getElementById('editorContent').innerHTML = `<div class="empty-state"><h3>Connection Failed</h3><p>Could not connect to the server at <strong>${SERVER_URL}</strong>.</p></div>`;
+                return;
+            }
+            
+            isDataLoaded = true;
+            document.getElementById('mainContent').style.display = 'grid';
+            document.getElementById('dataManagementSection').style.display = 'block';
+            
+            renderShopList();
+            lucide.createIcons();
+        }
+
+        function parseShopList(xmlText) {
+            const headerMatch = xmlText.match(/^[\s\S]*?(?=<ShopList>)/i);
+            originalShopListHeader = headerMatch ? headerMatch[0] : '<?xml version="1.0" encoding="utf-8"?>\n';
+            
+            const parser = new DOMParser();
+            const xmlDoc = parser.parseFromString(xmlText, "text/xml");
+            shopList = [];
+            for (let shop of xmlDoc.getElementsByTagName('Shop')) {
+                shopList.push({
+                    id: shop.getAttribute('ID'),
+                    name: shop.getAttribute('Name'),
+                    maxPkLevel: shop.getAttribute('MaxPkLevel'),
+                    message: shop.getAttribute('Message'),
+                    flags: shop.getAttribute('Flags'),
+                    type: shop.getAttribute('Type'),
+                    maxBuyCount: shop.getAttribute('MaxBuyCount'),
+                    maxBuyType: shop.getAttribute('MaxBuyType'),
+                    filename: shop.getAttribute('FileScriptsName')
+                });
+            }
+        }
+
+        function parseItemList(xmlText) {
+            const parser = new DOMParser();
+            const xmlDoc = parser.parseFromString(xmlText, "text/xml");
+            itemList = {};
+            itemCategories = {};
+            for (let category of xmlDoc.getElementsByTagName('Category')) {
+                const catIndex = parseInt(category.getAttribute('Index'), 10);
+                if (isNaN(catIndex)) continue; 
+                
+                itemCategories[catIndex] = category.getAttribute('Name');
+                itemList[catIndex] = {};
+                
+                for (let item of category.getElementsByTagName('Item')) {
+                    const itemIndex = parseInt(item.getAttribute('Index'), 10);
+                    if (isNaN(itemIndex)) continue; 
+                    
+                    itemList[catIndex][itemIndex] = {
+                        name: item.getAttribute('Name'),
+                        slot: item.getAttribute('Slot') || '0',
+                        width: parseInt(item.getAttribute('Width'), 10) || 1,
+                        height: parseInt(item.getAttribute('Height'), 10) || 1,
+                    };
+                }
+            }
+            console.log("Parsed ItemList.xml and extracted Name, Slot, Width, Height.");
+        }
+        
+        function parseExcellentOptions(xmlText) {
+            excellentOptions = {};
+            const parser = new DOMParser();
+            const xmlDoc = parser.parseFromString(xmlText, "text/xml");
+            
+            const parseSection = (sectionName) => {
+                const sections = xmlDoc.getElementsByTagName(sectionName);
+                for (let section of sections) {
+                    const options = section.getElementsByTagName('Option');
+                    for (let opt of options) {
+                        const id = opt.getAttribute('ID');
+                        const name = opt.getAttribute('Name');
+                        if (id && name) {
+                            excellentOptions[id] = name;
+                        }
+                    }
+                }
+            };
+            
+            parseSection('Common');
+            parseSection('Wings');
+        }
+        
+        function parseItemStack(xmlText) {
+            itemStackData = {};
+            const parser = new DOMParser();
+            const xmlDoc = parser.parseFromString(xmlText, "text/xml");
+            
+            for (let item of xmlDoc.getElementsByTagName('Item')) {
+                const cat = parseInt(item.getAttribute('ItemCat'), 10);
+                const index = parseInt(item.getAttribute('ItemIndex'), 10);
+                const maxStack = item.getAttribute('MaxStack');
+                
+                if (isNaN(cat) || isNaN(index)) continue;
+                
+                if (!itemStackData[cat]) {
+                    itemStackData[cat] = {};
+                }
+                itemStackData[cat][index] = { maxStack: maxStack };
+            }
+        }
+        
+        async function selectShop(shopId, shopName, filename) {
+            if (!filename) {
+                showStatus(`Shop '${shopName}' has no script file defined in ShopList.xml.`, true);
+                return;
+            }
+            
+            document.getElementById('editorContent').innerHTML = `<div class="empty-state"><h3><i data-lucide="loader-2" class="spin"></i> Loading ${shopName}...</h3></div>`;
+            document.querySelectorAll('.spin').forEach(el => el.animate([{ transform: 'rotate(0deg)' }, { transform: 'rotate(360deg)' }], { duration: 1000, iterations: Infinity }));
+            lucide.createIcons();
+            
+            document.querySelectorAll('.shop-item-entry').forEach(item => item.classList.remove('active'));
+            const activeItem = document.getElementById(`shop-item-${shopId}`);
+            if (activeItem) activeItem.classList.add('active');
+
+            currentShopID = shopId;
+            currentShopFilename = filename;
+            
+            const shopInfo = shopList.find(s => s.id === shopId);
+            const shopType = shopInfo ? shopInfo.type : '0'; 
+            
+            if (loadFromCache(shopId)) {
+                showStatus(`Loaded unsaved changes for '${shopName}' from local cache.`, false, true);
+                finishShopLoad(shopName, shopType); 
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${SERVER_URL}/api/shop-file/${filename}`);
+                if (!response.ok) throw new Error(`Server responded with status: ${response.status}`);
+                const data = await response.json();
+                
+                parseShopFile(data.shopFileXml);
+                finishShopLoad(shopName, shopType); 
+                
+            } catch (error) {
+                console.error(`Failed to load shop file ${filename}:`, error);
+                showStatus(`✗ Error: Could not load '${filename}'. It may not exist on the server.`, true);
+                document.getElementById('editorContent').innerHTML = `<div class="empty-state"><h3>Load Failed</h3><p>Could not load <strong>${filename}</strong>. Check server logs.</p></div>`;
+            }
+        }
+
+        function parseShopFile(xmlText) {
+            const headerMatch = xmlText.match(/^[\s\S]*?(?=<ShopItem>)/i);
+            originalXMLHeader = headerMatch ? headerMatch[0] : '<?xml version="1.0" encoding="utf-8"?>\n';
+
+            const parser = new DOMParser();
+            const xmlDoc = parser.parseFromString(xmlText, "text/xml");
+            
+            currentShopData.tabs = [[], [], [], [], []];
+            
+            for (let tab of xmlDoc.getElementsByTagName('Tab')) {
+                const tabId = parseInt(tab.getAttribute('Id'));
+                if (tabId >= 1 && tabId <= 5) {
+                    const tabIndex = tabId - 1; 
+                    currentShopData.tabs[tabIndex] = []; 
+                    
+                    for (let item of tab.getElementsByTagName('Item')) {
+                        const cat = item.getAttribute('ItemCat');
+                        const index = item.getAttribute('ItemIndex');
+                        
+                        const newItem = {
+                            cat: cat,
+                            index: index,
+                            level: item.getAttribute('ItemLevel'),
+                            dur: item.getAttribute('ItemDur'),
+                            skill: item.getAttribute('ItemSkill'),
+                            luck: item.getAttribute('ItemLuck'),
+                            option: item.getAttribute('ItemOption'),
+                            exel: item.getAttribute('ItemExel'),
+                            ancient: item.getAttribute('ItemAncient'),
+                            socket1: item.getAttribute('Socket1'),
+                            socket2: item.getAttribute('Socket2'),
+                            socket3: item.getAttribute('Socket3'),
+                            socket4: item.getAttribute('Socket4'),
+                            socket5: item.getAttribute('Socket5'),
+                            price: item.getAttribute('Price'),
+                            id: item.getAttribute('ID') 
+                        };
+                        
+                        const dims = getItemMetadata(cat, index);
+                        newItem.width = dims.width;
+                        newItem.height = dims.height;
+                        newItem.slot = dims.slot; 
+
+                        currentShopData.tabs[tabIndex].push(newItem);
+                    }
+                }
+            }
+        }
+        
+        function finishShopLoad(shopName, shopType) { 
+            activeTab = 0; 
+            undoHistory = [];
+            currentView = 'grid'; 
+            selectedItemToReplaceIndex = null; 
+            
+            initializeGridState();
+            
+            renderShopEditor(shopName, shopType); 
+            saveToCache(); 
+        }
+
+        function pushUndo() {
+            if (!currentShopID) return;
+            if (undoHistory.length >= 50) undoHistory.shift();
+            undoHistory.push(JSON.parse(JSON.stringify(currentShopData)));
+            updateUndoButton();
+            saveToCache();
+        }
+
+        function executeUndo() {
+            if (undoHistory.length === 0) return;
+            const lastState = undoHistory.pop();
+            if (lastState) {
+                currentShopData = lastState;
+                const shopInfo = shopList.find(s => s.id === currentShopID);
+                
+                initializeGridState();
+                
+                renderShopEditor(shopInfo.name, shopInfo.type);
+            }
+            updateUndoButton();
+            saveToCache();
+        }
+
+        function updateUndoButton() {
+            const btn = document.getElementById('undoBtn');
+            if (btn) {
+                btn.disabled = undoHistory.length === 0;
+                btn.innerHTML = `<i data-lucide="undo-2"></i> ${undoHistory.length > 0 ? `Undo (${undoHistory.length})` : 'Undo'}`;
+                lucide.createIcons();
+            }
+        }
+        
+        function updateActionButtons() {
+            // FIX: Use ID selector instead of possibly undefined class/tag
+            const container = document.getElementById('tabContentContainer');
+            if (!container) return;
+
+            currentShopData.tabs.forEach((tabItems, i) => {
+                const tabBtn = document.querySelector(`.tab-btn[onclick="selectTab(${i})"]`);
+                if (tabBtn) {
+                    const itemCountSpan = tabBtn.querySelector('.item-count');
+                    itemCountSpan.textContent = `${tabItems.length}/${MAX_SHOP_ITEMS}`;
+                    
+                    itemCountSpan.classList.toggle('limit-reached', tabItems.length >= MAX_SHOP_ITEMS);
+
+                    if (i === activeTab && currentView === 'table') {
+                        const addBtn = document.querySelector(`#tabContentContainer .btn-primary`);
+                        if (addBtn) {
+                            addBtn.disabled = tabItems.length >= MAX_SHOP_ITEMS;
+                        }
+                    }
+                }
+            });
+
+            if (currentView === 'table') {
+                const deleteBtn = document.getElementById(`deleteSelectedBtn-${activeTab}`); 
+                if (deleteBtn) {
+                    // Fix: Ensure we are looking within the correct container
+                    const checkedCount = container.querySelectorAll(`.item-checkbox:checked`).length;
+                    deleteBtn.disabled = checkedCount === 0;
+                    deleteBtn.innerHTML = `<i data-lucide="trash-2"></i> Delete Selected (${checkedCount})`;
+                }
+                const pasteBtn = document.getElementById('pasteBtn');
+                const clearBtn = document.getElementById('clearClipboardBtn');
+                if (pasteBtn) {
+                    pasteBtn.innerHTML = `<i data-lucide="clipboard-paste"></i> Paste Items (${itemClipboard.length})`;
+                    pasteBtn.disabled = itemClipboard.length === 0;
+                }
+                if (clearBtn) {
+                    clearBtn.disabled = itemClipboard.length === 0;
+                }
+            }
+            
+            lucide.createIcons();
+        }
+
+        function renderShopList() {
+            const shopListEl = document.getElementById('shopList');
+            shopListEl.innerHTML = '';
+            shopList.forEach(shop => {
+                const shopItem = document.createElement('div');
+                shopItem.className = 'shop-item-entry';
+                shopItem.id = `shop-item-${shop.id}`;
+                shopItem.innerHTML = `<span class="shop-item-id">[${shop.id}]</span> ${shop.name}`;
+                shopItem.onclick = () => selectShop(shop.id, shop.name, shop.filename);
+                shopListEl.appendChild(shopItem);
+            });
+        }
+
+        function filterShops() {
+            const searchTerm = document.getElementById('shopSearch').value.toLowerCase();
+            document.querySelectorAll('.shop-item-entry').forEach(item => {
+                item.style.display = item.textContent.toLowerCase().includes(searchTerm) ? '' : 'none';
+            });
+        }
+        
+        function setView(view) {
+            currentView = view;
+            selectedItemToReplaceIndex = null; 
+            const shopInfo = shopList.find(s => s.id === currentShopID);
+            if (shopInfo) {
+                initializeGridState(); 
+                renderShopEditor(shopInfo.name, shopInfo.type);
+            }
+        }
+        
+        function renderShopEditor(shopName, shopType) { 
+            const shopInfo = shopList.find(s => s.id === currentShopID);
+            const isShopListModified = shopInfo && shopInfo.isModified;
+            
+            const currencyTypes = {
+                '0': 'Zen', '1': 'Ruud', '2': 'WCoin', '3': 'Goblin Points',
+                '4': 'Ruud (Alt)', '5': 'Rare Ticket', '6': 'Jewel of Bless',
+                '7': 'Jewel of Soul', '8': 'Jewel of Chaos'
+            };
+            let currencyDropdownHtml = `<select class="inline-select" onchange="updateShopCurrency(event)" style="width: auto; font-weight: bold; padding: 4px 8px; background-color: rgba(0,0,0,0.5); border-color: var(--accent-amber);">`;
+            for (const [typeId, name] of Object.entries(currencyTypes)) {
+                currencyDropdownHtml += `<option value="${typeId}" ${typeId === String(shopType) ? 'selected' : ''}>${name}</option>`;
+            }
+            currencyDropdownHtml += `</select>`;
+            
+            let html = `
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <div>
+                        <h2 style="color: var(--text-bright); margin-bottom: 5px;">${shopName}</h2>
+                        <div style="color: var(--text-secondary); display: flex; align-items: center; gap: 15px;">
+                            <span>Editing file: <span style="font-family: var(--font-data);">${currentShopFilename}</span></span>
+                            <span style="display: flex; align-items: center; gap: 8px;">
+                                Currency: ${currencyDropdownHtml}
+                                <button id="saveShopListBtn" 
+                                        class="btn btn-sm ${isShopListModified ? 'btn-danger' : ''}" 
+                                        onclick="saveShopList()" 
+                                        ${isShopListModified ? '' : 'disabled'} 
+                                        title="Save changes to ShopList.xml (Currency Type)">
+                                    <i data-lucide="save"></i> Save ShopList
+                                </button>
+                            </span>
+                        </div>
+                    </div>
+                    <div class="controls" style="display: flex; gap: 10px;">
+                        <button id="undoBtn" class="btn btn-undo" onclick="executeUndo()" disabled><i data-lucide="undo-2"></i> Undo</button>
+                        <button class="btn btn-success" onclick="saveChangesToServer()"><i data-lucide="save"></i> Save Changes</button>
+                    </div>
+                </div>
+                
+                <div class="view-selector">
+                    <button class="btn btn-toggle ${currentView === 'table' ? 'active' : ''}" onclick="setView('table')">
+                        <i data-lucide="list"></i> Table View
+                    </button>
+                    <button class="btn btn-toggle ${currentView === 'grid' ? 'active' : ''}" onclick="setView('grid')">
+                        <i data-lucide="layout-grid"></i> Grid View
+                    </button>
+                </div>
+
+                <div class="tab-nav">
+                    ${currentShopData.tabs.map((tabItems, i) => `
+                        <button class="tab-btn ${i === activeTab ? 'active' : ''}" onclick="selectTab(${i})">
+                            Tab ${i + 1} <span class="item-count">${tabItems.length}/${MAX_SHOP_ITEMS}</span>
+                        </button>
+                    `).join('')}
+                </div>
+                
+                <!-- FIX: Strict ID usage -->
+                <div id="tabContentContainer"></div>
+            `;
+            
+            document.getElementById('editorContent').innerHTML = html;
+            updateUndoButton();
+            updateActionButtons(); 
+            lucide.createIcons();
+            
+            renderTabContent();
+        }
+        
+        function selectTab(tabIndex) {
+            activeTab = tabIndex;
+            document.querySelectorAll('.tab-btn').forEach((btn, i) => btn.classList.toggle('active', i === tabIndex));
+            
+            selectedItemToReplaceIndex = null; 
+            
+            initializeGridState(); 
+            
+            renderTabContent();
+        }
+
+        function renderTabContent() {
+            const container = document.getElementById('tabContentContainer');
+            if (!container) return;
+
+            const tabItems = currentShopData.tabs[activeTab];
+
+            let html = '';
+            
+            if (currentView === 'table') {
+                html = `
+                    <div class="tab-content active" id="tab-content-${activeTab}">
+                        ${renderTableControls(activeTab, tabItems.length)}
+                        ${renderItemTable(tabItems, activeTab)}
+                    </div>
+                `;
+            } else { 
+                html = `
+                    <div class="tab-content active grid-view-container" id="tab-content-${activeTab}">
+                        ${renderItemGrid(tabItems, activeTab)}
+                        ${renderVisualEditingPanel(tabItems, activeTab)}
+                    </div>
+                `;
+            }
+
+            container.innerHTML = html;
+            updateActionButtons(); 
+            lucide.createIcons();
+            
+            if (currentView === 'grid') {
+                 document.querySelectorAll('.grid-item-wrapper').forEach(w => w.classList.remove('selected'));
+                 
+                 document.querySelectorAll('.grid-item-wrapper').forEach(wrapper => {
+                     const itemIndex = parseInt(wrapper.dataset.itemIndex, 10); 
+                     
+                     wrapper.addEventListener('mousedown', (e) => handleDragStart(e, itemIndex));
+                     
+                     wrapper.addEventListener('contextmenu', (e) => {
+                         e.preventDefault(); 
+                         selectedItemToReplaceIndex = null; 
+                         document.querySelectorAll('.grid-item-wrapper').forEach(w => w.classList.remove('selected'));
+                         openEditModal(activeTab, itemIndex);
+                     });
+                     
+                     if (itemIndex === selectedItemToReplaceIndex) {
+                         wrapper.classList.add('selected');
+                     }
+                 });
+            }
+        }
+        
+        function renderTableControls(tabId, itemCount) {
+            const isLimit = itemCount >= MAX_SHOP_ITEMS;
+            return `
+                <div class="clipboard-controls">
+                    <button class="btn btn-primary" onclick="openAddModal(${tabId})" ${isLimit ? 'disabled' : ''}><i data-lucide="plus"></i> Add Item</button>
+                    <button class="btn btn-outline" onclick="copySelectedItems(${tabId})"><i data-lucide="copy"></i> Copy Selected</button>
+                    <button id="pasteBtn" class="btn btn-paste" onclick="pasteItems()" disabled><i data-lucide="clipboard-paste"></i> Paste Items (0)</button>
+                    <button id="clearClipboardBtn" class="btn btn-outline" onclick="clearClipboard()" disabled><i data-lucide="x"></i> Clear Clipboard</button>
+                    <button id="deleteSelectedBtn-${tabId}" class="btn btn-danger" onclick="confirmDeleteSelected(${tabId})" disabled><i data-lucide="trash-2"></i> Delete Selected (0)</button>
+                </div>
+            `;
+        }
+        
+        function getExcellentOptionSummary(exelString) {
+            if (!exelString || exelString === '-1' || exelString === '0') {
+                return 'No';
+            }
+            const count = exelString.split(';').filter(id => id.trim() !== '').length;
+            return `Yes (${count} Opts)`;
+        }
+
+        function renderItemTable(items, tabId) {
+            if (items.length === 0) {
+                return `<div class="empty-state"><h3>Tab ${tabId + 1} is empty</h3><p>Click "+ Add Item" to add new items to this tab.</p></div>`;
+            }
+            
+            let tableHtml = `<div class="item-table"><table>
+                <thead>
+                    <tr>
+                        <th style="width: 40px; text-align: center;">
+                            <input type="checkbox" class="item-checkbox" title="Select All" onchange="toggleSelectAll(this, ${tabId})">
+                        </th>
+                        <th>Item Name</th>
+                        <th style="width: 90px;">Order ID</th> 
+                        <th style="width: 110px;">Lvl</th>
+                        <th style="width: 90px;">Skill</th>
+                        <th style="width: 90px;">Luck</th>
+                        <th style="width: 90px;">Opt</th>
+                        <th style="width: 110px;">Exel</th> 
+                        <th style="width: 110px;">Ancient</th>
+                        <th style="width: 120px;">Price</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+            `;
+            
+            // Ensure items are sorted by ID for table view
+            const sortedItems = [...items].sort((a, b) => {
+                const idA = parseInt(a.id, 10);
+                const idB = parseInt(b.id, 10);
+                return (isNaN(idA) ? Infinity : idA) - (isNaN(idB) ? Infinity : idB);
+            });
+            
+            sortedItems.forEach((item, originalItemIndex) => {
+                const itemMetadata = getItemMetadata(item.cat, item.index);
+                const itemName = itemMetadata.name;
+                const itemDisplayName = `(${item.cat}, ${item.index}) ${itemName}`;
+                
+                const itemIndex = items.findIndex(i => i === item);
+
+                tableHtml += `
+                    <tr class="${item.isNew ? 'item-row-new' : (item.isModified ? 'item-row-modified' : '')}">
+                        <td style="text-align: center;">
+                            <input type="checkbox" class="item-checkbox item-checkbox-${tabId}" data-item-index="${itemIndex}" onchange="updateActionButtons()">
+                        </td>
+                        <td class="item-name-cell">
+                            <div class="inline-item-search">
+                                <input 
+                                    type="text" 
+                                    class="inline-input" 
+                                    value="${itemDisplayName}" 
+                                    autocomplete="off"
+                                    oninput="showInlineSuggestions(event, ${tabId}, ${itemIndex})"
+                                    onfocus="showInlineSuggestions(event, ${tabId}, ${itemIndex})"
+                                    onblur="hideInlineSuggestions(event, ${tabId}, ${itemIndex})">
+                                <div class="inline-suggestions" id="inline-suggestions-${tabId}-${itemIndex}"></div>
+                            </div>
+                        </td>
+                        <td>
+                             <div class="inline-number-wrapper">
+                                <button class="inline-number-btn btn-minus" onclick="adjustItemProperty(this, -1)">-</button>
+                                <input type="number" class="inline-input inline-number-input" value="${item.id}" min="0" data-tab-id="${tabId}" data-item-index="${itemIndex}" data-property="id" onchange="updateItemProperty(event); initializeGridState(); renderTabContent();">
+                                <button class="inline-number-btn btn-plus" onclick="adjustItemProperty(this, 1)">+</button>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="inline-number-wrapper">
+                                <button class="inline-number-btn btn-minus" onclick="adjustItemProperty(this, -1)">-</button>
+                                <input type="number" class="inline-input inline-number-input" value="${item.level}" min="0" max="15" data-tab-id="${tabId}" data-item-index="${itemIndex}" data-property="level" onchange="updateItemProperty(event)">
+                                <button class="inline-number-btn btn-plus" onclick="adjustItemProperty(this, 1)">+</button>
+                            </div>
+                        </td>
+                        <td>
+                            <select class="inline-select" data-tab-id="${tabId}" data-item-index="${itemIndex}" data-property="skill" onchange="updateItemProperty(event)">
+                                <option value="0" ${item.skill == '0' ? 'selected' : ''}>No</option>
+                                <option value="1" ${item.skill == '1' ? 'selected' : ''}>Yes</option>
+                            </select>
+                        </td>
+                        <td>
+                            <select class="inline-select" data-tab-id="${tabId}" data-item-index="${itemIndex}" data-property="luck" onchange="updateItemProperty(event)">
+                                <option value="0" ${item.luck == '0' ? 'selected' : ''}>No</option>
+                                <option value="1" ${item.luck == '1' ? 'selected' : ''}>Yes</option>
+                            </select>
+                        </td>
+                        <td>
+                             <div class="inline-number-wrapper">
+                                <button class="inline-number-btn btn-minus" onclick="adjustItemProperty(this, -1)">-</button>
+                                <input type="number" class="inline-input inline-number-input" value="${item.option}" min="0" max="7" data-tab-id="${tabId}" data-item-index="${itemIndex}" data-property="option" onchange="updateItemProperty(event)">
+                                <button class="inline-number-btn btn-plus" onclick="adjustItemProperty(this, 1)">+</button>
+                            </div>
+                        </td>
+                        
+                        <td>${getExcellentOptionSummary(item.exel)}</td>
+                        
+                        <td>
+                            <select class="inline-select" data-tab-id="${tabId}" data-item-index="${itemIndex}" data-property="ancient" onchange="updateItemProperty(event)">
+                                <option value="0" ${item.ancient == '0' ? 'selected' : ''}>No</option>
+                                <option value="5" ${item.ancient == '5' ? 'selected' : ''}>Set 1 (+5)</option>
+                                <option value="6" ${item.ancient == '6' ? 'selected' : ''}>Set 2 (+6)</option>
+                                <option value="9" ${item.ancient == '9' ? 'selected' : ''}>Set 1 (+9)</option>
+                                <option value="10" ${item.ancient == '10' ? 'selected' : ''}>Set 2 (+10)</option>
+                            </select>
+                        </td>
+                        
+                        <td>
+                            <div class="inline-number-wrapper">
+                                <button class="inline-number-btn btn-minus" onclick="adjustItemProperty(this, -1000)">-</button>
+                                <input type="number" class="inline-input inline-number-input" style="width: 100%;" value="${item.price}" min="0" data-tab-id="${tabId}" data-item-index="${itemIndex}" data-property="price" onchange="updateItemProperty(event)">
+                                <button class="inline-number-btn btn-plus" onclick="adjustItemProperty(this, 1000)">+</button>
+                            </div>
+                        </td>
+                        
+                        <td style="white-space: nowrap;">
+                            <button class="action-btn btn-edit" title="Edit Complex" onclick="openEditModal(${tabId}, ${itemIndex})"><i data-lucide="edit"></i></button>
+                            <button class="action-btn btn-duplicate" title="Duplicate" onclick="duplicateItem(${tabId}, ${itemIndex})"><i data-lucide="copy"></i></button>
+                            <button class="action-btn btn-delete" title="Delete" onclick="deleteItem(${tabId}, ${itemIndex})"><i data-lucide="trash-2"></i></button>
+                        </td>
+                    </tr>
+                `;
+            });
+            
+            tableHtml += `</tbody></table></div>`;
+            return tableHtml;
+        }
+
+        function renderItemGrid(items, tabId) {
+            let gridHtml = `<div class="item-grid" id="shopGrid-${tabId}" oncontextmenu="event.preventDefault()">`;
+            
+            for (let i = 0; i < GRID_SIZE; i++) {
+                gridHtml += `<div 
+                                class="grid-cell" 
+                                data-slot-index="${i}">
+                             </div>`;
+            }
+            
+            items.forEach((item, itemIndex) => {
+                // FIX: Stricter check for numeric slot validity
+                if (typeof item.gridSlot === 'number' && item.gridSlot >= 0) {
+                    const { width, height, name } = getItemMetadata(item.cat, item.index);
+                    
+                    const slotIndex = item.gridSlot;
+                    const col = slotIndex % GRID_COLS;
+                    const row = Math.floor(slotIndex / GRID_COLS);
+                    
+                    const style = `
+                        grid-area: ${row + 1} / ${col + 1} / span ${height} / span ${width};
+                    `;
+                    
+                    gridHtml += `
+                        <div class="grid-item-wrapper ${item.isNew ? 'item-row-new' : (item.isModified ? 'item-row-modified' : '')}"
+                             style="${style}" 
+                             data-item-index="${itemIndex}" 
+                             data-item-order-id="${item.id}"
+                             data-item-name="${name}"
+                             oncontextmenu="openEditModal(${tabId}, ${itemIndex})"
+                             onmousedown="handleDragStart(event, ${itemIndex})"
+                             onmouseenter="handleGridHover(event, ${slotIndex}, true, ${itemIndex})"
+                             onmouseleave="handleGridHover(event, ${slotIndex}, false)">
+                             
+                            <span style="font-size: 11px; text-align: center; color: var(--text-primary); pointer-events: none; padding: 2px;">
+                                ${name}
+                            </span>
+                        </div>
+                    `;
+                }
+            });
+            
+            gridHtml += `</div>`;
+            return gridHtml;
+        }
+
+        function renderVisualEditingPanel(items, tabId) {
+            // Fix check for unplaced items
+            const unplacedCount = items.filter(i => typeof i.gridSlot !== 'number' || i.gridSlot < 0).length;
+            let unplacedWarning = '';
+            if (unplacedCount > 0) {
+                 unplacedWarning = `<p style="color: var(--accent-pink); font-weight: 600;">Warning: ${unplacedCount} item(s) could not be placed in the grid due to insufficient space (or invalid dimensions). Use the Table View to verify the items.</p>`;
+            }
+
+            let html = `<div class="visual-edit-panel glass-effect">
+                <h3><i data-lucide="layout-grid"></i> Grid Information</h3>
+                <div class="placement-info-box">
+                    <p style="font-weight: 600;">Display Type: Inventory-style Management</p>
+                    <p style="font-size: 14px;">
+                        **Left Click:** Click item A to select. Click item B to **swap** A and B.<br>
+                        **Delete/Backspace:** Delete the selected item.<br>
+                        **Right Click:** Open **Edit Modal**.<br>
+                        **Drag & Drop:** Always performs a **Swap** or **Move**.
+                    </p>
+                    ${unplacedWarning}
+                </div>
+                
+                <h3 style="margin-top: auto;"><i data-lucide="settings-2"></i> Actions</h3>
+                <button class="btn btn-primary" onclick="openAddModal(${tabId})"><i data-lucide="plus"></i> Add New Item (to Order ID ${items.length})</button>
+                <button class="btn btn-danger" onclick="confirmClearItems(${tabId})"><i data-lucide="eraser"></i> Clear All Items in Tab</button>
+            </div>`;
+            
+            return html;
+        }
+
+        function confirmClearItems(tabId) {
+            confirmAction(
+                `Clear Tab ${tabId + 1}?`,
+                `Are you sure you want to permanently **delete all ${currentShopData.tabs[tabId].length} items** from Tab ${tabId + 1}? This can be undone with the Undo button.`,
+                () => {
+                    pushUndo();
+                    currentShopData.tabs[tabId] = [];
+                    initializeGridState();
+                    const shopInfo = shopList.find(s => s.id === currentShopID);
+                    renderShopEditor(shopInfo.name, shopInfo.type); 
+                    saveToCache();
+                },
+                'btn-danger'
+            );
+        }
+
+        function getItemMetadata(cat, index) {
+            const catNum = parseInt(cat, 10);
+            const indexNum = parseInt(index, 10);
+            
+            const metadata = itemList[catNum]?.[indexNum];
+
+            const defaultName = `Unknown Item (${cat}, ${index})`;
+
+            return {
+                name: metadata ? metadata.name : defaultName,
+                slot: metadata ? metadata.slot : '0',
+                width: metadata && metadata.width > 0 ? metadata.width : 1,
+                height: metadata && metadata.height > 0 ? metadata.height : 1,
+            };
+        }
+        
+        function getItemName(cat, index) {
+            return getItemMetadata(cat, index).name;
+        }
+
+        function getAncientName(val) {
+             switch(val) {
+                case '5': return 'Set 1 (+5)';
+                case '6': return 'Set 2 (+6)';
+                case '9': return 'Set 1 (+9)';
+                case '10': return 'Set 2 (+10)';
+                default: return 'No Ancient';
+            }
+        }
+        
+        function getExcellentOptionList(exelString) {
+            if (!exelString || exelString === '-1' || exelString === '0') {
+                return [];
+            }
+            return exelString.split(';').map(id => excellentOptions[id] || `Unknown Option (${id})`);
+        }
+        
+        function getCurrencyName(type) {
+            switch (String(type)) {
+                case '0': return 'Zen';
+                case '1':
+                case '4': return 'Ruud';
+                case '2': return 'WCoin';
+                case '3': return 'Goblin Points';
+                case '5': return 'Rare Ticket';
+                case '6': return 'Jewel of Bless';
+                case '7': return 'Jewel of Soul';
+                case '8': return 'Jewel of Chaos';
+                default: return 'Unknown';
+            }
+        }
+        
+        function initializeGridState() {
+            gridState = Array(GRID_SIZE).fill(null);
+            const items = currentShopData.tabs[activeTab];
+            let placedCount = 0;
+            
+            // Ensure items are sorted by ID to make placement predictable
+            const sortedItems = [...items].sort((a, b) => {
+                const idA = parseInt(a.id, 10);
+                const idB = parseInt(b.id, 10);
+                return (isNaN(idA) ? Infinity : idA) - (isNaN(idB) ? Infinity : idB);
+            });
+            
+            sortedItems.forEach((item) => {
+                const { width, height } = getItemMetadata(item.cat, item.index);
+                
+                // Since we sorted a copy, we need to find the real index in the original array
+                const originalItemIndex = items.findIndex(i => i === item);
+
+                const placementSlot = findEmptyPlacement(width, height);
+
+                if (placementSlot !== null) {
+                    reserveArea(placementSlot, width, height, originalItemIndex);
+                    
+                    item.gridSlot = placementSlot;
+                    item.width = width;
+                    item.height = height;
+                    placedCount++;
+                } else {
+                    item.gridSlot = null; 
+                    item.width = width;
+                    item.height = height;
+                }
+            });
+            console.log(`Auto-placed ${placedCount}/${items.length} items in the grid.`);
+        }
+
+        function isAreaOccupied(startSlot, width, height) {
+            const startCol = startSlot % GRID_COLS;
+            const startRow = Math.floor(startSlot / GRID_COLS);
+
+            for (let row = startRow; row < startRow + height; row++) {
+                for (let col = startCol; col < startCol + width; col++) {
+                    const slot = row * GRID_COLS + col;
+
+                    if (row >= GRID_ROWS || col >= GRID_COLS) {
+                        return true; 
+                    }
+                    if (slot < 0 || slot >= GRID_SIZE) {
+                         return true; 
+                    }
+                    
+                    if (gridState[slot] !== null) {
+                        return true; 
+                    }
+                }
+            }
+            return false;
+        }
+
+        function reserveArea(startSlot, width, height, itemIndex) {
+            const startCol = startSlot % GRID_COLS;
+            const startRow = Math.floor(startSlot / GRID_COLS);
+            
+            const endCol = startCol + width;
+
+            for (let row = startRow; row < startRow + height; row++) {
+                for (let col = startCol; col < endCol; col++) {
+                    const slot = row * GRID_COLS + col;
+                    if (slot < GRID_SIZE) {
+                        gridState[slot] = itemIndex;
+                    }
+                }
+            }
+        }
+
+        function findEmptyPlacement(width, height) {
+            for (let i = 0; i < GRID_SIZE; i++) {
+                if (gridState[i] === null) {
+                    const col = i % GRID_COLS;
+                    const row = Math.floor(i / GRID_COLS);
+
+                    if (col + width <= GRID_COLS && row + height <= GRID_ROWS) {
+                        if (!isAreaOccupied(i, width, height)) {
+                            return i;
+                        }
+                    }
+                }
+            }
+            return null; 
+        }
+        
+        function populateTooltip(item, event) {
+            const tooltip = document.getElementById('itemTooltip');
+            if (!item) {
+                tooltip.classList.remove('show');
+                return;
+            }
+
+            const { name, width, height, slot } = getItemMetadata(item.cat, item.index);
+            
+            let itemQualityName = name;
+            if (item.ancient !== '0') {
+                itemQualityName = `Ancient ${name}`;
+            } else if (item.exel !== '-1' && item.exel !== '0') {
+                itemQualityName = `Excellent ${name}`;
+            }
+
+            let tooltipHtml = `<div class="tooltip-header">${itemQualityName}</div>`;
+            
+            tooltipHtml += `<div class="tooltip-prop">Level: <span>+${item.level}</span></div>`;
+            
+            const durLabel = itemStackData[parseInt(item.cat, 10)]?.[parseInt(item.index, 10)] ? 'Stack Size' : 'Durability';
+            tooltipHtml += `<div class="tooltip-prop">${durLabel}: <span>${item.dur}</span></div>`;
+            
+            tooltipHtml += `<div class="tooltip-prop" style="margin-bottom: 8px;">Price: <span>${item.price} ${getCurrencyName(shopList.find(s => s.id === currentShopID)?.type)}</span></div>`;
+            
+            tooltipHtml += `<div style="border-top: 1px solid rgba(255, 255, 255, 0.1); padding-top: 5px;"></div>`;
+            tooltipHtml += `<div class="tooltip-prop">Skill: <span>${item.skill == '1' ? 'Yes' : 'No'}</span></div>`;
+            tooltipHtml += `<div class="tooltip-prop">Luck: <span>${item.luck == '1' ? 'Yes' : 'No'}</span></div>`;
+            tooltipHtml += `<div class="tooltip-prop">Additional Option: <span>+${item.option}</span></div>`;
+            
+            const ancientName = getAncientName(item.ancient);
+            if (ancientName !== 'No Ancient') {
+                tooltipHtml += `<div class="tooltip-ancient" style="margin-top: 8px;">Ancient: <span>${ancientName}</span></div>`;
+            }
+
+            const exelOptions = getExcellentOptionList(item.exel);
+            if (exelOptions.length > 0) {
+                tooltipHtml += `<div class="tooltip-exel" style="margin-top: 8px; border-top: 1px solid var(--accent-green); padding-top: 5px;">Excellent Options:</div>`;
+                exelOptions.forEach(opt => tooltipHtml += `<div class="tooltip-exel" style="margin-left: 10px; font-size: 12px;">- ${opt}</div>`);
+            }
+            
+            const sockets = [item.socket1, item.socket2, item.socket3, item.socket4, item.socket5];
+            const socketCount = sockets.filter(s => s !== '65535' && s !== null).length;
+            
+            tooltipHtml += `<div class="tooltip-socket" style="margin-top: 8px; border-top: 1px solid var(--accent-red); padding-top: 5px;">Sockets: <span>${socketCount} / 5</span></div>`;
+            
+            tooltipHtml += `<div class="tooltip-prop" style="margin-top: 8px; border-top: 1px solid rgba(255, 255, 255, 0.1); padding-top: 5px; font-size: 10px;">
+                Editor ID (Cat, Index): <span>${item.cat}, ${item.index}</span>
+            </div>`; 
+            tooltipHtml += `<div class="tooltip-prop" style="font-size: 10px;">
+                Grid Order ID: <span>${item.id} (Slot ${item.gridSlot})</span>
+            </div>`; 
+            
+
+            tooltip.innerHTML = tooltipHtml;
+            tooltip.classList.add('show');
+            updateTooltipPosition(event);
+        }
+
+        function updateTooltipPosition(event) {
+            const tooltip = document.getElementById('itemTooltip');
+            if (!tooltip.classList.contains('show')) return;
+            
+            const TOOLTIP_OFFSET = 18; 
+            
+            tooltip.style.left = `0px`;
+            tooltip.style.top = `0px`;
+            
+            const tooltipHeight = tooltip.offsetHeight;
+            const tooltipWidth = tooltip.offsetWidth;
+            
+            let x = event.clientX + TOOLTIP_OFFSET;
+            let y = event.clientY + TOOLTIP_OFFSET; 
+            
+            if (x + tooltipWidth > window.innerWidth) {
+                x = event.clientX - tooltipWidth - TOOLTIP_OFFSET;
+            }
+            if (y + tooltipHeight > window.innerHeight) {
+                y = event.clientY - tooltipHeight - TOOLTIP_OFFSET; 
+            }
+            
+            if (x < 0) x = 0;
+            if (y < 0) { 
+                y = event.clientY + TOOLTIP_OFFSET; 
+            }
+
+            tooltip.style.left = `${x}px`;
+            tooltip.style.top = `${y}px`;
+        }
+
+        function handleGridHover(event, slotIndex, isEntering, itemIndex) {
+            
+            if (dragItemWrapper) {
+                 document.getElementById('itemTooltip').classList.remove('show');
+                 return;
+            }
+
+            if (isEntering && itemIndex !== null) {
+                const item = currentShopData.tabs[activeTab][itemIndex];
+                populateTooltip(item, event);
+            } else {
+                document.getElementById('itemTooltip').classList.remove('show');
+            }
+        }
+        
+        function adjustItemProperty(button, amount) {
+            const wrapper = button.parentElement;
+            const input = wrapper.querySelector('.inline-input');
+            if (!input) return;
+
+            let currentValue = parseInt(input.value, 10);
+            if (isNaN(currentValue)) currentValue = 0;
+
+            let newValue = currentValue + amount;
+
+            const min = input.getAttribute('min');
+            const max = input.getAttribute('max');
+            if (min !== null && newValue < parseInt(min, 10)) {
+                newValue = parseInt(min, 10);
+            }
+            if (max !== null && newValue > parseInt(max, 10)) {
+                newValue = parseInt(max, 10);
+            }
+            
+            if (input.dataset.property === 'price' && newValue < 0) {
+                newValue = 0;
+            }
+            
+            if (input.dataset.property === 'id' && newValue < 0) {
+                 newValue = 0;
+            }
+
+
+            input.value = newValue;
+
+            const changeEvent = new Event('change', { bubbles: true });
+            input.dispatchEvent(changeEvent);
+        }
+
+        function updateItemProperty(event) {
+            pushUndo();
+            
+            const { tabId, itemIndex, property } = event.target.dataset;
+            let value = event.target.value;
+            
+            if (property === 'id') {
+                value = String(parseInt(value, 10));
+                
+                // We need to clone because reorganize modifies in place
+                const item = currentShopData.tabs[tabId][itemIndex];
+                item.id = value;
+                
+                // Flag for manual change so we sort by ID instead of just index re-assignment
+                item.manualIdChange = true; 
+
+                reorganizeShopItems(item);
+                
+                saveToCache();
+                return; 
+            }
+
+            const item = currentShopData.tabs[tabId][itemIndex];
+            item[property] = value;
+            item.isModified = true;
+            delete item.isNew; 
+
+            saveToCache();
+            
+            const shopInfo = shopList.find(s => s.id === currentShopID);
+            renderShopEditor(shopInfo.name, shopInfo.type);
+        }
+        
+        function showInlineSuggestions(event, tabId, itemIndex) { 
+            const input = event.target;
+            const searchTerm = input.value.toLowerCase();
+            const suggestionsEl = document.getElementById(`inline-suggestions-${tabId}-${itemIndex}`);
+            if (!suggestionsEl) return;
+            
+            let html = '';
+            let count = 0;
+            
+            for (const [catIndex, items] of Object.entries(itemList)) {
+                if (count >= 50) break;
+                
+                for (const [innerItemIndex, metadata] of Object.entries(items)) {
+                    if (count >= 50) break;
+                    
+                    const itemName = metadata.name;
+                    const fullItemName = `(${catIndex}, ${innerItemIndex}) ${itemName}`;
+                    
+                    if (fullItemName.toLowerCase().includes(searchTerm)) {
+                        
+                        html += `<div class="suggestion-item" onmousedown="selectInlineItem(${tabId}, ${itemIndex}, '${catIndex}', '${innerItemIndex}', '${itemName.replace(/'/g, "\\'")}')">
+                                        <span class="suggestion-item-cat">${itemCategories[catIndex] || 'Cat ' + catIndex}</span> 
+                                        <span class="suggestion-item-id">(${catIndex}, ${innerItemIndex})</span> 
+                                        ${itemName}
+                                        <span class="suggestion-item-dim">(Slot ${metadata.slot} / ${metadata.width}x${metadata.height})</span>
+                                    </div>`;
+                        count++;
+                    }
+                }
+            }
+            suggestionsEl.innerHTML = html;
+            suggestionsEl.classList.add('show');
+        }
+
+        function hideInlineSuggestions(event, tabId, itemIndex) {
+            const suggestionsEl = document.getElementById(`inline-suggestions-${tabId}-${itemIndex}`);
+            setTimeout(() => {
+                if (suggestionsEl) suggestionsEl.classList.remove('show');
+                
+                if (currentShopData.tabs[tabId] && currentShopData.tabs[tabId][itemIndex]) {
+                    const item = currentShopData.tabs[tabId][itemIndex];
+                    const itemMetadata = getItemMetadata(item.cat, item.index);
+                    event.target.value = `(${item.cat}, ${item.index}) ${itemMetadata.name}`;
+                }
+            }, 200);
+        }
+
+        function selectInlineItem(tabId, itemIndex, cat, index, name) {
+            pushUndo(); 
+
+            const item = currentShopData.tabs[tabId][itemIndex];
+            const newMetadata = getItemMetadata(cat, index);
+
+            item.cat = cat;
+            item.index = index;
+            item.width = newMetadata.width; 
+            item.height = newMetadata.height;
+            item.slot = newMetadata.slot; 
+            item.isModified = true;
+            delete item.isNew;
+
+            initializeGridState();
+
+            saveToCache();
+
+            const shopInfo = shopList.find(s => s.id === currentShopID);
+            renderShopEditor(shopInfo.name, shopInfo.type);
+            
+            showStatus(`Item updated to '${name}' in Tab ${tabId + 1}.`, false, false, true);
+        }
+        
+        function populateExcellentOptionsModal(exelString) {
+            const container = document.getElementById('exelOptionsContainer');
+            container.innerHTML = ''; 
+            
+            const activeIds = (exelString || '-1').split(';').reduce((acc, id) => {
+                if (id.trim() !== '' && id.trim() !== '-1') acc[id] = true;
+                return acc;
+            }, {});
+
+            if (Object.keys(excellentOptions).length === 0) {
+                container.innerHTML = '<p style="color: var(--text-secondary);">No excellent options loaded. Check server files.</p>';
+                return;
+            }
+            
+            const sortedOptionIds = Object.keys(excellentOptions).sort((a, b) => parseInt(a) - parseInt(b));
+
+            for (const id of sortedOptionIds) {
+                const name = excellentOptions[id];
+                const isChecked = activeIds[id] ? 'checked' : '';
+                const shortName = name.length > 40 ? name.substring(0, 37) + '...' : name;
+                
+                const checkboxHtml = `
+                    <div title="${name}">
+                        <input type="checkbox" id="exel_opt_${id}" value="${id}" ${isChecked}>
+                        <label for="exel_opt_${id}">${shortName} <span style="color: var(--text-secondary); font-family: var(--font-data);">(${id})</span></label>
+                    </div>
+                `;
+                container.innerHTML += checkboxHtml;
+            }
+        }
+        
+        function updateDurabilityField(cat, index) {
+            const label = document.getElementById('itemDurLabel');
+            const input = document.getElementById('itemDur');
+            if (!label || !input) return;
+
+            const catNum = parseInt(cat, 10);
+            const indexNum = parseInt(index, 10);
+            const stackInfo = itemStackData[catNum]?.[indexNum];
+            
+            if (stackInfo) {
+                label.textContent = 'Stack Size';
+                input.max = stackInfo.maxStack || '255';
+            } else {
+                label.textContent = 'Durability';
+                input.max = '255';
+            }
+            input.value = Math.min(input.value, input.max); 
+        }
+        
+        function openAddModal(tabId) {
+            if (currentShopData.tabs[tabId].length >= MAX_SHOP_ITEMS) {
+                showStatus(`✗ Cannot add item: Tab ${tabId + 1} has reached the maximum limit of ${MAX_SHOP_ITEMS} items.`, true);
+                return;
+            }
+
+            editingItemIndex = null;
+            document.getElementById('modalTitle').textContent = `Add Item to Tab ${tabId + 1}`;
+            document.getElementById('itemForm').reset();
+            document.getElementById('modalTabId').value = tabId;
+            
+            document.getElementById('itemLevel').value = '0';
+            document.getElementById('itemDur').value = '0';
+            document.getElementById('itemOption').value = '0';
+            document.getElementById('itemPrice').value = '0';
+            document.getElementById('itemAncient').value = '0'; 
+            document.getElementById('socket1').value = '65535';
+            document.getElementById('socket2').value = '65535';
+            document.getElementById('socket3').value = '65535';
+            document.getElementById('socket4').value = '65535';
+            document.getElementById('socket5').value = '65535';
+            document.getElementById('itemCat').value = '';
+            document.getElementById('itemIndex').value = '';
+            document.getElementById('itemSearch').value = '';
+            
+            const nextId = currentShopData.tabs[tabId].length;
+            document.getElementById('itemIdDisplay').value = String(nextId);
+            
+            document.getElementById('itemSlotDisplay').value = '0'; 
+            
+            populateExcellentOptionsModal('-1'); 
+            updateDurabilityField(null, null); 
+            
+            document.getElementById('itemModal').classList.add('show');
+            lucide.createIcons();
+        }
+        
+        function openEditModal(tabId, itemIndex) {
+            const item = currentShopData.tabs[tabId][itemIndex];
+            if (!item) return;
+            
+            editingItemIndex = { tabId, itemIndex };
+            document.getElementById('modalTitle').textContent = `Edit Item in Tab ${tabId + 1}`;
+            document.getElementById('itemForm').reset();
+            document.getElementById('modalTabId').value = tabId;
+            document.getElementById('modalItemIndex').value = itemIndex;
+            
+            const itemMetadata = getItemMetadata(item.cat, item.index);
+            document.getElementById('itemSearch').value = `(${item.cat}, ${item.index}) ${itemMetadata.name}`;
+            document.getElementById('itemCat').value = item.cat;
+            document.getElementById('itemIndex').value = item.index;
+            document.getElementById('itemLevel').value = item.level;
+            document.getElementById('itemDur').value = item.dur;
+            document.getElementById('itemSkill').value = item.skill;
+            document.getElementById('itemLuck').value = item.luck;
+            document.getElementById('itemOption').value = item.option;
+            document.getElementById('itemAncient').value = item.ancient;
+            document.getElementById('itemPrice').value = item.price;
+            document.getElementById('socket1').value = item.socket1;
+            document.getElementById('socket2').value = item.socket2;
+            document.getElementById('socket3').value = item.socket3;
+            document.getElementById('socket4').value = item.socket4;
+            document.getElementById('socket5').value = item.socket5;
+            
+            document.getElementById('itemIdDisplay').value = item.id;
+            
+            document.getElementById('itemSlotDisplay').value = itemMetadata.slot || '0';
+            
+            populateExcellentOptionsModal(item.exel); 
+            updateDurabilityField(item.cat, item.index); 
+            
+            document.getElementById('itemModal').classList.add('show');
+            lucide.createIcons();
+        }
+
+        function closeModal() {
+            document.getElementById('itemModal').classList.remove('show');
+        }
+        
+        function duplicateItem(tabId, itemIndex) {
+            if (currentShopData.tabs[tabId].length >= MAX_SHOP_ITEMS) {
+                showStatus(`✗ Cannot duplicate item: Tab ${tabId + 1} has reached the maximum limit of ${MAX_SHOP_ITEMS} items.`, true);
+                return;
+            }
+
+            if (!currentShopData.tabs[tabId] || !currentShopData.tabs[tabId][itemIndex]) return;
+
+            pushUndo(); 
+
+            const itemToCopy = currentShopData.tabs[tabId][itemIndex];
+            const newItem = JSON.parse(JSON.stringify(itemToCopy));
+            
+            newItem.isNew = true;
+            delete newItem.isModified;
+            
+            const nextId = currentShopData.tabs[tabId].length;
+            newItem.id = String(nextId);
+            
+            const dims = getItemMetadata(newItem.cat, newItem.index);
+            newItem.width = dims.width;
+            newItem.height = dims.height;
+            newItem.slot = dims.slot;
+
+            currentShopData.tabs[tabId].splice(itemIndex + 1, 0, newItem);
+            
+            reorganizeShopItems(newItem);
+            
+            const shopInfo = shopList.find(s => s.id === currentShopID);
+            renderShopEditor(shopInfo.name, shopInfo.type);
+            saveToCache();
+            
+            showStatus(`Item '${getItemName(newItem.cat, newItem.index)}' duplicated.`, false, false, true);
+        }
+
+        function deleteItem(tabId, itemIndex) {
+            const item = currentShopData.tabs[tabId][itemIndex];
+            const itemName = getItemName(item.cat, item.index);
+            confirmAction(
+                `Delete ${itemName}?`,
+                `Are you sure you want to delete (${item.cat}, ${item.index}) ${itemName} from Tab ${tabId + 1}?`,
+                () => {
+                    pushUndo();
+                    currentShopData.tabs[tabId].splice(itemIndex, 1);
+                    
+                    reorganizeShopItems(null); 
+                    
+                    const shopInfo = shopList.find(s => s.id === currentShopID);
+                    renderShopEditor(shopInfo.name, shopInfo.type); 
+                    saveToCache();
+                }
+            );
+        }
+
+        function toggleSelectAll(checkbox, tabId) {
+            document.querySelectorAll(`.item-checkbox-${tabId}`).forEach(cb => {
+                cb.checked = checkbox.checked;
+            });
+            updateActionButtons(); 
+        }
+
+        function copySelectedItems(tabId) {
+            const checkboxes = document.querySelectorAll(`#tabContentContainer .item-checkbox:checked`);
+            if (checkboxes.length === 0) {
+                showStatus('No items selected to copy.', true, false, false);
+                return;
+            }
+            
+            itemClipboard = []; 
+            checkboxes.forEach(cb => {
+                const itemIndex = parseInt(cb.dataset.itemIndex, 10);
+                const item = currentShopData.tabs[tabId][itemIndex];
+                if (item) {
+                    const clipboardItem = JSON.parse(JSON.stringify(item));
+                    const dims = getItemMetadata(item.cat, item.index);
+                    clipboardItem.width = dims.width;
+                    clipboardItem.height = dims.height;
+                    clipboardItem.slot = dims.slot;
+                    itemClipboard.push(clipboardItem);
+                }
+            });
+            
+            showStatus(`Copied ${checkboxes.length} items. Clipboard now has ${itemClipboard.length} items.`, false, false, true);
+            updateActionButtons();
+            
+            checkboxes.forEach(cb => cb.checked = false);
+            const selectAllCheckbox = document.querySelector(`#tabContentContainer th .item-checkbox`);
+            if(selectAllCheckbox) selectAllCheckbox.checked = false;
+        }
+
+        function pasteItems() {
+            if (itemClipboard.length === 0) {
+                showStatus('Clipboard is empty.', true);
+                return;
+            }
+            
+            const targetTabItems = currentShopData.tabs[activeTab];
+            const spaceAvailable = MAX_SHOP_ITEMS - targetTabItems.length;
+
+            if (itemClipboard.length > spaceAvailable) {
+                 showStatus(`✗ Paste failed: Only ${spaceAvailable} slot(s) remaining in Tab ${activeTab + 1}.`, true);
+                 return;
+            }
+
+            pushUndo();
+            
+            const newItems = JSON.parse(JSON.stringify(itemClipboard));
+            const startId = targetTabItems.length;
+
+            newItems.forEach((item, index) => {
+                item.isNew = true; 
+                delete item.isModified;
+                
+                item.id = String(startId + index); 
+                
+                targetTabItems.push(item);
+            });
+            
+            reorganizeShopItems(null); 
+            
+            showStatus(`Pasted ${newItems.length} items into Tab ${activeTab + 1}.`, false);
+            
+            const shopInfo = shopList.find(s => s.id === currentShopID);
+            renderShopEditor(shopInfo.name, shopInfo.type); 
+            saveToCache();
+        }
+
+        function clearClipboard() {
+            if (itemClipboard.length > 0) {
+                itemClipboard = [];
+                showStatus('Clipboard cleared.', false, false, true);
+                updateActionButtons();
+            }
+        }
+        
+        function confirmDeleteSelected(tabId) {
+            const checkboxes = document.querySelectorAll(`#tabContentContainer .item-checkbox:checked`);
+            if (checkboxes.length === 0) {
+                showStatus('No items selected to delete.', true);
+                return;
+            }
+            
+            confirmAction(
+                `Delete ${checkboxes.length} Item(s)?`,
+                `Are you sure you want to permanently delete ${checkboxes.length} selected item(s) from Tab ${tabId + 1}? This can be undone with the Undo button.`,
+                () => {
+                    deleteSelectedItems(tabId);
+                }
+            );
+        }
+
+        function deleteSelectedItems(tabId) {
+            const checkboxes = document.querySelectorAll(`#tabContentContainer .item-checkbox:checked`);
+            if (checkboxes.length === 0) return; 
+
+            pushUndo();
+
+            const indicesToDelete = [];
+            checkboxes.forEach(cb => {
+                indicesToDelete.push(parseInt(cb.dataset.itemIndex, 10));
+            });
+
+            indicesToDelete.sort((a, b) => b - a);
+
+            indicesToDelete.forEach(index => {
+                currentShopData.tabs[tabId].splice(index, 1);
+            });
+
+            showStatus(`Deleted ${indicesToDelete.length} items from Tab ${tabId + 1}.`, false);
+
+            reorganizeShopItems(null); 
+            
+            const shopInfo = shopList.find(s => s.id === currentShopID);
+            renderShopEditor(shopInfo.name, shopInfo.type); 
+            saveToCache();
+        }
+
+        document.getElementById('itemSearch').addEventListener('input', function(e) {
+            let html = '';
+            let count = 0;
+            const searchTerm = e.target.value.toLowerCase();
+            const suggestions = document.getElementById('itemSuggestions');
+            
+            if (searchTerm.length < 2) {
+                suggestions.classList.remove('show');
+                return;
+            }
+            
+            for (const [catIndex, items] of Object.entries(itemList)) {
+                if (count >= 50) break;
+                for (const [itemIndex, metadata] of Object.entries(items)) {
+                    if (count >= 50) break;
+                    const itemName = metadata.name;
+                    const fullItemName = `(${catIndex}, ${itemIndex}) ${itemName}`;
+                    
+                    if (fullItemName.toLowerCase().includes(searchTerm)) {
+                        
+                        html += `<div class="suggestion-item" onclick="selectItem('${catIndex}', '${itemIndex}', '${itemName.replace(/'/g, "\\'")}')">
+                            <span class="suggestion-item-cat">${itemCategories[catIndex] || 'Cat ' + catIndex}</span> 
+                            <span class="suggestion-item-id">(${catIndex}, ${itemIndex})</span> 
+                            ${itemName}
+                            <span class="suggestion-item-dim">(Slot ${metadata.slot} / ${metadata.width}x${metadata.height})</span>
+                        </div>`;
+                        count++;
+                    }
+                }
+            }
+            suggestions.innerHTML = html;
+            suggestions.classList.toggle('show', !!html);
+        });
+        
+        function selectItem(cat, index, name) {
+            document.getElementById('itemSearch').value = `(${cat}, ${index}) ${name}`;
+            document.getElementById('itemCat').value = cat;
+            document.getElementById('itemIndex').value = index;
+            document.getElementById('itemSuggestions').classList.remove('show');
+            
+            const newMetadata = getItemMetadata(cat, index);
+            document.getElementById('itemSlotDisplay').value = newMetadata.slot;
+            
+            updateDurabilityField(cat, index); 
+        }
+        
+        document.getElementById('itemForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const tabId = parseInt(document.getElementById('modalTabId').value);
+            
+            if (isNaN(tabId)) {
+                showStatus('Error: Could not determine which tab to save to.', true);
+                return;
+            }
+            
+            const checkedExelOptions = [];
+            document.querySelectorAll('#exelOptionsContainer input[type="checkbox"]:checked').forEach(cb => {
+                checkedExelOptions.push(cb.value);
+            });
+            const exelValue = checkedExelOptions.length > 0 ? checkedExelOptions.join(';') : '-1';
+            
+            const newCat = document.getElementById('itemCat').value;
+            const newIndex = document.getElementById('itemIndex').value;
+            const newId = document.getElementById('itemIdDisplay').value; 
+
+            if (!newCat || !newIndex) {
+                showStatus('Error: Item Category and Index are required. Use the search.', true);
+                return;
+            }
+
+            const newMetadata = getItemMetadata(newCat, newIndex);
+            
+            const newItemData = {
+                cat: newCat,
+                index: newIndex,
+                level: document.getElementById('itemLevel').value,
+                dur: document.getElementById('itemDur').value,
+                skill: document.getElementById('itemSkill').value,
+                luck: document.getElementById('itemLuck').value,
+                option: document.getElementById('itemOption').value,
+                exel: exelValue, 
+                ancient: document.getElementById('itemAncient').value,
+                socket1: document.getElementById('socket1').value,
+                socket2: document.getElementById('socket2').value,
+                socket3: document.getElementById('socket3').value,
+                socket4: document.getElementById('socket4').value,
+                socket5: document.getElementById('socket5').value,
+                price: document.getElementById('itemPrice').value,
+                id: newId, 
+                width: newMetadata.width,
+                height: newMetadata.height,
+                slot: newMetadata.slot 
+            };
+            
+            pushUndo();
+
+            if (editingItemIndex && editingItemIndex.tabId === tabId) {
+                const itemIndex = editingItemIndex.itemIndex;
+                newItemData.isModified = true;
+                currentShopData.tabs[tabId][itemIndex] = newItemData;
+
+            } else {
+                if (currentShopData.tabs[tabId].length >= MAX_SHOP_ITEMS) {
+                    showStatus(`✗ Save failed: Tab ${tabId + 1} is already full. Max limit is ${MAX_SHOP_ITEMS}.`, true);
+                    return;
+                }
+                
+                newItemData.isNew = true;
+                currentShopData.tabs[tabId].push(newItemData);
+            }
+            
+            reorganizeShopItems(newItemData); 
+            
+            closeModal();
+            const shopInfo = shopList.find(s => s.id === currentShopID);
+            renderShopEditor(shopInfo.name, shopInfo.type); 
+            saveToCache();
+        });
+
+        function updateShopCurrency(event) {
+            const newType = event.target.value;
+            const shopInfo = shopList.find(s => s.id === currentShopID);
+            if (!shopInfo) return;
+
+            shopInfo.type = newType;
+            shopInfo.isModified = true; 
+            
+            const saveBtn = document.getElementById('saveShopListBtn');
+            saveBtn.disabled = false;
+            saveBtn.classList.add('btn-danger'); 
+            saveBtn.classList.remove('btn-success'); 
+            
+            renderShopEditor(shopInfo.name, shopInfo.type);
+            
+            saveToCache(); 
+            showStatus('Shop currency type changed. Click "Save ShopList" to make this change permanent.', false, true);
+        }
+
+        function generateShopListXml() {
+            let xml = originalShopListHeader + '<ShopList>\n';
+            
+            shopList.forEach(shop => {
+                xml += `\t\t<Shop ID="${shop.id}" Name="${shop.name}" MaxPkLevel="${shop.maxPkLevel}" Message="${shop.message}" Flags="${shop.flags}" Type="${shop.type}" MaxBuyCount="${shop.maxBuyCount}" MaxBuyType="${shop.maxBuyType}" FileScriptsName="${shop.filename}" />\n`;
+            });
+            
+            xml += '</ShopList>\n';
+            return xml;
+        }
+
+        async function saveShopList() {
+            const saveButton = document.getElementById('saveShopListBtn');
+            saveButton.disabled = true;
+            saveButton.innerHTML = `<i data-lucide="loader-2" class="spin"></i> Saving...`;
+            lucide.createIcons();
+            document.querySelectorAll('.spin').forEach(el => el.animate([{ transform: 'rotate(0deg)' }, { transform: 'rotate(360deg)' }], { duration: 1000, iterations: Infinity }));
+
+            const xmlContent = generateShopListXml();
+
+            try {
+                const response = await fetch(`${SERVER_URL}/api/save-shoplist`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ newXmlContent: xmlContent }),
+                });
+                if (!response.ok) throw new Error(`Server responded with status: ${response.status}`);
+
+                showStatus('✓ ShopList.xml saved successfully!', false);
+                
+                saveButton.classList.remove('btn-danger');
+                saveButton.classList.add('btn-success'); 
+                
+                const shopInfo = shopList.find(s => s.id === currentShopID);
+                if (shopInfo) delete shopInfo.isModified;
+                saveToCache();
+
+            } catch (error) {
+                console.error('Failed to save ShopList.xml:', error);
+                showStatus(`✗ Error: Could not save ShopList.xml. Changes are still in local cache.`, true);
+                saveButton.disabled = false; 
+            } finally {
+                setTimeout(() => {
+                    saveButton.disabled = shopList.find(s => s.id === currentShopID)?.isModified === undefined;
+                    saveButton.classList.remove('btn-success');
+                    saveButton.innerHTML = `<i data-lucide="save"></i> Save ShopList`;
+                    lucide.createIcons();
+                }, 3000);
+            }
+        }
+
+        function openGuideModal() { 
+             if (dragItemWrapper || dragOriginalWrapper) {
+                 showStatus('Please complete the drag operation before opening the guide.', true);
+                 return;
+             }
+             document.getElementById('guideModal').classList.add('show'); 
+             lucide.createIcons(); 
+        }
+        function closeGuideModal() { document.getElementById('guideModal').classList.remove('show'); }
+        
+        document.getElementById('itemModal').addEventListener('click', function (e) { if (e.target === this) closeModal(); }); 
+        document.getElementById('guideModal').addEventListener('click', function (e) { if (e.target === this) closeGuideModal(); }); 
+        document.getElementById('confirmModal').addEventListener('click', function (e) { if (e.target === this) closeConfirmModal(); }); 
+        
+        document.addEventListener('click', function (e) { 
+            if (!e.target.closest('.item-search')) document.getElementById('itemSuggestions').classList.remove('show'); 
+            if (!e.target.closest('.inline-item-search')) {
+                document.querySelectorAll('.inline-suggestions').forEach(el => el.classList.remove('show'));
+            }
+        });
+        
+        function generateShopFileXml() {
+            let xml = originalXMLHeader + '<ShopItem>\n';
+            
+            currentShopData.tabs.forEach((items, tabIndex) => {
+                const tabId = tabIndex + 1;
+                
+                const sortedItems = [...items].sort((a, b) => {
+                    const idA = parseInt(a.id, 10);
+                    const idB = parseInt(b.id, 10);
+                    return (isNaN(idA) ? Infinity : idA) - (isNaN(idB) ? Infinity : idB);
+                });
+                
+                if (sortedItems.length === 0) {
+                    xml += `\t<Tab Id="${tabId}" />\n`;
+                } else {
+                    xml += `\t<Tab Id="${tabId}">\n`;
+                    sortedItems.forEach(item => {
+                        const itemCat = item.cat.toString().padStart(2, '0');
+                        const itemIndex = item.index.toString().padStart(3, '0');
+                        
+                        const sockets = `Socket1="${item.socket1 || '65535'}" Socket2="${item.socket2 || '65535'}" Socket3="${item.socket3 || '65535'}" Socket4="${item.socket4 || '65535'}" Socket5="${item.socket5 || '65535'}"`;
+                        xml += `\t\t<Item ItemCat="${itemCat}" ItemIndex="${itemIndex}" ItemLevel="${item.level}" ItemDur="${item.dur}" ItemSkill="${item.skill}" ItemLuck="${item.luck}" ItemOption="${item.option}" ItemExel="${item.exel}" ItemAncient="${item.ancient}" ${sockets} Price="${item.price}" ID="${item.id}" />\n`;
+                    });
+                    xml += `\t</Tab>\n`;
+                }
+            });
+            
+            xml += '</ShopItem>\n';
+            return xml;
+        }
+
+        async function saveChangesToServer() { 
+            if (!currentShopFilename) {
+                showStatus('No shop selected. Cannot save.', true);
+                return;
+            }
+            
+            const saveButton = document.querySelector('.btn-success'); 
+            saveButton.disabled = true; 
+            saveButton.innerHTML = `<i data-lucide="loader-2" class="spin"></i> Saving...`; 
+            lucide.createIcons(); 
+            document.querySelectorAll('.spin').forEach(el => el.animate([{ transform: 'rotate(0deg)' }, { transform: 'rotate(360deg)' }], { duration: 1000, iterations: Infinity }));
+            
+            const xmlContent = generateShopFileXml();
+            
+            try { 
+                const response = await fetch(`${SERVER_URL}/api/save-shop-file/${currentShopFilename}`, {
+                    method: 'POST', 
+                    headers: { 'Content-Type': 'application/json' }, 
+                    body: JSON.stringify({ newXmlContent: xmlContent }), 
+                }); 
+                if (!response.ok) throw new Error(`Server responded with status: ${response.status}`); 
+                
+                showStatus(`✓ Changes for ${currentShopFilename} saved successfully!`, false);
+                
+                let cache = JSON.parse(localStorage.getItem(CACHE_KEY) || '{}');
+                delete cache[currentShopID];
+                localStorage.setItem(CACHE_KEY, JSON.stringify(cache));
+
+                const currentShop = shopList.find(s => s.id === currentShopID);
+                selectShop(currentShop.id, currentShop.name, currentShop.filename);
+                
+            } catch (error) { 
+                console.error('Failed to save changes:', error); 
+                showStatus(`✗ Error: Could not save changes. Your work is still cached locally.`, true); 
+            } finally { 
+                saveButton.disabled = false; 
+                saveButton.innerHTML = `<i data-lucide="save"></i> Save Changes`; 
+                lucide.createIcons(); 
+            } 
+        }
+    </script>
+</body>
+</html>
