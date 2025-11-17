@@ -9,7 +9,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@500;700&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="public/css/style.css">
     <script src="https://unpkg.com/lucide@latest"></script>
 </head>
 <body>
@@ -86,7 +86,7 @@
         <div id="statusBar" class="status-bar"></div>
         
         <!-- Data Management (Cache) -->
-        <div id="dataManagementSection" class="glass-effect" style="display: none; padding: 20px;">
+        <div id="dataManagementSection" style="display: none; padding: 20px;">
             <div style="display: flex; justify-content: space-between; align-items: center;">
                 <div>
                     <h3><i data-lucide="database"></i>Data Management</h3>
@@ -100,7 +100,7 @@
         
         <!-- Main Content (Editor Panel) -->
         <div class="main-content" id="mainContent" style="display: none;">
-            <div class="editor-panel glass-effect" style="padding: 25px;">
+            <div class="editor-panel" style="padding: 25px;">
                 <!-- Tab Navigation -->
                 <div class="tab-nav">
                     <button class="tab-btn active" data-tab-name="zen" onclick="setActiveTab('zen')"><i data-lucide="gem" style="width: 16px;"></i> Zen Drop Rates</button>

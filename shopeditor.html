@@ -32,8 +32,8 @@
         </div>
     </div>
     
-    <div class="container">
-        <div class="header glass-effect">
+    <div class="container glass-effect">
+        <div class="header">
             <div class="header-controls">
                 <label>Author:</label>
                 <div id="authorDisplayView" style="display: flex; align-items: center;">
@@ -58,7 +58,7 @@
         
         <div id="statusBar" class="status-bar"></div>
         
-        <div id="dataManagementSection" class="glass-effect" style="display: none;">
+        <div id="dataManagementSection" style="display: none; padding: 20px;">
             <div style="display: flex; justify-content: space-between; align-items: center;">
                 <div>
                     <h3><i data-lucide="database"></i>Data Management</h3>
@@ -71,12 +71,12 @@
         </div>
         
         <div class="main-content" id="mainContent" style="display: none;">
-            <div class="sidebar glass-effect">
+            <div class="sidebar" style="padding: 20px;">
                 <h3><i data-lucide="contact"></i>Shops</h3>
                 <div class="search-bar"><input type="text" id="shopSearch" oninput="filterShops()" placeholder="Search shops..."></div>
                 <div class="shop-list" id="shopList"></div>
             </div>
-            <div class="editor-panel glass-effect">
+            <div class="editor-panel">
                 <div id="editorContent"><div class="empty-state"><h3>Select a Shop</h3><p>Choose a shop from the list on the left to start editing.</p></div></div>
             </div>
         </div>

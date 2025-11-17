@@ -9,15 +9,15 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@500&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="public/css/style.css">
     <script src="https://unpkg.com/lucide@latest"></script>
 </head>
 <body>
 
-    <div class="container">
+    <div class="container glass-effect">
         <!-- Main Dashboard Header -->
-        <header class="header glass-effect">
-            <h1><i data-lucide="server"></i>Game Administrator Dashboard</h1>
+        <header class="header">
+            <h1><i data-lucide="server"></i>Game Administrator Dashboard<i data-lucide="shield-check"></i></h1>
             <p>Select a module to begin managing server data</p>
         </header>
 
@@ -25,7 +25,7 @@
         <main class="module-grid">
 
             <!-- Module 1: Monster Spawn Editor (Active) -->
-            <a href="monsterspawneditor.html" class="module-card glass-effect">
+            <a href="monsterspawneditor.html" class="module-card">
                 <div class="module-card-icon">
                     <i data-lucide="siren"></i>
                 </div>
@@ -37,7 +37,7 @@
             </a>
             
             <!-- NEW: Module 2: Monster Drop Editor (Active) -->
-            <a href="monsterdropeditor.html" class="module-card glass-effect">
+            <a href="monsterdropeditor.html" class="module-card">
                 <div class="module-card-icon">
                     <i data-lucide="package"></i>
                 </div>
@@ -49,7 +49,7 @@
             </a>
 
             <!-- Module 3: Zen & Drop Editor (Active) -->
-            <a href="zendropeditor.html" class="module-card glass-effect">
+            <a href="zendropeditor.html" class="module-card">
                 <div class="module-card-icon">
                     <i data-lucide="droplets"></i>
                 </div>
@@ -61,7 +61,7 @@
             </a>
 
             <!-- Module 4: Shop Manager (Active) -->
-            <a href="shopeditor.html" class="module-card glass-effect">
+            <a href="shopeditor.html" class="module-card">
                 <div class="module-card-icon">
                     <i data-lucide="store"></i>
                 </div>
@@ -73,7 +73,7 @@
             </a>
             
             <!-- Module 5: Chaos Mix Editor (Active) -->
-            <a href="mixeditor.html" class="module-card glass-effect">
+            <a href="mixeditor.html" class="module-card">
                 <div class="module-card-icon">
                     <i data-lucide="flask-conical"></i>
                 </div>
@@ -85,7 +85,7 @@
             </a>
 
             <!-- Module 6: Event Scheduler (Coming Soon) -->
-            <a href="#" class="module-card glass-effect disabled" onclick="return false;">
+            <a href="#" class="module-card disabled" onclick="return false;">
                 <div class="module-card-icon">
                     <i data-lucide="calendar-clock"></i>
                 </div>
