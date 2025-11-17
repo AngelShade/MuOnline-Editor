@@ -1,0 +1,8 @@
+Checking file paths...
+All file paths verified.
+Spawn Editor server running on http://localhost:3000
+Monster Backups will be saved to: /app/data/Monster/Backups
+Zen Backups will be saved to: /app/data/Item/Drop/Backups
+Shop Backups will be saved to: /app/data/Shops/Backups
+Mix Backups will be saved to: /app/data/Mix/Backups
+Map Drop Backups will be saved to: /app/data/Item/Drop/EachMonsterMapDrop/Backups
