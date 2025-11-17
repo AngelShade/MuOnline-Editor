@@ -8,7 +8,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@500&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="public/css/style.css">
 
     <script src="https://unpkg.com/lucide@latest"></script>
 </head>
@@ -59,12 +59,12 @@
         <div id="statusBar" class="status-bar"></div>
         
         <div class="main-content" id="mainContent">
-            <div class="sidebar glass-effect" style="padding: 20px;">
+            <div class="sidebar" style="padding: 20px;">
                 <h3><i data-lucide="map"></i>Map Bag Files</h3>
                 <div class="search-bar" style="margin-bottom: 15px;"><input type="text" id="mapSearch" oninput="filterMapFiles()" placeholder="Search map files..."></div>
                 <div class="map-list" id="mapFileList"></div>
             </div>
-            <div class="editor-panel glass-effect" style="padding: 25px;">
+            <div class="editor-panel" style="padding: 25px;">
                 <div id="editorContent">
                     <div class="empty-state">
                         <h3>Loading data...</h3>
