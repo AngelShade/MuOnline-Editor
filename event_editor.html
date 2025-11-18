@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Event Editor</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <h1>Event Editor</h1>
+    <div id="editor-container">
+        <table id="event-table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Name</th>
+                    <th>Start Time</th>
+                    <th>Duration</th>
+                    <th>Enabled</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Event rows will be inserted here -->
+            </tbody>
+        </table>
+        <div id="edit-form">
+            <input type="hidden" id="edit-index">
+            <input type="text" id="edit-id" placeholder="ID">
+            <input type="text" id="edit-name" placeholder="Name">
+            <input type="text" id="edit-start-time" placeholder="Start Time">
+            <input type="text" id="edit-duration" placeholder="Duration">
+            <input type="checkbox" id="edit-enabled">
+            <label for="edit-enabled">Enabled</label>
+            <button id="save-button">Save</button>
+            <button id="cancel-button">Cancel</button>
+        </div>
+        <button id="add-button">Add Event</button>
+    </div>
+    <script src="js/event_editor.js"></script>
+</body>
+</html>

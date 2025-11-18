@@ -2,6 +2,7 @@ const express = require('express');
 const fs = require('fs').promises;
 const cors = require('cors');
 const path = require('path');
+const xml2js = require('xml2js');
 const config = require('./config.json');
 
 const app = express();
@@ -36,6 +37,7 @@ const SOCKET_ITEM_DROP_RATES_PATH = resolvePath(config.SOCKET_ITEM_DROP_RATES_PA
 const ITEM_DROP_RATE_CONTROL_PATH = resolvePath(config.ITEM_DROP_RATE_CONTROL_PATH);
 const EVENT_SCHEDULE_PATH = resolvePath(config.EVENT_SCHEDULE_PATH);
 const EVENT_BACKUP_DIR = resolvePath(config.EVENT_BACKUP_DIR);
+const EVENT_XML_PATH = resolvePath('data/Event/Event.xml');
 
 // --- Mix Editor Paths ---
 const MIX_PATH = path.join(MIX_DIR, 'Mix.xml');
@@ -135,6 +137,10 @@ app.get('/eventscheduler.html', (req, res) => {
     res.sendFile(path.join(__dirname, 'eventscheduler.html'));
 });
 
+app.get('/event_editor.html', (req, res) => {
+    res.sendFile(path.join(__dirname, 'event_editor.html'));
+});
+
 
 // --- Helper Functions ---
 /**
@@ -162,6 +168,20 @@ async function createBackup(filePath, backupDir) {
         // But we must log the error.
     }
 }
+
+app.get('/api/events', async (req, res) => {
+    try {
+        await fs.access(EVENT_XML_PATH);
+        const xmlData = await fs.readFile(EVENT_XML_PATH, 'utf8');
+        const parser = new xml2js.Parser({ explicitArray: false, mergeAttrs: true });
+        const result = await parser.parseStringPromise(xmlData);
+        const events = result.Events.Event ? (Array.isArray(result.Events.Event) ? result.Events.Event : [result.Events.Event]) : [];
+        res.json(events);
+    } catch (error) {
+        console.error('Error reading Event.xml:', error);
+        res.status(500).send('Error reading Event.xml');
+    }
+});
 
 /**
  * @api {get} /api/files Get Monster Spawn and List Files
@@ -500,6 +520,23 @@ app.get('/api/event-data', async (req, res) => {
 
 // --- SAVE ENDPOINTS ---
 
+app.post('/api/events', async (req, res) => {
+    try {
+        const events = req.body;
+        const builder = new xml2js.Builder({
+            renderOpts: { pretty: true, indent: '    ', newline: '\n' },
+            xmldec: { version: '1.0', encoding: 'utf-8' }
+        });
+        const xml = builder.buildObject({ Events: { Event: events } });
+        await createBackup(EVENT_XML_PATH, EVENT_BACKUP_DIR);
+        await fs.writeFile(EVENT_XML_PATH, xml, 'utf8');
+        res.status(200).send('Events saved successfully');
+    } catch (error) {
+        console.error('Error saving Event.xml:', error);
+        res.status(500).send('Error saving Event.xml');
+    }
+});
+
 /**
  * @api {post} /api/save Save MonsterSpawn.xml
  * @apiName SaveMonsterSpawn
@@ -802,6 +839,7 @@ app.listen(PORT, async () => {
         await fs.access(SOCKET_ITEM_DROP_RATES_PATH);
         await fs.access(ITEM_DROP_RATE_CONTROL_PATH);
         await fs.access(EVENT_SCHEDULE_PATH);
+        await fs.access(EVENT_XML_PATH);
         
         console.log('All file paths verified.');
         
