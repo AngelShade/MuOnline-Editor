@@ -30,6 +30,8 @@ const MASTERY_EXC_OPTIONS_PATH = resolvePath(config.MASTERY_EXC_OPTIONS_PATH);
 const PENTAGRAM_DROP_RATE_PATH = resolvePath(config.PENTAGRAM_DROP_RATE_PATH);
 const SOCKET_ITEM_DROP_RATES_PATH = resolvePath(config.SOCKET_ITEM_DROP_RATES_PATH);
 const ITEM_DROP_RATE_CONTROL_PATH = resolvePath(config.ITEM_DROP_RATE_CONTROL_PATH);
+const EVENT_DIR = resolvePath(config.EVENT_DIR || 'data/Event');
+const EVENT_BACKUP_DIR = resolvePath(config.EVENT_BACKUP_DIR || path.join('data', 'Event', 'Backups'));
 
 // --- Mix Editor Paths ---
 const MIX_PATH = path.join(MIX_DIR, 'Mix.xml');
@@ -77,6 +79,10 @@ app.get('/zendropeditor.html', (req, res) => {
     res.sendFile(path.join(__dirname, 'zendropeditor.html'));
 });
 
+app.get('/eventscheduler.html', (req, res) => {
+    res.sendFile(path.join(__dirname, 'eventscheduler.html'));
+});
+
 
 // --- Helper Functions ---
 /**
@@ -102,6 +108,86 @@ async function createBackup(filePath, backupDir) {
         // We don't throw here, saving is more critical than backing up
         // But we must log the error.
     }
+}
+
+/**
+ * Read the top-of-file header from a text/XML/INI file without parsing the entire content.
+ * Returns an object { header: string, body: string }
+ */
+async function readFileHeader(filePath, maxChars = 10000) {
+    try {
+        const content = await fs.readFile(filePath, 'utf8');
+        const sample = content.slice(0, maxChars);
+
+        // If XML and has leading comment blocks <!-- ... -->, extract them
+        const xmlCommentMatch = sample.match(/^\s*(?:<\?xml[^>]*>\s*)?(?:<!--([\s\S]*?)-->\s*)+/);
+        if (xmlCommentMatch) {
+            // Collect consecutive comment blocks
+            const commentBlocks = [];
+            const commentRegex = /<!--([\s\S]*?)-->/g;
+            let m;
+            while ((m = commentRegex.exec(sample)) !== null) {
+                commentBlocks.push(m[1].trim());
+            }
+            const header = commentBlocks.join('\n');
+            const restIndex = sample.indexOf('-->') + 3;
+            const body = content.slice(restIndex).trimStart();
+            return { header: header.trim(), body };
+        }
+
+        // Otherwise, read lines until a blank line or a non-comment line (for INI-like or code files)
+        const lines = sample.split(/\r?\n/);
+        const headerLines = [];
+        let i = 0;
+        for (; i < lines.length; i++) {
+            const ln = lines[i];
+            if (ln.trim() === '') break;
+            // consider comment markers
+            if (/^\s*(?:\/\/|;|#)/.test(ln) || /^\s*\/\*/.test(ln) || /^\s*<!--/.test(ln)) {
+                headerLines.push(ln.replace(/^\s*(?:\/\/|;|#)\s?/, '').replace(/^\s*<!--\s?/, '').replace(/-->\s*$/, ''));
+                continue;
+            }
+            // For INI files, lines like [Section] or key=value at top could be part of header as well
+            if (/^[a-zA-Z0-9_\[\];#\-\s=:,]+$/.test(ln) && ln.length < 200) {
+                headerLines.push(ln);
+                continue;
+            }
+            // otherwise stop
+            break;
+        }
+
+        const header = headerLines.join('\n').trim();
+        const body = content.slice(i ? content.indexOf(lines[i]) : 0).trimStart();
+        return { header, body };
+    } catch (err) {
+        return { header: '', body: '' };
+    }
+}
+
+/**
+ * Parse a simple header block into key/value pairs.
+ * Supports lines like `Key=Value`, `Key: Value`, `key value` and CSV-like directives.
+ */
+function parseHeaderToKV(header) {
+    if (!header) return {};
+    const lines = header.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+    const out = {};
+    for (const ln of lines) {
+        // key = value
+        const mEq = ln.match(/^([^=:\s]+)\s*=\s*(.+)$/);
+        if (mEq) { out[mEq[1]] = mEq[2]; continue; }
+
+        const mColon = ln.match(/^([^:]+):\s*(.+)$/);
+        if (mColon) { out[mColon[1].trim()] = mColon[2].trim(); continue; }
+
+        const mSpace = ln.match(/^([A-Za-z0-9_]+)\s+(.+)$/);
+        if (mSpace) { out[mSpace[1]] = mSpace[2]; continue; }
+
+        // fallback: push as raw line entries
+        const key = `line_${Object.keys(out).length+1}`;
+        out[key] = ln;
+    }
+    return out;
 }
 
 // Route to get the spawn and monster list files
@@ -333,6 +419,129 @@ app.get('/api/map-drop-file-content', async (req, res) => {
     }
 });
 // --- End of new route ---
+
+
+// --- Event Scheduler API ---
+app.get('/api/event-data', async (req, res) => {
+    try {
+        // Ensure event directory exists
+        await fs.access(EVENT_DIR);
+
+        // Read Event.ini if present
+        const eventIniPath = path.join(EVENT_DIR, 'Event.ini');
+        let eventIni = '';
+        try {
+            await fs.access(eventIniPath);
+            eventIni = await fs.readFile(eventIniPath, 'utf8');
+        } catch (e) {
+            // file may not exist; that's fine
+            eventIni = '';
+        }
+
+        // Read other useful event files if present
+        const invasionMonstersPath = path.join(EVENT_DIR, 'InvasionMonsters.xml');
+        const invasionManagerPath = path.join(EVENT_DIR, 'InvasionManager.xml');
+        const eventSeasonManagerPath = path.join(EVENT_DIR, 'EventSeasonManager.xml');
+
+        const invasionMonsters = await (async () => {
+            try { await fs.access(invasionMonstersPath); return await fs.readFile(invasionMonstersPath, 'utf8'); } catch { return ''; }
+        })();
+        const invasionManager = await (async () => {
+            try { await fs.access(invasionManagerPath); return await fs.readFile(invasionManagerPath, 'utf8'); } catch { return ''; }
+        })();
+        const eventSeasonManager = await (async () => {
+            try { await fs.access(eventSeasonManagerPath); return await fs.readFile(eventSeasonManagerPath, 'utf8'); } catch { return ''; }
+        })();
+
+        // List subfolders and files for discovery
+        const entries = await fs.readdir(EVENT_DIR, { withFileTypes: true });
+        const files = [];
+        const dirs = [];
+        for (const e of entries) {
+            if (e.isDirectory()) dirs.push(e.name);
+            else files.push(e.name);
+        }
+
+        // For each file present, attempt to extract a header and parse it
+        const fileDetails = [];
+        for (const f of files) {
+            const fp = path.join(EVENT_DIR, f);
+            try {
+                const { header } = await readFileHeader(fp);
+                const parsed = parseHeaderToKV(header);
+                fileDetails.push({ filename: f, header, parsed });
+            } catch (e) {
+                fileDetails.push({ filename: f, header: '', parsed: {} });
+            }
+        }
+
+        res.json({
+            eventIni,
+            invasionMonsters,
+            invasionManager,
+            eventSeasonManager,
+            files,
+            dirs,
+            fileDetails
+        });
+    } catch (error) {
+        console.error('Error reading Event directory:', error);
+        if (error.code === 'ENOENT') {
+            res.status(500).send(`Error: Event directory not found: ${EVENT_DIR}`);
+        } else {
+            res.status(500).send('Error: Could not read Event directory.');
+        }
+    }
+});
+
+// Serve raw event file content by filename (safe basename only)
+app.get('/api/event-file', async (req, res) => {
+    const { filename } = req.query;
+    if (!filename || filename.includes('..') || filename.includes('/')) {
+        return res.status(400).send('Invalid filename');
+    }
+    const filePath = path.join(EVENT_DIR, filename);
+    try {
+        await fs.access(filePath);
+        const content = await fs.readFile(filePath, 'utf8');
+        // If parse query param present, include header and parsed metadata
+        if (req.query.parse === '1' || req.query.parse === 'true') {
+            const { header, body } = await readFileHeader(filePath);
+            const parsed = parseHeaderToKV(header);
+            res.json({ filename, header, parsed, body, raw: content });
+            return;
+        }
+
+        res.header('Content-Type', 'text/plain');
+        res.send(content);
+    } catch (err) {
+        console.error(`Error reading event file ${filename}:`, err);
+        res.status(404).send('File not found');
+    }
+});
+
+
+app.post('/api/save-event-data', async (req, res) => {
+    const { filename, newContent } = req.body;
+    // If no filename provided, default to Event.ini
+    const target = filename ? path.join(EVENT_DIR, filename) : path.join(EVENT_DIR, 'Event.ini');
+
+    if (!newContent) return res.status(400).send('Error: No content provided.');
+
+    try {
+        // Ensure event dir exists
+        await fs.mkdir(EVENT_DIR, { recursive: true });
+        await createBackup(target, EVENT_BACKUP_DIR);
+        await fs.writeFile(target, newContent, 'utf8');
+        console.log(`Saved event data to ${target}`);
+        res.status(200).send('Saved');
+    } catch (error) {
+        console.error('Error saving event data:', error);
+        res.status(500).send('Error: Could not save event data.');
+    }
+});
+
+// --- End Event Scheduler API ---
 
 
 // --- SAVE ENDPOINTS ---
