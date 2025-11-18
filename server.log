@@ -6,3 +6,4 @@ Zen Backups will be saved to: /app/data/Item/Drop/Backups
 Shop Backups will be saved to: /app/data/Shops/Backups
 Mix Backups will be saved to: /app/data/Mix/Backups
 Map Drop Backups will be saved to: /app/data/Item/Drop/EachMonsterMapDrop/Backups
+Event Backups will be saved to: /app/data/Event/Backups

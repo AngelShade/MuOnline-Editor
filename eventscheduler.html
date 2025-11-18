@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Event Scheduler</title>
+
+    <!-- Fonts and Icons -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@500&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link rel="stylesheet" href="css/style.css">
+
+</head>
+<body>
+
+    <div class="container glass-effect">
+        <!-- Main Dashboard Header -->
+        <header class="header">
+            <h1><i data-lucide="calendar-clock"></i>Event Scheduler Manager</h1>
+            <p>Visually schedule invasions, blood castle, devil square, and other server events.</p>
+        </header>
+
+        <!-- Event Scheduler UI -->
+        <div class="main-content">
+            <div class="glass-effect" style="padding: 20px;">
+                <h2>Event Configuration</h2>
+                <p>Use this section to configure the server events.</p>
+                <div id="event-list"></div>
+                <button id="save-events" class="btn btn-success" style="margin-top: 20px;">
+                    <i data-lucide="save"></i> Save Changes
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/eventscheduler.js"></script>
+    <script>
+        // Render all icons on load
+        document.addEventListener('DOMContentLoaded', () => {
+            lucide.createIcons();
+        });
+    </script>
+</body>
+</html>

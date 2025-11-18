@@ -34,6 +34,8 @@ const MASTERY_EXC_OPTIONS_PATH = resolvePath(config.MASTERY_EXC_OPTIONS_PATH);
 const PENTAGRAM_DROP_RATE_PATH = resolvePath(config.PENTAGRAM_DROP_RATE_PATH);
 const SOCKET_ITEM_DROP_RATES_PATH = resolvePath(config.SOCKET_ITEM_DROP_RATES_PATH);
 const ITEM_DROP_RATE_CONTROL_PATH = resolvePath(config.ITEM_DROP_RATE_CONTROL_PATH);
+const EVENT_SCHEDULE_PATH = resolvePath(config.EVENT_SCHEDULE_PATH);
+const EVENT_BACKUP_DIR = resolvePath(config.EVENT_BACKUP_DIR);
 
 // --- Mix Editor Paths ---
 const MIX_PATH = path.join(MIX_DIR, 'Mix.xml');
@@ -127,6 +129,10 @@ app.get('/monsterdropeditor.html', (req, res) => {
  */
 app.get('/zendropeditor.html', (req, res) => {
     res.sendFile(path.join(__dirname, 'zendropeditor.html'));
+});
+
+app.get('/eventscheduler.html', (req, res) => {
+    res.sendFile(path.join(__dirname, 'eventscheduler.html'));
 });
 
 
@@ -476,6 +482,21 @@ app.get('/api/map-drop-file-content', async (req, res) => {
 });
 // --- End of new route ---
 
+app.get('/api/event-data', async (req, res) => {
+    try {
+        await fs.access(EVENT_SCHEDULE_PATH);
+        const eventDataXml = await fs.readFile(EVENT_SCHEDULE_PATH, 'utf8');
+        res.json({ eventDataXml });
+    } catch (error) {
+        console.error('Error reading event data file:', error);
+        if (error.code === 'ENOENT') {
+            res.status(500).send(`Error: A required file was not found. Missing: ${error.path}`);
+        } else {
+            res.status(500).send('Error: Could not read server files for event scheduler.');
+        }
+    }
+});
+
 
 // --- SAVE ENDPOINTS ---
 
@@ -727,6 +748,22 @@ app.post('/api/save-map-drop-file', async (req, res) => {
 });
 // --- End of new save route ---
 
+app.post('/api/save-event-data', async (req, res) => {
+    const { newXmlContent } = req.body;
+    if (!newXmlContent) {
+        return res.status(400).send('Error: No XML content provided.');
+    }
+    try {
+        await createBackup(EVENT_SCHEDULE_PATH, EVENT_BACKUP_DIR);
+        await fs.writeFile(EVENT_SCHEDULE_PATH, newXmlContent, 'utf8');
+        console.log('Event data saved successfully.');
+        res.status(200).send('File saved successfully.');
+    } catch (error) {
+        console.error('Error during save operation (Event Data):', error);
+        res.status(500).send('Error: Could not save file to disk.');
+    }
+});
+
 
 /**
  * Starts the Express server and listens for connections on the specified port.
@@ -764,6 +801,7 @@ app.listen(PORT, async () => {
         await fs.access(PENTAGRAM_DROP_RATE_PATH);
         await fs.access(SOCKET_ITEM_DROP_RATES_PATH);
         await fs.access(ITEM_DROP_RATE_CONTROL_PATH);
+        await fs.access(EVENT_SCHEDULE_PATH);
         
         console.log('All file paths verified.');
         
@@ -775,6 +813,7 @@ app.listen(PORT, async () => {
         console.log(`Shop Backups will be saved to: ${SHOPS_BACKUP_DIR}`);
         console.log(`Mix Backups will be saved to: ${MIX_BACKUP_DIR}`);
         console.log(`Map Drop Backups will be saved to: ${MAP_DROP_BACKUP_DIR}`); // Added log
+        console.log(`Event Backups will be saved to: ${EVENT_BACKUP_DIR}`);
 
     } catch (error) {
         console.error('--- !!! SERVER STARTUP FAILED !!! ---');
