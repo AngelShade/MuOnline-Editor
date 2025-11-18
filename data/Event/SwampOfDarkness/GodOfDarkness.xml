@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+// ============================================================
+// == 				MUONLINE SERVER EMULATOR				 ==
+// == 				   POWERED BY DV-Team				 	 ==
+// ==               File Name: GodOfDarkness                 ==
+// ============================================================
+//
+// ### GodOfDarkness ###
+//	Enable: Enables or disables the event, 0/1
+//	MaxPlayers: Max Players can join the boss zone at the same time
+//	WaterMonsterSummon: Monster 790 life percent be decreased to this value will summon Monster 793
+//	AdditionalRewardBagID: If enabled, issues additional reward from bagid, -1 to disable
+//
+// ### GodOfDarkness::Time ###
+//	BattleTime: Time to kill 'God of Darkness' (794) once it appears, seconds
+//	MoveTown: Time to move to town from event zone after event end, seconds
+-->
+
+<GodOfDarkness Enable="1" MaxPlayers="100" WaterMonsterSummon="30" AdditionalRewardBagID="-1" >
+	<Time BossAppearTime="30" BattleTime="600" MoveTown="300" /> <!-- seconds -->
+</GodOfDarkness>

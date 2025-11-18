@@ -1,0 +1,1809 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Monster Spawn Editor</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+        
+        .header {
+            position: relative;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+        
+        .content {
+            padding: 30px;
+        }
+
+        #cacheStatus {
+            padding: 15px;
+            background: #d4edda;
+            color: #155724;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .file-upload-section {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .upload-box {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            border: 2px dashed #1e3c72;
+        }
+        
+        .upload-box h3 {
+            margin-bottom: 15px;
+            color: #1e3c72;
+        }
+        
+        .file-input-wrapper {
+            position: relative;
+            overflow: hidden;
+            display: inline-block;
+            width: 100%;
+        }
+        
+        .file-input-wrapper input[type="file"] {
+            position: absolute;
+            left: -9999px;
+        }
+        
+        .file-input-label {
+            display: block;
+            padding: 12px;
+            background: white;
+            border: 2px dashed #1e3c72;
+            border-radius: 6px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .file-input-label:hover {
+            background: #e3f2fd;
+            border-color: #2a5298;
+        }
+        
+        .file-status {
+            margin-top: 10px;
+            padding: 8px;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        
+        .status-success {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .status-pending {
+            background: #fff3cd;
+            color: #856404;
+        }
+        
+        .main-content {
+            display: grid;
+            grid-template-columns: 300px 1fr;
+            gap: 20px;
+            margin-top: 20px;
+        }
+        
+        .sidebar {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            height: fit-content;
+        }
+        
+        .sidebar h3 {
+            margin-bottom: 15px;
+            color: #1e3c72;
+        }
+        
+        .map-list {
+            max-height: 600px;
+            overflow-y: auto;
+        }
+        
+        .map-item {
+            padding: 10px;
+            margin-bottom: 5px;
+            background: white;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s;
+            border-left: 3px solid transparent;
+        }
+        
+        .map-item:hover {
+            background: #e3f2fd;
+            border-left-color: #2a5298;
+        }
+        
+        .map-item.active {
+            background: #1e3c72;
+            color: white;
+            border-left-color: #ffc107;
+        }
+        
+        .map-item-number {
+            font-weight: bold;
+            margin-right: 8px;
+        }
+        
+        .editor-panel {
+            background: #f8f9fa;
+            padding: 25px;
+            border-radius: 8px;
+        }
+        
+        .search-bar {
+            margin-bottom: 20px;
+        }
+        
+        .search-bar input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+        
+        .search-bar input:focus {
+            outline: none;
+            border-color: #1e3c72;
+        }
+        
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .btn-primary {
+            background: #1e3c72;
+            color: white;
+        }
+        
+        .btn-primary:hover:not(:disabled) {
+            background: #2a5298;
+        }
+        
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+        
+        .btn-success:hover:not(:disabled) {
+            background: #218838;
+        }
+        
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+        
+        .btn-danger:hover:not(:disabled) {
+            background: #c82333;
+        }
+
+        .btn-undo {
+            background: #6f42c1;
+            color: white;
+            min-width: 110px;
+        }
+
+        .btn-undo:hover:not(:disabled) {
+            background: #5a32a3;
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 2px solid #1e3c72;
+            color: #1e3c72;
+            padding: 8px 12px;
+            font-size: 13px;
+        }
+
+        .btn-outline:hover {
+            background: #e3f2fd;
+            border-color: #2a5298;
+        }
+        
+        .spawn-table {
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+
+        /* Styles for collapsible headers */
+        .spawn-table h3 {
+            cursor: pointer;
+            user-select: none;
+            display: flex !important;
+            align-items: center;
+            justify-content: space-between;
+            transition: background-color 0.2s;
+        }
+
+        .spawn-table h3:hover {
+            background-color: #e9ecef !important;
+        }
+
+        .spawn-table .toggle-icon {
+            transition: transform 0.3s ease;
+            display: inline-block;
+            margin-left: 10px;
+        }
+
+        .spawn-table.collapsed .toggle-icon {
+            transform: rotate(-90deg);
+        }
+
+        .spawn-table.collapsed table {
+            display: none;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        th {
+            background: #1e3c72;
+            color: white;
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 13px;
+        }
+        
+        td {
+            padding: 8px 12px;
+            border-bottom: 1px solid #ddd;
+            vertical-align: middle;
+        }
+        
+        tr:hover {
+            background: #f8f9fa;
+        }
+
+        /* Row Status Colors */
+        .spawn-row-new {
+            background-color: #d1e7dd !important; /* Fresher green */
+        }
+        .spawn-row-modified {
+            background-color: #fff3cd !important; /* Warning yellow */
+        }
+        
+        .spawn-row-new.spawn-row-empty {
+            background-color: #f8d7da !important; /* Light red for empty new rows */
+        }
+
+        /* Inline Editing Styles */
+        .inline-input {
+            width: 60px;
+            padding: 4px 2px;
+            border: 1px solid transparent;
+            background: transparent;
+            border-radius: 3px;
+            font-family: inherit;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+
+        .inline-input:hover, .inline-input:focus {
+            border-color: #1e3c72;
+            background: white;
+        }
+
+        .inline-input.coord {
+             width: 45px;
+             text-align: center;
+        }
+        
+        .inline-input.required-empty {
+            border-color: #dc3545;
+            background-color: #f8d7da;
+        }
+
+        .coord-group {
+            display: flex;
+            align-items: center;
+            gap: 2px;
+        }
+
+        .inline-coord-btn {
+            padding: 1px 5px;
+            font-size: 11px;
+            margin-left: 2px;
+            border: 1px solid #ccc;
+            background: #f8f9fa;
+            border-radius: 3px;
+            cursor: pointer;
+            color: #666;
+        }
+        .inline-coord-btn:hover {
+            background: #e9ecef;
+            color: #333;
+            border-color: #999;
+        }
+        
+        .monster-name {
+            font-weight: 600;
+            color: #1e3c72;
+            font-size: 14px;
+        }
+
+        .monster-name-cell {
+            cursor: pointer;
+            min-width: 220px;
+        }
+        
+        .spawn-type-badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-right: 8px;
+        }
+        
+        .type-0 { background: #ffc107; color: #000; }
+        .type-1 { background: #17a2b8; color: white; }
+        .type-2 { background: #28a745; color: white; }
+        .type-3 { background: #dc3545; color: white; }
+        .type-4 { background: #6f42c1; color: white; }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .modal.show {
+            display: flex;
+        }
+        
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            max-width: 800px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .modal-header h2 {
+            color: #1e3c72;
+        }
+        
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #666;
+        }
+        
+        .close-btn:hover {
+            color: #000;
+        }
+        
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        .form-group.full-width {
+            grid-column: 1 / -1;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+        
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #1e3c72;
+        }
+
+        .form-group select:disabled {
+            background-color: #e9ecef;
+            cursor: not-allowed;
+        }
+
+        /* Input Group for coordinates and buttons in modal */
+        .input-group {
+            display: flex;
+        }
+        
+        .input-group input {
+            border-top-right-radius: 0;
+            border-bottom-right-radius: 0;
+            flex: 1;
+        }
+
+        .input-group .btn-coord-preset {
+            padding: 0 12px;
+            background: #f8f9fa;
+            color: #1e3c72;
+            font-weight: 600;
+            font-size: 13px;
+            border: 2px solid #ddd;
+            border-left: none;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .input-group .btn-coord-preset:hover {
+            background: #e3f2fd;
+            color: #2a5298;
+        }
+
+        .input-group .btn-coord-preset:last-child {
+            border-top-right-radius: 6px;
+            border-bottom-right-radius: 6px;
+        }
+        
+        .monster-search {
+            position: relative;
+        }
+        
+        .monster-suggestions {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border: 2px solid #1e3c72;
+            border-top: none;
+            border-radius: 0 0 6px 6px;
+            max-height: 200px;
+            overflow-y: auto;
+            z-index: 100;
+            display: none;
+        }
+        
+        .monster-suggestions.show {
+            display: block;
+        }
+        
+        .suggestion-item {
+            padding: 10px;
+            cursor: pointer;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .suggestion-item:hover {
+            background: #e3f2fd;
+        }
+        
+        .suggestion-item-id {
+            font-weight: bold;
+            color: #1e3c72;
+            margin-right: 8px;
+        }
+        
+        .action-btn {
+            padding: 4px 8px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 11px;
+            margin-right: 3px;
+        }
+
+        .btn-sm {
+            padding: 4px 8px;
+            font-size: 12px;
+        }
+        
+        .btn-edit { background: #ffc107; color: #000; }
+        .btn-delete { background: #dc3545; color: white; }
+        .btn-duplicate { background: #17a2b8; color: white; }
+        
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #666;
+        }
+        
+        .empty-state h3 {
+            margin-bottom: 10px;
+        }
+        
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 4px;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+
+        /* Missing Categories Section */
+        .missing-categories {
+            background: #fff;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border: 1px dashed #ccc;
+        }
+        .missing-categories h4 {
+            color: #666;
+            margin-bottom: 10px;
+            font-size: 14px;
+        }
+        .missing-categories-list {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        /* Guide Modal Styles */
+        #guideContent {
+            line-height: 1.6;
+        }
+        #guideContent h3 {
+            color: #1e3c72;
+            margin-top: 20px;
+            margin-bottom: 10px;
+            border-bottom: 2px solid #eee;
+            padding-bottom: 5px;
+        }
+        #guideContent h3:first-child {
+            margin-top: 0;
+        }
+        #guideContent ul {
+            list-style-position: inside;
+            padding-left: 10px;
+        }
+        #guideContent li {
+            margin-bottom: 8px;
+        }
+        #guideContent code {
+            background-color: #e9ecef;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'Courier New', Courier, monospace;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🐉 MU Online Monster Spawn Editor</h1>
+            <p>Manage monster spawns across all maps</p>
+            <button class="btn btn-outline" style="position: absolute; top: 25px; right: 30px; border-color: white; color: white; background-color: rgba(255,255,255,0.1);" onclick="openGuideModal()">? Guide</button>
+        </div>
+        
+        <div class="content">
+            <!-- Cache Status Bar -->
+            <div id="cacheStatus" style="display: none;">
+                <span>✓ Loaded files from local storage.</span>
+                <button class="btn btn-danger" onclick="clearSavedData()" style="padding: 8px 15px; font-size: 12px;">Clear & Reload</button>
+            </div>
+
+            <div class="file-upload-section" id="file-upload-section">
+                <div class="upload-box">
+                    <h3>📁 Monster List (MonsterList.xml)</h3>
+                    <div class="file-input-wrapper">
+                        <input type="file" id="monsterListInput" accept=".xml">
+                        <label for="monsterListInput" class="file-input-label">
+                            Click to upload MonsterList.xml
+                        </label>
+                    </div>
+                    <div id="monsterListStatus" class="file-status status-pending">Waiting for file...</div>
+                </div>
+                
+                <div class="upload-box">
+                    <h3>📁 Monster Spawn (MonsterSpawn.xml)</h3>
+                    <div class="file-input-wrapper">
+                        <input type="file" id="monsterSpawnInput" accept=".xml">
+                        <label for="monsterSpawnInput" class="file-input-label">
+                            Click to upload MonsterSpawn.xml
+                        </label>
+                    </div>
+                    <div id="monsterSpawnStatus" class="file-status status-pending">Waiting for file...</div>
+                </div>
+            </div>
+            
+            <div class="main-content" id="mainContent" style="display: none;">
+                <div class="sidebar">
+                    <h3>🗺️ Maps</h3>
+                    <div class="search-bar">
+                        <input type="text" id="mapSearch" placeholder="Search maps...">
+                    </div>
+                    <div class="map-list" id="mapList"></div>
+                </div>
+                
+                <div class="editor-panel">
+                    <div id="editorContent">
+                        <div class="empty-state">
+                            <h3>Select a map to view spawns</h3>
+                            <p>Choose a map from the left sidebar to start editing</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Add/Edit Spawn Modal -->
+    <div class="modal" id="spawnModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitle">Add New Spawn</h2>
+                <button class="close-btn" onclick="closeModal()">&times;</button>
+            </div>
+            <form id="spawnForm">
+                <div class="form-grid">
+                    <div class="form-group full-width monster-search">
+                        <label>Monster * <span id="npcWarning" style="color: #dc3545; font-size: 12px; display: none;">(NPCs/Traps only for Type 0)</span></label>
+                        <input type="text" id="monsterSearch" placeholder="Search monster by ID or name..." autocomplete="off" required>
+                        <input type="hidden" id="monsterIndex">
+                        <div class="monster-suggestions" id="monsterSuggestions"></div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Spawn Type *</label>
+                        <select id="spawnType" required onchange="updateSpawnTypeRestrictions()">
+                            <option value="0">Type 0 - NPC/Traps</option>
+                            <option value="1">Type 1 - Multiple Monsters</option>
+                            <option value="2">Type 2 - Single Monster</option>
+                            <option value="3">Type 3 - Multiple Elemental Monsters</option>
+                            <option value="4">Type 4 - Single Elemental Monster</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Count</label>
+                        <input type="number" id="spawnCount" value="1" min="0">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Start X *</label>
+                        <input type="number" id="startX" required min="0">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Start Y *</label>
+                        <input type="number" id="startY" required min="0">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>End X</label>
+                        <input type="number" id="endX" value="0" min="0">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>End Y</label>
+                        <div class="input-group">
+                            <input type="number" id="endY" value="0" min="0">
+                            <button type="button" class="btn-coord-preset" onclick="setEndCoords(3, 'modal')" title="Set 3x3 area">+3</button>
+                            <button type="button" class="btn-coord-preset" onclick="setEndCoords(4, 'modal')" title="Set 4x4 area">+4</button>
+                            <button type="button" class="btn-coord-preset" onclick="setEndCoords(5, 'modal')" title="Set 5x5 area">+5</button>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Distance</label>
+                        <input type="number" id="distance" value="0" min="0">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Direction</label>
+                        <input type="number" id="dir" value="-1" min="-1" max="7">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Element</label>
+                        <input type="number" id="element" value="0" min="0" max="5">
+                    </div>
+                    
+                    <div class="form-group full-width">
+                        <label>NPC Function</label>
+                        <input type="text" id="npcFunction" placeholder="None">
+                    </div>
+                </div>
+                
+                <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                    <button type="button" class="btn btn-danger" onclick="closeModal()">Cancel</button>
+                    <button type="submit" class="btn btn-success">Save Spawn</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Guide Modal -->
+    <div class="modal" id="guideModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>How to Use the Spawn Editor</h2>
+                <button class="close-btn" onclick="closeGuideModal()">&times;</button>
+            </div>
+            <div id="guideContent">
+                <h3>1. Getting Started</h3>
+                <ul>
+                    <li><strong>Upload Files:</strong> To begin, you must upload your <code>MonsterList.xml</code> and <code>MonsterSpawn.xml</code> files using the upload boxes.</li>
+                    <li><strong>Automatic Saving:</strong> Once both files are successfully loaded, they are saved to your browser's local storage. The next time you open the editor, your files will be loaded automatically.</li>
+                    <li><strong>Clear & Reload:</strong> If you need to start over with new files, click the "Clear & Reload" button that appears at the top after files are loaded.</li>
+                </ul>
+
+                <h3>2. Navigating the Editor</h3>
+                <ul>
+                    <li><strong>Map List:</strong> On the left, you'll find a searchable list of all maps from your <code>MonsterSpawn.xml</code>. Click a map to load its spawn data.</li>
+                    <li><strong>Editor Panel:</strong> On the right, all spawns for the selected map are displayed, grouped by category (Spot Type). You can collapse or expand these categories by clicking on their headers.</li>
+                </ul>
+
+                <h3>3. Editing Spawns</h3>
+                <ul>
+                    <li><strong>Inline Editing:</strong> Most values can be edited directly in the table. Simply click on a value (like Count, Distance, or coordinates) and type a new one. The row will be highlighted in yellow to show it has been modified.</li>
+                    <li><strong>Editing the Monster:</strong> Click on a monster's name to open a search box. Start typing a name or ID, and select the desired monster, NPC, or Trap from the suggestions. The suggestions are automatically filtered based on the category type.</li>
+                    <li><strong>Action Buttons:</strong>
+                        <ul>
+                            <li><code>Copy</code>: Duplicates the entire row, creating a new spawn with the same data.</li>
+                            <li><code>Edit</code>: Opens a detailed modal window for editing all spawn attributes at once.</li>
+                            <li><code>Del</code>: Deletes the spawn row (a confirmation will be required).</li>
+                        </ul>
+                    </li>
+                </ul>
+
+                <h3>4. Adding New Spawns</h3>
+                 <ul>
+                    <li><strong>Method 1 (Recommended):</strong> Each category has a <code>+ Add</code> button in its header. Clicking this adds a new, empty row to the top of that category. This new row is highlighted in red and is <strong>compulsory</strong>. You must fill in at least the Monster, Start X, and Start Y for it to be saved.</li>
+                    <li><strong>Method 2 (Adding a Category):</strong> If a map is missing a spawn category (e.g., no NPCs), a button like <code>+ Type 0 (NPC/Traps)</code> will appear at the top of the editor. Clicking this creates the category and adds a new, empty row for you to fill.</li>
+                    <li><strong>Method 3 (New Spot via Modal):</strong> The <code>+ New Spot</code> button is for creating a new spot with a custom description via a modal, but for most use cases, Method 1 and 2 are easier.</li>
+                </ul>
+
+                <h3>5. Saving Your Work</h3>
+                 <ul>
+                    <li><strong>Important:</strong> Your changes are only saved in the browser session until you download the file.</li>
+                    <li>To finalize your work, click the <strong>💾 Download XML</strong> button. This will generate a new <code>MonsterSpawn_edited.xml</code> file with all your changes.</li>
+                    <li>Any empty, incomplete rows you added will be automatically removed from the downloaded file to prevent errors in your server.</li>
+                </ul>
+
+                <h3>6. Helpful Features</h3>
+                <ul>
+                    <li><strong>Undo:</strong> Made a mistake? Use the <code>↩ Undo</code> button or press <code>Ctrl+Z</code> to revert the last change.</li>
+                    <li><strong>Search:</strong> Use the search bars above the map list and the spawn table to quickly filter and find what you're looking for.</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let monsterList = {};
+        let spawnData = {};
+        let currentMap = null;
+        let editingSpawnIndex = null;
+        let addingToSpotIndex = null;
+        let sortDirections = {};
+        let collapsedStates = {}; 
+        let undoHistory = [];
+        let originalXMLHeader = '';
+        let activeInlineEditor = null;
+        
+        // --- Local Storage & Init ---
+        document.addEventListener('DOMContentLoaded', loadFromStorage);
+
+        function loadFromStorage() {
+            try {
+                const monsterListXML = localStorage.getItem('monsterListXML');
+                const monsterSpawnXML = localStorage.getItem('monsterSpawnXML');
+
+                if (monsterListXML && monsterSpawnXML) {
+                    console.log('Loading files from local storage...');
+                    parseMonsterList(monsterListXML);
+                    parseMonsterSpawn(monsterSpawnXML);
+                    
+                    document.getElementById('file-upload-section').style.display = 'none';
+                    document.getElementById('cacheStatus').style.display = 'flex';
+                }
+            } catch (error) {
+                console.error('Could not load from local storage:', error);
+                clearSavedData(true); // Force clear without confirm on error
+            }
+        }
+
+        function clearSavedData(force = false) {
+            if (force || confirm('Are you sure you want to clear all loaded data and reload?')) {
+                try {
+                    localStorage.removeItem('monsterListXML');
+                    localStorage.removeItem('monsterSpawnXML');
+                } catch (error) {
+                    console.error('Failed to clear local storage:', error);
+                }
+                location.reload();
+            }
+        }
+
+        // --- Undo System ---
+        function pushUndo() {
+            if (currentMap === null || !spawnData[currentMap]) return;
+            
+            if (undoHistory.length >= 50) {
+                undoHistory.shift();
+            }
+
+            undoHistory.push({
+                mapNum: currentMap,
+                data: JSON.parse(JSON.stringify(spawnData[currentMap]))
+            });
+            updateUndoButton();
+        }
+
+        function executeUndo() {
+            if (undoHistory.length === 0) return;
+
+            const lastState = undoHistory.pop();
+            if (lastState) {
+                spawnData[lastState.mapNum] = lastState.data;
+                if (currentMap !== lastState.mapNum) {
+                    selectMap(lastState.mapNum);
+                } else {
+                    renderMapEditor(currentMap);
+                }
+            }
+            updateUndoButton();
+        }
+
+        function updateUndoButton() {
+            const btn = document.getElementById('undoBtn');
+            if (btn) {
+                 btn.disabled = undoHistory.length === 0;
+                 btn.textContent = undoHistory.length > 0 ? `↩ Undo (${undoHistory.length})` : '↩ Undo';
+            }
+        }
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', function(e) {
+            if (e.ctrlKey && e.key === 'z' && !e.shiftKey) {
+                e.preventDefault();
+                executeUndo();
+            }
+        });
+
+        // File upload handlers
+        document.getElementById('monsterListInput').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    parseMonsterList(event.target.result);
+                };
+                reader.readAsText(file);
+            }
+        });
+        
+        document.getElementById('monsterSpawnInput').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    parseMonsterSpawn(event.target.result);
+                };
+                reader.readAsText(file);
+            }
+        });
+        
+        function parseMonsterList(xmlText) {
+            try {
+                const parser = new DOMParser();
+                const xmlDoc = parser.parseFromString(xmlText, 'text/xml');
+                const monsters = xmlDoc.getElementsByTagName('Monster');
+                
+                monsterList = {};
+                for (let monster of monsters) {
+                    const id = monster.getAttribute('ID');
+                    const name = monster.getAttribute('Name');
+                    const type = monster.getAttribute('Type');
+                    monsterList[id] = { name: name, type: type };
+                }
+
+                localStorage.setItem('monsterListXML', xmlText);
+                
+                document.getElementById('monsterListStatus').textContent = 
+                    `✓ Loaded ${Object.keys(monsterList).length} monsters/NPCs`;
+                document.getElementById('monsterListStatus').className = 'file-status status-success';
+                
+                checkBothFilesLoaded();
+            } catch (error) {
+                document.getElementById('monsterListStatus').textContent = '✗ Error parsing file';
+                console.error(error);
+                localStorage.removeItem('monsterListXML');
+            }
+        }
+        
+        function parseMonsterSpawn(xmlText) {
+            try {
+                const headerMatch = xmlText.match(/^[\s\S]*?(?=<MonsterSpawn>)/i);
+                if (headerMatch) {
+                    originalXMLHeader = headerMatch[0];
+                } else {
+                    originalXMLHeader = '';
+                }
+
+                const parser = new DOMParser();
+                const xmlDoc = parser.parseFromString(xmlText, 'text/xml');
+                const maps = xmlDoc.getElementsByTagName('Map');
+                
+                spawnData = {};
+                for (let map of maps) {
+                    const mapNum = map.getAttribute('Number');
+                    const mapName = map.getAttribute('Name');
+                    
+                    spawnData[mapNum] = {
+                        name: mapName,
+                        spots: []
+                    };
+                    
+                    const spots = map.getElementsByTagName('Spot');
+                    for (let spot of spots) {
+                        const type = spot.getAttribute('Type');
+                        const desc = spot.getAttribute('Description');
+                        const spawns = spot.getElementsByTagName('Spawn');
+                        
+                        const spotData = {
+                            type: type,
+                            description: desc,
+                            spawns: []
+                        };
+                        
+                        for (let spawn of spawns) {
+                            spotData.spawns.push({
+                                index: spawn.getAttribute('Index'),
+                                startX: spawn.getAttribute('StartX'),
+                                startY: spawn.getAttribute('StartY'),
+                                endX: spawn.getAttribute('EndX'),
+                                endY: spawn.getAttribute('EndY'),
+                                distance: spawn.getAttribute('Distance'),
+                                count: spawn.getAttribute('Count'),
+                                dir: spawn.getAttribute('Dir'),
+                                npcFunction: spawn.getAttribute('NpcFunction'),
+                                element: spawn.getAttribute('Element')
+                            });
+                        }
+                        
+                        spawnData[mapNum].spots.push(spotData);
+                    }
+                }
+                
+                localStorage.setItem('monsterSpawnXML', xmlText);
+
+                document.getElementById('monsterSpawnStatus').textContent = 
+                    `✓ Loaded ${Object.keys(spawnData).length} maps`;
+                document.getElementById('monsterSpawnStatus').className = 'file-status status-success';
+                
+                checkBothFilesLoaded();
+            } catch (error) {
+                document.getElementById('monsterSpawnStatus').textContent = '✗ Error parsing file';
+                console.error(error);
+                localStorage.removeItem('monsterSpawnXML');
+            }
+        }
+        
+        function checkBothFilesLoaded() {
+            if (Object.keys(monsterList).length > 0 && Object.keys(spawnData).length > 0) {
+                document.getElementById('mainContent').style.display = 'grid';
+                document.getElementById('file-upload-section').style.display = 'none';
+                renderMapList();
+            }
+        }
+        
+        function renderMapList() {
+            const mapList = document.getElementById('mapList');
+            mapList.innerHTML = '';
+            
+            const sortedMaps = Object.keys(spawnData).sort((a, b) => parseInt(a) - parseInt(b));
+            
+            sortedMaps.forEach(mapNum => {
+                const mapItem = document.createElement('div');
+                mapItem.className = 'map-item';
+                mapItem.id = `map-item-${mapNum}`;
+                mapItem.innerHTML = `
+                    <span class="map-item-number">[${mapNum}]</span>
+                    ${spawnData[mapNum].name}
+                `;
+                mapItem.onclick = () => selectMap(mapNum);
+                mapList.appendChild(mapItem);
+            });
+        }
+        
+        function selectMap(mapNum) {
+            currentMap = mapNum;
+            document.querySelectorAll('.map-item').forEach(item => item.classList.remove('active'));
+            const activeItem = document.getElementById(`map-item-${mapNum}`);
+            if (activeItem) {
+                activeItem.classList.add('active');
+                activeItem.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }
+            renderMapEditor(mapNum);
+        }
+        
+        function toggleSpot(tableElement, mapNum, spotType) {
+            tableElement.classList.toggle('collapsed');
+            const key = `${mapNum}-${spotType}`;
+            collapsedStates[key] = tableElement.classList.contains('collapsed');
+        }
+
+        function updateSpawnValue(spotIndex, spawnIndex, field, value) {
+            const spawn = spawnData[currentMap].spots[spotIndex].spawns[spawnIndex];
+            if (spawn[field] !== value) {
+                if(!spawn.isNew) pushUndo(); 
+                spawn[field] = value;
+                if (!spawn.isNew) {
+                     spawn.isModified = true;
+                }
+                
+                const baseId = `input-${spotIndex}-${spawnIndex}`;
+                const element = document.getElementById(`${baseId}-${field}`);
+                if(element) {
+                    element.classList.toggle('required-empty', value === '');
+                }
+
+                const row = document.querySelector(`tr[data-spot-index="${spotIndex}"][data-spawn-index="${spawnIndex}"]`);
+                if(row) {
+                    const monsterId = spawn.index;
+                    const startX = spawn.startX;
+                    const startY = spawn.startY;
+                    const count = spawn.count;
+                    const isCompulsoryFilled = monsterId && startX && startY && count;
+                    row.classList.toggle('spawn-row-empty', !isCompulsoryFilled);
+                }
+            }
+        }
+
+        function setInlineEndCoords(spotIndex, spawnIndex, addValue) {
+            pushUndo();
+            const spawn = spawnData[currentMap].spots[spotIndex].spawns[spawnIndex];
+            spawn.endX = (parseInt(spawn.startX) + addValue).toString();
+            spawn.endY = (parseInt(spawn.startY) + addValue).toString();
+            if (!spawn.isNew) spawn.isModified = true;
+            renderMapEditor(currentMap);
+        }
+
+        function getSpotDescription(type) {
+             const typeDescriptions = {
+                '0': 'NPC/Traps', '1': 'Multiple Monsters Spawn',
+                '2': 'Single Monster Spawn', '3': 'Multiple Elemental Monster Spawn',
+                '4': 'Single Elemental Monster Spawn'
+            };
+            return typeDescriptions[type] || 'Unknown Spot';
+        }
+
+        function addMissingCategory(type) {
+            pushUndo();
+            const typeStr = type.toString();
+            
+            const newSpot = {
+                type: typeStr,
+                description: getSpotDescription(typeStr),
+                spawns: []
+            };
+
+            spawnData[currentMap].spots.push(newSpot);
+            spawnData[currentMap].spots.sort((a, b) => parseInt(a.type) - parseInt(b.type));
+            const newSpotIndex = spawnData[currentMap].spots.findIndex(s => s.type === typeStr);
+            
+            renderMapEditor(currentMap);
+
+            if (newSpotIndex !== -1) {
+                addNewSpawnRow(newSpotIndex);
+            }
+        }
+        
+        function addNewSpawnRow(spotIndex) {
+            pushUndo();
+            const newSpawn = {
+                index: '', startX: '', startY: '', endX: '0', endY: '0',
+                distance: '0', count: '1', dir: '-1', npcFunction: 'None', element: '0',
+                isNew: true,
+                isCompulsory: true
+            };
+            spawnData[currentMap].spots[spotIndex].spawns.unshift(newSpawn);
+            renderMapEditor(currentMap);
+            
+            const newRow = document.querySelector(`tr[data-spot-index='${spotIndex}'][data-spawn-index='0']`);
+            if(newRow){
+                 const firstInput = newRow.querySelector('.monster-name-cell');
+                 if(firstInput) firstInput.click();
+            }
+        }
+
+        function renderMapEditor(mapNum) {
+            cancelActiveInlineEdit();
+            const map = spawnData[mapNum];
+            let lastFocusedId = document.activeElement && document.activeElement.id ? document.activeElement.id : null;
+
+            const existingTypes = map.spots.map(s => parseInt(s.type));
+            const missingTypes = [0, 1, 2, 3, 4].filter(t => !existingTypes.includes(t));
+
+            let html = `
+                <div>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                        <div>
+                            <h2 style="color: #1e3c72; margin-bottom: 5px;">${map.name}</h2>
+                            <p style="color: #666;">Map Number: ${mapNum}</p>
+                        </div>
+                        <div class="controls">
+                            <button id="undoBtn" class="btn btn-undo" onclick="executeUndo()" disabled title="Ctrl+Z">↩ Undo</button>
+                            <button class="btn btn-primary" onclick="openAddModal()">+ New Spot</button>
+                            <button class="btn btn-success" onclick="downloadSpawnXML()">💾 Download XML</button>
+                        </div>
+                    </div>
+            `;
+
+            if (missingTypes.length > 0) {
+                html += `<div class="missing-categories"><h4>Add Missing Categories:</h4><div class="missing-categories-list">`;
+                missingTypes.forEach(type => {
+                    const typeNames = ['NPC/Traps', 'Multiple Monsters', 'Single Monster', 'Multi Elemental', 'Single Elemental'];
+                    html += `<button class="btn btn-outline" onclick="addMissingCategory(${type})">+ Type ${type} (${typeNames[type]})</button>`;
+                });
+                html += `</div></div>`;
+            }
+                    
+            html += `
+                    <div class="search-bar">
+                        <input type="text" id="spawnSearch" placeholder="Search spawns by monster name or ID..." oninput="filterSpawns()">
+                    </div>
+            `;
+            
+            map.spots.sort((a, b) => parseInt(a.type) - parseInt(b.type));
+
+            if (map.spots.length === 0) {
+                 html += `<div class="empty-state"><h3>No spawns on this map</h3><p>Use the buttons above to add categories and spawns.</p></div>`;
+            } else {
+                map.spots.forEach((spot, spotIndex) => {
+                    const isCollapsed = collapsedStates[`${mapNum}-${spot.type}`];
+                    const collapsedClass = isCollapsed ? 'collapsed' : '';
+
+                    html += `
+                        <div class="spawn-table ${collapsedClass}" data-spot-index="${spotIndex}">
+                            <h3 style="padding: 15px; background: #f8f9fa; border-bottom: 2px solid #ddd;" onclick="toggleSpot(this.parentElement, ${mapNum}, '${spot.type}')">
+                                <div style="display: flex; align-items: center; gap: 15px;">
+                                    <span>
+                                        <span class="spawn-type-badge type-${spot.type}">${getSpotDescription(spot.type)}</span>
+                                    </span>
+                                    <button class="btn btn-primary btn-sm" onclick="event.stopPropagation(); addNewSpawnRow(${spotIndex})">+ Add</button>
+                                </div>
+                                <span style="display: flex; align-items: center; gap: 10px;">
+                                    <span style="font-size: 14px; color: #666;">${spot.spawns.length} spawns</span>
+                                    <span class="toggle-icon">▼</span>
+                                </span>
+                            </h3>
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th onclick="sortTable(${spotIndex}, 0)" style="cursor: pointer;">Monster ⇅</th>
+                                        <th onclick="sortTable(${spotIndex}, 1)" style="cursor: pointer;">Start (X,Y) ⇅</th>
+                                        <th style="cursor: pointer;">End (X,Y)</th>
+                                        <th onclick="sortTable(${spotIndex}, 2)" style="cursor: pointer;">Count ⇅</th>
+                                        <th onclick="sortTable(${spotIndex}, 3)" style="cursor: pointer;">Dist ⇅</th>
+                                        <th onclick="sortTable(${spotIndex}, 4)" style="cursor: pointer;">Dir ⇅</th>
+                                        <th onclick="sortTable(${spotIndex}, 5)" style="cursor: pointer;">Elem ⇅</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                    `;
+                    
+                    spot.spawns.forEach((spawn, spawnIndex) => {
+                        const monsterDetails = monsterList[spawn.index];
+                        const monsterName = monsterDetails ? monsterDetails.name : `Unknown (${spawn.index})`;
+                        const isCompulsoryFilled = spawn.index && spawn.startX && spawn.startY && spawn.count;
+
+                        let rowClass = '';
+                        if (spawn.isNew) {
+                            rowClass = 'spawn-row-new';
+                            if(!isCompulsoryFilled) rowClass += ' spawn-row-empty';
+                        } else if (spawn.isModified) {
+                            rowClass = 'spawn-row-modified';
+                        }
+
+                        const baseId = `input-${spotIndex}-${spawnIndex}`;
+
+                        html += `
+                            <tr data-spot-index="${spotIndex}" data-spawn-index="${spawnIndex}" class="${rowClass}">
+                                <td class="monster-name-cell" onclick="editMonsterInline(this, ${spotIndex}, ${spawnIndex})">
+                                    <div title="${monsterName}" class="monster-name">
+                                        ${spawn.index ? `[${spawn.index}] ${monsterName.length > 20 ? monsterName.substring(0, 18) + '...' : monsterName}` : '<span style="color: #dc3545;">Click to select...</span>'}
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="coord-group">
+                                        <input type="number" id="${baseId}-startX" class="inline-input coord ${!spawn.startX && spawn.isCompulsory ? 'required-empty' : ''}" value="${spawn.startX}" onchange="updateSpawnValue(${spotIndex}, ${spawnIndex}, 'startX', this.value)">
+                                        ,
+                                        <input type="number" id="${baseId}-startY" class="inline-input coord ${!spawn.startY && spawn.isCompulsory ? 'required-empty' : ''}" value="${spawn.startY}" onchange="updateSpawnValue(${spotIndex}, ${spawnIndex}, 'startY', this.value)">
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="coord-group">
+                                        <input type="number" id="${baseId}-endX" class="inline-input coord" value="${spawn.endX}" onchange="updateSpawnValue(${spotIndex}, ${spawnIndex}, 'endX', this.value)">
+                                        ,
+                                        <input type="number" id="${baseId}-endY" class="inline-input coord" value="${spawn.endY}" onchange="updateSpawnValue(${spotIndex}, ${spawnIndex}, 'endY', this.value)">
+                                        <button class="inline-coord-btn" onclick="setInlineEndCoords(${spotIndex}, ${spawnIndex}, 3)" title="+3">+3</button>
+                                        <button class="inline-coord-btn" onclick="setInlineEndCoords(${spotIndex}, ${spawnIndex}, 4)" title="+4">+4</button>
+                                        <button class="inline-coord-btn" onclick="setInlineEndCoords(${spotIndex}, ${spawnIndex}, 5)" title="+5">+5</button>
+                                    </div>
+                                </td>
+                                <td><input type="number" id="${baseId}-count" class="inline-input ${!spawn.count && spawn.isCompulsory ? 'required-empty' : ''}" value="${spawn.count}" onchange="updateSpawnValue(${spotIndex}, ${spawnIndex}, 'count', this.value)"></td>
+                                <td><input type="number" id="${baseId}-distance" class="inline-input" value="${spawn.distance}" onchange="updateSpawnValue(${spotIndex}, ${spawnIndex}, 'distance', this.value)"></td>
+                                <td><input type="number" id="${baseId}-dir" class="inline-input" value="${spawn.dir}" min="-1" max="7" onchange="updateSpawnValue(${spotIndex}, ${spawnIndex}, 'dir', this.value)"></td>
+                                <td><input type="number" id="${baseId}-element" class="inline-input" value="${spawn.element}" min="0" max="5" onchange="updateSpawnValue(${spotIndex}, ${spawnIndex}, 'element', this.value)"></td>
+                                <td style="white-space: nowrap;">
+                                    <button class="action-btn btn-duplicate" onclick="duplicateSpawn(${spotIndex}, ${spawnIndex})">Copy</button>
+                                    <button class="action-btn btn-edit" onclick="editSpawn(${spotIndex}, ${spawnIndex})">Edit</button>
+                                    <button class="action-btn btn-delete" onclick="deleteSpawn(${spotIndex}, ${spawnIndex})">Del</button>
+                                </td>
+                            </tr>
+                        `;
+                    });
+                    
+                    html += `
+                                </tbody>
+                            </table>
+                        </div>
+                    `;
+                });
+            }
+            
+            html += `</div>`;
+            document.getElementById('editorContent').innerHTML = html;
+            updateUndoButton();
+
+            if (lastFocusedId) {
+                const el = document.getElementById(lastFocusedId);
+                if (el) {
+                    el.focus();
+                }
+            }
+        }
+        
+        function filterSpawns() {
+            const searchTerm = document.getElementById('spawnSearch').value.toLowerCase();
+            const tables = document.querySelectorAll('.spawn-table');
+            
+            tables.forEach(table => {
+                const rows = table.querySelectorAll('tbody tr');
+                let visibleCount = 0;
+                
+                rows.forEach(row => {
+                    const text = row.textContent.toLowerCase();
+                    const inputs = row.querySelectorAll('input');
+                    let inputText = '';
+                    inputs.forEach(input => inputText += input.value + ' ');
+
+                    if (text.includes(searchTerm) || inputText.includes(searchTerm)) {
+                        row.style.display = '';
+                        visibleCount++;
+                    } else {
+                        row.style.display = 'none';
+                    }
+                });
+                
+                table.style.display = visibleCount > 0 ? '' : 'none';
+                if (searchTerm.length > 0 && visibleCount > 0) {
+                    table.classList.remove('collapsed');
+                }
+            });
+        }
+        
+        // --- Inline Monster Editing ---
+        function cancelActiveInlineEdit() {
+            if (!activeInlineEditor) return;
+            document.removeEventListener('click', handleGlobalClickForInlineEdit);
+
+            const { td, spotIndex, spawnIndex } = activeInlineEditor;
+            const spawn = spawnData[currentMap].spots[spotIndex].spawns[spawnIndex];
+            const monsterDetails = monsterList[spawn.index];
+            const monsterName = monsterDetails ? monsterDetails.name : `Unknown (${spawn.index})`;
+            
+            td.innerHTML = `<div title="${monsterName}" class="monster-name">${spawn.index ? `[${spawn.index}] ${monsterName.length > 20 ? monsterName.substring(0, 18) + '...' : monsterName}`: '<span style="color: #dc3545;">Click to select...</span>'}</div>`;
+            td.setAttribute('onclick', `editMonsterInline(this, ${spotIndex}, ${spawnIndex})`);
+            activeInlineEditor = null;
+        }
+
+        function editMonsterInline(td, spotIndex, spawnIndex) {
+            cancelActiveInlineEdit(); 
+
+            activeInlineEditor = { td, spotIndex, spawnIndex };
+            td.removeAttribute('onclick'); 
+
+            const spawn = spawnData[currentMap].spots[spotIndex].spawns[spawnIndex];
+            const currentMonsterName = monsterList[spawn.index] ? monsterList[spawn.index].name : '';
+
+            td.innerHTML = `
+                <div class="monster-search" style="position: relative;">
+                    <input type="text" class="inline-input" style="width: 100%; background: #fff;" value="${currentMonsterName}"
+                        oninput="showInlineSuggestions(this, ${spotIndex}, ${spawnIndex})"
+                        onkeydown="if(event.key === 'Escape') cancelActiveInlineEdit();"
+                        autocomplete="off">
+                    <div class="monster-suggestions" style="position: absolute; top: 100%; left: 0; width: 250px; z-index: 100;"></div>
+                </div>`;
+
+            const input = td.querySelector('input');
+            input.focus();
+            input.select();
+            showInlineSuggestions(input, spotIndex, spawnIndex);
+
+            setTimeout(() => document.addEventListener('click', handleGlobalClickForInlineEdit), 0);
+        }
+
+        function handleGlobalClickForInlineEdit(event) {
+            if (activeInlineEditor && !activeInlineEditor.td.contains(event.target)) {
+                cancelActiveInlineEdit();
+            }
+        }
+
+        function showInlineSuggestions(input, spotIndex, spawnIndex) {
+            const searchTerm = input.value.toLowerCase();
+            const suggestionsDiv = input.nextElementSibling;
+            const spotType = spawnData[currentMap].spots[spotIndex].type;
+            const isNpcTrapSpot = spotType === '0';
+
+            let html = '';
+            let count = 0;
+
+            for (const [id, details] of Object.entries(monsterList)) {
+                if (count >= 10) break;
+                
+                const monsterType = details.type;
+                
+                if (isNpcTrapSpot) {
+                    if (monsterType !== '4' && monsterType !== '8') continue;
+                } else {
+                    if (monsterType === '4' || monsterType === '8') continue;
+                }
+
+                if (id.includes(searchTerm) || details.name.toLowerCase().includes(searchTerm)) {
+                    html += `<div class="suggestion-item" onmousedown="event.preventDefault(); selectMonsterInline(${spotIndex}, ${spawnIndex}, '${id}')">
+                                <span class="suggestion-item-id">[${id}]</span> ${details.name.replace(/'/g, "\\'")}
+                            </div>`;
+                    count++;
+                }
+            }
+            suggestionsDiv.innerHTML = html;
+            suggestionsDiv.classList.toggle('show', !!html);
+        }
+
+        function selectMonsterInline(spotIndex, spawnIndex, newIndex) {
+            const spawn = spawnData[currentMap].spots[spotIndex].spawns[spawnIndex];
+            const oldIndex = spawn.index;
+
+            if (oldIndex !== newIndex) {
+                if(!spawn.isNew) pushUndo();
+                spawn.index = newIndex;
+                if (!spawn.isNew) {
+                    spawn.isModified = true;
+                }
+            }
+            
+            const isCompulsoryFilled = newIndex && spawn.startX && spawn.startY && spawn.count;
+            const row = document.querySelector(`tr[data-spot-index="${spotIndex}"][data-spawn-index="${spawnIndex}"]`);
+            if(row) {
+                row.classList.toggle('spawn-row-empty', !isCompulsoryFilled);
+            }
+            
+            cancelActiveInlineEdit();
+            renderMapEditor(currentMap); 
+        }
+
+        // --- Modal Logic ---
+        function openAddModal() {
+            editingSpawnIndex = null;
+            addingToSpotIndex = null;
+            
+            document.getElementById('modalTitle').textContent = 'Add New Spot & Spawn';
+            document.getElementById('spawnForm').reset();
+            document.getElementById('monsterIndex').value = '';
+            
+            const spawnTypeSelect = document.getElementById('spawnType');
+            spawnTypeSelect.disabled = false;
+            
+            updateSpawnTypeRestrictions();
+            document.getElementById('spawnModal').classList.add('show');
+        }
+
+        function duplicateSpawn(spotIndex, spawnIndex) {
+            pushUndo(); 
+            const originalSpawn = spawnData[currentMap].spots[spotIndex].spawns[spawnIndex];
+            const newSpawn = JSON.parse(JSON.stringify(originalSpawn));
+            
+            newSpawn.isNew = true;
+            delete newSpawn.isModified;
+            delete newSpawn.isCompulsory;
+            
+            spawnData[currentMap].spots[spotIndex].spawns.splice(spawnIndex + 1, 0, newSpawn);
+            renderMapEditor(currentMap);
+        }
+        
+        function editSpawn(spotIndex, spawnIndex) {
+            const spawn = spawnData[currentMap].spots[spotIndex].spawns[spawnIndex];
+            const monsterDetails = monsterList[spawn.index];
+            editingSpawnIndex = { spot: spotIndex, spawn: spawnIndex };
+            addingToSpotIndex = null;
+            
+            document.getElementById('modalTitle').textContent = 'Edit Spawn Details';
+            document.getElementById('monsterSearch').value = `[${spawn.index}] ${monsterDetails ? monsterDetails.name : 'Unknown'}`;
+            document.getElementById('monsterIndex').value = spawn.index;
+            
+            const spawnTypeSelect = document.getElementById('spawnType');
+            spawnTypeSelect.value = spawnData[currentMap].spots[spotIndex].type;
+            spawnTypeSelect.disabled = true;
+            
+            document.getElementById('startX').value = spawn.startX;
+            document.getElementById('startY').value = spawn.startY;
+            document.getElementById('endX').value = spawn.endX;
+            document.getElementById('endY').value = spawn.endY;
+            document.getElementById('distance').value = spawn.distance;
+            document.getElementById('spawnCount').value = spawn.count;
+            document.getElementById('dir').value = spawn.dir;
+            document.getElementById('element').value = spawn.element;
+            document.getElementById('npcFunction').value = spawn.npcFunction === 'None' ? '' : spawn.npcFunction;
+            
+            updateSpawnTypeRestrictions();
+            document.getElementById('spawnModal').classList.add('show');
+        }
+        
+        function deleteSpawn(spotIndex, spawnIndex) {
+            if (confirm('Are you sure you want to delete this spawn?')) {
+                pushUndo(); 
+                spawnData[currentMap].spots[spotIndex].spawns.splice(spawnIndex, 1);
+                if (spawnData[currentMap].spots[spotIndex].spawns.length === 0) {
+                    spawnData[currentMap].spots.splice(spotIndex, 1);
+                }
+                renderMapEditor(currentMap);
+            }
+        }
+        
+        function closeModal() {
+            document.getElementById('spawnModal').classList.remove('show');
+            document.getElementById('monsterSuggestions').classList.remove('show');
+        }
+        
+        document.getElementById('monsterSearch').addEventListener('input', function(e) {
+            const searchTerm = e.target.value.toLowerCase();
+            const suggestions = document.getElementById('monsterSuggestions');
+            const spawnType = document.getElementById('spawnType').value;
+            const isNpcTrapSpot = spawnType === '0';
+            
+            if (searchTerm.length < 1) {
+                suggestions.classList.remove('show');
+                return;
+            }
+            
+            let html = '';
+            let count = 0;
+            
+            for (let [id, details] of Object.entries(monsterList)) {
+                if (count >= 10) break;
+                
+                const monsterType = details.type;
+                
+                if (isNpcTrapSpot) {
+                    if (monsterType !== '4' && monsterType !== '8') continue;
+                } else {
+                    if (monsterType === '4' || monsterType === '8') continue;
+                }
+                
+                if (id.includes(searchTerm) || details.name.toLowerCase().includes(searchTerm)) {
+                    html += `
+                        <div class="suggestion-item" onclick="selectMonster('${id}', '${details.name.replace(/'/g, "\\'")}')">
+                            <span class="suggestion-item-id">[${id}]</span>
+                            ${details.name}
+                        </div>
+                    `;
+                    count++;
+                }
+            }
+            
+            if (html) {
+                suggestions.innerHTML = html;
+                suggestions.classList.add('show');
+            } else {
+                suggestions.innerHTML = '<div style="padding: 10px; color: #999;">No matching ' + (isNpcTrapSpot ? 'NPCs/Traps' : 'monsters') + ' found</div>';
+                suggestions.classList.add('show');
+            }
+        });
+        
+        function selectMonster(id, name) {
+            document.getElementById('monsterSearch').value = `[${id}] ${name}`;
+            document.getElementById('monsterIndex').value = id;
+            document.getElementById('monsterSuggestions').classList.remove('show');
+        }
+        
+        function updateSpawnTypeRestrictions() {
+            const spawnType = document.getElementById('spawnType').value;
+            const warning = document.getElementById('npcWarning');
+            const monsterSearch = document.getElementById('monsterSearch');
+            
+            if (spawnType === '0') {
+                warning.style.display = 'inline';
+                monsterSearch.placeholder = 'Search NPCs/Traps only...';
+            } else {
+                warning.style.display = 'none';
+                monsterSearch.placeholder = 'Search monsters by ID or name...';
+            }
+             if (!editingSpawnIndex && addingToSpotIndex === null && document.activeElement === document.getElementById('spawnType')) {
+                 monsterSearch.value = '';
+                 document.getElementById('monsterIndex').value = '';
+             }
+        }
+
+        function setEndCoords(addValue, mode = 'inline') {
+            if (mode === 'modal') {
+                const startX = parseInt(document.getElementById('startX').value) || 0;
+                const startY = parseInt(document.getElementById('startY').value) || 0;
+                document.getElementById('endX').value = startX + addValue;
+                document.getElementById('endY').value = startY + addValue;
+            }
+        }
+        
+        function sortTable(spotIndex, columnIndex) {
+            const sortKey = `${currentMap}-${spotIndex}-${columnIndex}`;
+            if (!sortDirections[sortKey]) {
+                sortDirections[sortKey] = 'asc';
+            } else {
+                sortDirections[sortKey] = sortDirections[sortKey] === 'asc' ? 'desc' : 'asc';
+            }
+            
+            const direction = sortDirections[sortKey];
+            const spawns = spawnData[currentMap].spots[spotIndex].spawns;
+            
+            spawns.sort((a, b) => {
+                let valA, valB;
+                switch(columnIndex) {
+                    case 0: valA = parseInt(a.index); valB = parseInt(b.index); break;
+                    case 1: valA = parseInt(a.startX); valB = parseInt(b.startX); break;
+                    case 2: valA = parseInt(a.count); valB = parseInt(b.count); break;
+                    case 3: valA = parseInt(a.distance); valB = parseInt(b.distance); break;
+                    case 4: valA = parseInt(a.dir); valB = parseInt(b.dir); break;
+                    case 5: valA = parseInt(a.element); valB = parseInt(b.element); break;
+                    default: return 0;
+                }
+                return direction === 'asc' ? valA - valB : valB - valA;
+            });
+            renderMapEditor(currentMap);
+        }
+        
+        document.getElementById('spawnForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const monsterIndex = document.getElementById('monsterIndex').value;
+            if (!monsterIndex) {
+                alert('Please select a valid monster');
+                return;
+            }
+            
+            pushUndo(); 
+            
+            const spawnType = document.getElementById('spawnType').value;
+            const newSpawnData = {
+                index: monsterIndex,
+                startX: document.getElementById('startX').value,
+                startY: document.getElementById('startY').value,
+                endX: document.getElementById('endX').value,
+                endY: document.getElementById('endY').value,
+                distance: document.getElementById('distance').value,
+                count: document.getElementById('spawnCount').value,
+                dir: document.getElementById('dir').value,
+                element: document.getElementById('element').value,
+                npcFunction: document.getElementById('npcFunction').value || 'None'
+            };
+            
+            if (editingSpawnIndex) {
+                const spawnToUpdate = spawnData[currentMap].spots[editingSpawnIndex.spot].spawns[editingSpawnIndex.spawn];
+                Object.assign(spawnToUpdate, newSpawnData);
+                if (!spawnToUpdate.isNew) {
+                    spawnToUpdate.isModified = true;
+                }
+            } else {
+                newSpawnData.isNew = true;
+                let spotIndex = spawnData[currentMap].spots.findIndex(s => s.type === spawnType);
+                if (spotIndex === -1) {
+                    spawnData[currentMap].spots.push({
+                        type: spawnType,
+                        description: getSpotDescription(spawnType),
+                        spawns: [newSpawnData]
+                    });
+                    spawnData[currentMap].spots.sort((a, b) => parseInt(a.type) - parseInt(b.type));
+                } else {
+                    spawnData[currentMap].spots[spotIndex].spawns.unshift(newSpawnData);
+                }
+            }
+            
+            closeModal();
+            renderMapEditor(currentMap);
+        });
+        
+        document.getElementById('mapSearch').addEventListener('input', function(e) {
+            const searchTerm = e.target.value.toLowerCase();
+            const mapItems = document.querySelectorAll('.map-item');
+            mapItems.forEach(item => {
+                const text = item.textContent.toLowerCase();
+                item.style.display = text.includes(searchTerm) ? '' : 'none';
+            });
+        });
+        
+        function downloadSpawnXML() {
+            for (const mapNum in spawnData) {
+                spawnData[mapNum].spots.forEach(spot => {
+                    spot.spawns = spot.spawns.filter(spawn => {
+                        return !(spawn.isNew && (!spawn.index || !spawn.startX || !spawn.startY || !spawn.count));
+                    });
+                });
+                spawnData[mapNum].spots = spawnData[mapNum].spots.filter(spot => spot.spawns.length > 0);
+            }
+            
+            let xml = originalXMLHeader || ('<?xml version="1.0" encoding="utf-8"?>\n' +
+                '<!-- Generated by MU Online Monster Spawn Editor -->\n');
+            
+            xml += '<MonsterSpawn>\n';
+            
+            const sortedMapNumbers = Object.keys(spawnData).sort((a, b) => parseInt(a) - parseInt(b));
+
+            for (const mapNum of sortedMapNumbers) {
+                const mapData = spawnData[mapNum];
+                if(mapData.spots.length === 0) continue;
+
+                xml += `  <Map Number="${mapNum}" Name="${mapData.name}">\n`;
+                
+                mapData.spots.sort((a, b) => parseInt(a.type) - parseInt(b.type));
+
+                mapData.spots.forEach(spot => {
+                    xml += `    <Spot Type="${spot.type}" Description="${spot.description}">\n`;
+                    
+                    spot.spawns.forEach(spawn => {
+                        if(!spawn.index || !spawn.startX || !spawn.startY) return;
+                        xml += `      <Spawn Index="${spawn.index}" StartX="${spawn.startX}" StartY="${spawn.startY}" EndX="${spawn.endX}" EndY="${spawn.endY}" Distance="${spawn.distance}" Count="${spawn.count}" Dir="${spawn.dir}" NpcFunction="${spawn.npcFunction}" Element="${spawn.element}" />\n`;
+                    });
+                    
+                    xml += `    </Spot>\n`;
+                });
+                
+                xml += `  </Map>\n`;
+            }
+            
+            xml += '</MonsterSpawn>';
+            
+            const blob = new Blob([xml], { type: 'text/xml' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'MonsterSpawn_edited.xml';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            
+            renderMapEditor(currentMap);
+        }
+
+        // --- Guide Modal ---
+        function openGuideModal() {
+            document.getElementById('guideModal').classList.add('show');
+        }
+
+        function closeGuideModal() {
+            document.getElementById('guideModal').classList.remove('show');
+        }
+        
+        // --- Global Event Listeners for Modals ---
+        document.getElementById('spawnModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeModal();
+            }
+        });
+        
+        document.getElementById('guideModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeGuideModal();
+            }
+        });
+
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('.monster-search')) {
+                document.getElementById('monsterSuggestions').classList.remove('show');
+            }
+        });
+    </script>
+</body>
+</html>

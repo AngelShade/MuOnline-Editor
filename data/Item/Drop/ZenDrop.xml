@@ -1,0 +1,182 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 
+// ============================================================
+// == 				MUONLINE SERVER EMULATOR				 ==
+// == 				   POWERED BY DV-Team				 	 ==
+// ==          File Name: ZendDrop.xml                       ==
+// ============================================================
+// ============================================================
+//
+// ### ZenDropSystem ###
+//	Enable: Activates or deactivates the system, 0/1
+//	MultiplyByMonsterLevel: Multiplies the Zen dropped by monster by monster level, 0/1
+//	MultiplyChanceRate: Chance of getting the zen multiply bonus if MultiplyByMonsterLevel is enabled, n/10000
+//
+// ### ZenDropSystem::Map ###
+//	MapNumber: Number of a map
+//	MinMoneyCount: Minimum amount of Zen to drop from monster on specified map
+//	MaxMoneyCount: Maximum amount of Zen to drop from monster on specified map
+//	Disable: Allows to exclude specified map from the system, 0/1
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+//~~ The MaxMoneyCount must be greater or equal to MinMoneyCount
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+//~~ IMPORTANT: Final output of Zen amount cannot exceed 2147483647
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+//
+// STRICTLY NO COMMENTS INSIDE TAGS
+// BALANCED FOR 1,000,000,000 ZEN CUSTOM JEWELS
+// 20% chance for ×MonsterLevel (exciting drops)
+// Progressive: Early (10M/hr) → Endgame (800M+/hr)
+// Max safe: 2.5M base × 400 = 1B < 2.147B cap
+-->
+<ZenDropSystem Enable="1" MultiplyByMonsterLevel="0.5" MultiplyChanceRate="100">
+
+<!-- ============================= EARLY GAME (Lv 1-200) ============================= -->
+<Map Number="0"  MinMoneyCount="5000"    MaxMoneyCount="15000"   Disable="0" /> <!-- Lorencia (Lv 10) -->
+<Map Number="1"  MinMoneyCount="8000"    MaxMoneyCount="20000"   Disable="0" /> <!-- Dungeon 1-3 (Lv 25-50) -->
+<Map Number="2"  MinMoneyCount="8000"    MaxMoneyCount="20000"   Disable="0" /> <!-- Devias (Lv 10-40) -->
+<Map Number="3"  MinMoneyCount="8000"    MaxMoneyCount="20000"   Disable="0" /> <!-- Noria (Lv 10) -->
+<Map Number="4"  MinMoneyCount="10000"   MaxMoneyCount="30000"   Disable="0" /> <!-- Lost Tower 1-7 (Lv 40-90) -->
+<Map Number="5"  MinMoneyCount="10000"   MaxMoneyCount="30000"   Disable="1" /> <!-- Exile (Disabled) -->
+<Map Number="6"  MinMoneyCount="10000"   MaxMoneyCount="25000"   Disable="0" /> <!-- Arena (Lv 40) -->
+
+<!-- ============================= MID GAME (Lv 200-400) ============================= -->
+<Map Number="7"  MinMoneyCount="20000"   MaxMoneyCount="50000"   Disable="0" /> <!-- Atlans 1-3 (Lv 50-90) -->
+<Map Number="8"  MinMoneyCount="30000"   MaxMoneyCount="70000"   Disable="0" /> <!-- Tarkan 1-2 (Lv 130-160) -->
+<Map Number="10" MinMoneyCount="40000"   MaxMoneyCount="90000"   Disable="0" /> <!-- Icarus (Lv 1050) -->
+<Map Number="24" MinMoneyCount="50000"   MaxMoneyCount="120000"  Disable="0" /> <!-- Kalima 1 -->
+<Map Number="25" MinMoneyCount="60000"   MaxMoneyCount="140000"  Disable="0" /> <!-- Kalima 2 -->
+<Map Number="26" MinMoneyCount="70000"   MaxMoneyCount="160000"  Disable="0" /> <!-- Kalima 3 -->
+<Map Number="27" MinMoneyCount="80000"   MaxMoneyCount="180000"  Disable="0" /> <!-- Kalima 4 -->
+<Map Number="28" MinMoneyCount="90000"   MaxMoneyCount="200000"  Disable="0" /> <!-- Kalima 5 -->
+<Map Number="29" MinMoneyCount="100000"  MaxMoneyCount="220000"  Disable="0" /> <!-- Kalima 6 -->
+
+<!-- ============================= EVENT MAPS (Balanced Rewards) ============================= -->
+<Map Number="9"  MinMoneyCount="30000"   MaxMoneyCount="70000"   Disable="0" /> <!-- Devil Square 1-4 -->
+<Map Number="11" MinMoneyCount="40000"   MaxMoneyCount="90000"   Disable="0" /> <!-- Blood Castle 1 -->
+<Map Number="12" MinMoneyCount="50000"   MaxMoneyCount="110000"  Disable="0" /> <!-- Blood Castle 2 -->
+<Map Number="13" MinMoneyCount="60000"   MaxMoneyCount="130000"  Disable="0" /> <!-- Blood Castle 3 -->
+<Map Number="14" MinMoneyCount="70000"   MaxMoneyCount="150000"  Disable="0" /> <!-- Blood Castle 4 -->
+<Map Number="15" MinMoneyCount="80000"   MaxMoneyCount="170000"  Disable="0" /> <!-- Blood Castle 5 -->
+<Map Number="16" MinMoneyCount="90000"   MaxMoneyCount="190000"  Disable="0" /> <!-- Blood Castle 6 -->
+<Map Number="17" MinMoneyCount="100000"  MaxMoneyCount="210000"  Disable="0" /> <!-- Blood Castle 7 -->
+<Map Number="18" MinMoneyCount="40000"   MaxMoneyCount="90000"   Disable="0" /> <!-- Chaos Castle 1 -->
+<Map Number="19" MinMoneyCount="50000"   MaxMoneyCount="110000"  Disable="0" /> <!-- Chaos Castle 2 -->
+<Map Number="20" MinMoneyCount="60000"   MaxMoneyCount="130000"  Disable="0" /> <!-- Chaos Castle 3 -->
+<Map Number="21" MinMoneyCount="70000"   MaxMoneyCount="150000"  Disable="0" /> <!-- Chaos Castle 4 -->
+<Map Number="22" MinMoneyCount="80000"   MaxMoneyCount="170000"  Disable="0" /> <!-- Chaos Castle 5 -->
+<Map Number="23" MinMoneyCount="90000"   MaxMoneyCount="190000"  Disable="0" /> <!-- Chaos Castle 6 -->
+<Map Number="52" MinMoneyCount="110000"  MaxMoneyCount="230000"  Disable="0" /> <!-- Blood Castle 8 -->
+<Map Number="53" MinMoneyCount="100000"  MaxMoneyCount="210000"  Disable="0" /> <!-- Chaos Castle 7 -->
+
+<!-- ============================= HIGH-END (Lv 400-800) ============================= -->
+<Map Number="30" MinMoneyCount="150000"  MaxMoneyCount="350000"  Disable="0" /> <!-- Valley of Loren -->
+<Map Number="31" MinMoneyCount="150000"  MaxMoneyCount="350000"  Disable="0" /> <!-- Land of Trials -->
+<Map Number="32" MinMoneyCount="150000"  MaxMoneyCount="350000"  Disable="0" /> <!-- Devil Square 5-7 -->
+<Map Number="33" MinMoneyCount="200000"  MaxMoneyCount="450000"  Disable="0" /> <!-- Aida 1-2 (Lv 150-380) -->
+<Map Number="34" MinMoneyCount="200000"  MaxMoneyCount="450000"  Disable="0" /> <!-- Crywolf Fortress -->
+<Map Number="35" MinMoneyCount="200000"  MaxMoneyCount="450000"  Disable="0" /> <!-- Crywolf -->
+<Map Number="36" MinMoneyCount="200000"  MaxMoneyCount="450000"  Disable="0" /> <!-- Kalima 7 -->
+<Map Number="37" MinMoneyCount="250000"  MaxMoneyCount="550000"  Disable="0" /> <!-- Kanturu Ruins (Lv 160) -->
+<Map Number="38" MinMoneyCount="250000"  MaxMoneyCount="550000"  Disable="0" /> <!-- Kanturu 1 -->
+<Map Number="39" MinMoneyCount="250000"  MaxMoneyCount="550000"  Disable="0" /> <!-- Kanturu 2 -->
+<Map Number="40" MinMoneyCount="250000"  MaxMoneyCount="550000"  Disable="0" /> <!-- Silent Map -->
+<Map Number="41" MinMoneyCount="250000"  MaxMoneyCount="550000"  Disable="0" /> <!-- Barracks -->
+<Map Number="42" MinMoneyCount="250000"  MaxMoneyCount="550000"  Disable="0" /> <!-- Balgass Refuge -->
+<Map Number="51" MinMoneyCount="300000"  MaxMoneyCount="700000"  Disable="0" /> <!-- Elbeland (Lv 10-300) -->
+<Map Number="56" MinMoneyCount="400000"  MaxMoneyCount="900000"  Disable="0" /> <!-- Swamp of Calmness (Lv 380) -->
+<Map Number="57" MinMoneyCount="450000"  MaxMoneyCount="1000000" Disable="0" /> <!-- Raklion (Lv 380) -->
+<Map Number="58" MinMoneyCount="450000"  MaxMoneyCount="1000000" Disable="0" /> <!-- Hatchery -->
+<Map Number="63" MinMoneyCount="400000"  MaxMoneyCount="900000"  Disable="0" /> <!-- Vulcanus (Lv 300) -->
+
+<!-- ============================= ENDGAME PRIME (Lv 800-1500+) ============================= -->
+<Map Number="91" MinMoneyCount="600000"  MaxMoneyCount="1500000" Disable="0" /> <!-- Acheron (Lv 900) -->
+<Map Number="92" MinMoneyCount="600000"  MaxMoneyCount="1500000" Disable="0" /> <!-- Acheron Arca -->
+<Map Number="95" MinMoneyCount="700000"  MaxMoneyCount="1800000" Disable="0" /> <!-- Debenter -->
+<Map Number="96" MinMoneyCount="700000"  MaxMoneyCount="1800000" Disable="0" /> <!-- Debenter Arca -->
+<Map Number="97" MinMoneyCount="700000"  MaxMoneyCount="1800000" Disable="0" /> <!-- Chaos Castle Survival -->
+<Map Number="98" MinMoneyCount="600000"  MaxMoneyCount="1500000" Disable="0" /> <!-- Illusion Temple League -->
+<Map Number="99" MinMoneyCount="600000"  MaxMoneyCount="1500000" Disable="0" /> <!-- Illusion Temple League -->
+<Map Number="100" MinMoneyCount="800000" MaxMoneyCount="2000000" Disable="0" /> <!-- Urk Mountain -->
+<Map Number="101" MinMoneyCount="800000" MaxMoneyCount="2000000" Disable="0" /> <!-- Urk Event -->
+<Map Number="110" MinMoneyCount="800000" MaxMoneyCount="2000000" Disable="0" /> <!-- Nars -->
+<Map Number="112" MinMoneyCount="900000" MaxMoneyCount="2200000" Disable="0" /> <!-- Ferea (Lv 400) -->
+<Map Number="113" MinMoneyCount="900000" MaxMoneyCount="2200000" Disable="0" /> <!-- Nixie Lake (Lv 630) -->
+
+<!-- Illusion Temple (Higher Entry) -->
+<Map Number="45" MinMoneyCount="500000"  MaxMoneyCount="1200000" Disable="0" /> <!-- Illusion Temple 1 -->
+<Map Number="46" MinMoneyCount="500000"  MaxMoneyCount="1200000" Disable="0" /> <!-- Illusion Temple 2 -->
+<Map Number="47" MinMoneyCount="500000"  MaxMoneyCount="1200000" Disable="0" /> <!-- Illusion Temple 3 -->
+<Map Number="48" MinMoneyCount="500000"  MaxMoneyCount="1200000" Disable="0" /> <!-- Illusion Temple 4 -->
+<Map Number="49" MinMoneyCount="500000"  MaxMoneyCount="1200000" Disable="0" /> <!-- Illusion Temple 5 -->
+<Map Number="50" MinMoneyCount="500000"  MaxMoneyCount="1200000" Disable="0" /> <!-- Illusion Temple 6 -->
+
+<!-- Doppelganger (All) -->
+<Map Number="65" MinMoneyCount="500000"  MaxMoneyCount="1200000" Disable="0" /> <!-- Snow -->
+<Map Number="66" MinMoneyCount="500000"  MaxMoneyCount="1200000" Disable="0" /> <!-- Volcan -->
+<Map Number="67" MinMoneyCount="500000"  MaxMoneyCount="1200000" Disable="0" /> <!-- Sea -->
+<Map Number="68" MinMoneyCount="500000"  MaxMoneyCount="1200000" Disable="0" /> <!-- Crystals -->
+<Map Number="82" MinMoneyCount="600000"  MaxMoneyCount="1500000" Disable="0" /> <!-- Renewal 1 -->
+<Map Number="83" MinMoneyCount="600000"  MaxMoneyCount="1500000" Disable="0" /> <!-- Renewal 2 -->
+<Map Number="84" MinMoneyCount="600000"  MaxMoneyCount="1500000" Disable="0" /> <!-- Renewal 3 -->
+<Map Number="85" MinMoneyCount="600000"  MaxMoneyCount="1500000" Disable="0" /> <!-- Renewal 4 -->
+<Map Number="86" MinMoneyCount="600000"  MaxMoneyCount="1500000" Disable="0" /> <!-- Renewal 5 -->
+<Map Number="87" MinMoneyCount="600000"  MaxMoneyCount="1500000" Disable="0" /> <!-- Renewal 6 -->
+<Map Number="88" MinMoneyCount="600000"  MaxMoneyCount="1500000" Disable="0" /> <!-- Renewal 7 -->
+<Map Number="89" MinMoneyCount="600000"  MaxMoneyCount="1500000" Disable="0" /> <!-- Renewal 8 -->
+<Map Number="90" MinMoneyCount="600000"  MaxMoneyCount="1500000" Disable="0" /> <!-- Renewal 9 -->
+
+<!-- Imperial Fortress -->
+<Map Number="69" MinMoneyCount="500000"  MaxMoneyCount="1200000" Disable="0" /> <!-- Imperial 1 -->
+<Map Number="70" MinMoneyCount="500000"  MaxMoneyCount="1200000" Disable="0" /> <!-- Imperial 2 -->
+<Map Number="71" MinMoneyCount="500000"  MaxMoneyCount="1200000" Disable="0" /> <!-- Imperial 3 -->
+<Map Number="72" MinMoneyCount="500000"  MaxMoneyCount="1200000" Disable="0" /> <!-- Imperial 4 -->
+
+<!-- Karutan -->
+<Map Number="80" MinMoneyCount="500000"  MaxMoneyCount="1200000" Disable="0" /> <!-- Karutan 1 -->
+<Map Number="81" MinMoneyCount="500000"  MaxMoneyCount="1200000" Disable="0" /> <!-- Karutan 2 -->
+
+<!-- ============================= DEEP ENDGAME (Lv 900-1500+) ============================= -->
+<Map Number="116" MinMoneyCount="800000" MaxMoneyCount="2000000" Disable="0" /> <!-- Deep Dungeon 1 (Lv 770) -->
+<Map Number="117" MinMoneyCount="850000" MaxMoneyCount="2100000" Disable="0" /> <!-- Deep Dungeon 2 -->
+<Map Number="118" MinMoneyCount="850000" MaxMoneyCount="2100000" Disable="0" /> <!-- Deep Dungeon 3 -->
+<Map Number="119" MinMoneyCount="850000" MaxMoneyCount="2100000" Disable="0" /> <!-- Deep Dungeon 4 -->
+<Map Number="120" MinMoneyCount="850000" MaxMoneyCount="2100000" Disable="0" /> <!-- Deep Dungeon 5 -->
+<Map Number="122" MinMoneyCount="900000" MaxMoneyCount="2200000" Disable="0" /> <!-- Swamp of Darkness (Lv 800) -->
+<Map Number="123" MinMoneyCount="1000000" MaxMoneyCount="2500000" Disable="0" /> <!-- Kubera Mine 1-5 (Lv 850) -->
+<Map Number="124" MinMoneyCount="1000000" MaxMoneyCount="2500000" Disable="0" />
+<Map Number="125" MinMoneyCount="1000000" MaxMoneyCount="2500000" Disable="0" />
+<Map Number="126" MinMoneyCount="1000000" MaxMoneyCount="2500000" Disable="0" />
+<Map Number="127" MinMoneyCount="1000000" MaxMoneyCount="2500000" Disable="0" />
+
+<!-- Abyss of Atlans -->
+<Map Number="128" MinMoneyCount="1000000" MaxMoneyCount="2500000" Disable="0" /> <!-- Abyss 1 (Lv 900) -->
+<Map Number="129" MinMoneyCount="1000000" MaxMoneyCount="2500000" Disable="0" /> <!-- Abyss 2 (Lv 925) -->
+<Map Number="130" MinMoneyCount="1000000" MaxMoneyCount="2500000" Disable="0" /> <!-- Abyss 3 (Lv 950) -->
+
+<!-- Final Tier Maps -->
+<Map Number="131" MinMoneyCount="1100000" MaxMoneyCount="2700000" Disable="0" /> <!-- Scorched Canyon (Lv 1000) -->
+<Map Number="132" MinMoneyCount="1100000" MaxMoneyCount="2700000" Disable="0" /> <!-- Red Smoke Icarus (Lv 1050) -->
+<Map Number="133" MinMoneyCount="1100000" MaxMoneyCount="2700000" Disable="0" /> <!-- Arenil Temple (Lv 1100) -->
+<Map Number="134" MinMoneyCount="1100000" MaxMoneyCount="2700000" Disable="0" /> <!-- Ashy Aida (Lv 1150) -->
+<Map Number="135" MinMoneyCount="1200000" MaxMoneyCount="2800000" Disable="0" /> <!-- Old Kethotum (Lv 1200) -->
+<Map Number="136" MinMoneyCount="1200000" MaxMoneyCount="2800000" Disable="0" /> <!-- Blaze Kethotum (Lv 1250) -->
+<Map Number="137" MinMoneyCount="1300000" MaxMoneyCount="2900000" Disable="0" /> <!-- Kanturu Undergrounds -->
+<Map Number="138" MinMoneyCount="1300000" MaxMoneyCount="2900000" Disable="0" /> <!-- Volcano Ignis (Lv 1350) -->
+<Map Number="139" MinMoneyCount="1300000" MaxMoneyCount="2900000" Disable="0" /> <!-- Boss Zone -->
+<Map Number="140" MinMoneyCount="1400000" MaxMoneyCount="3000000" Disable="0" /> <!-- Bloody Tarkan (Lv 1400) -->
+<Map Number="141" MinMoneyCount="1400000" MaxMoneyCount="3000000" Disable="0" /> <!-- Tormenta Island (Lv 1450) -->
+<Map Number="142" MinMoneyCount="1400000" MaxMoneyCount="3000000" Disable="0" /> <!-- Twisted Karutan (Lv 1450) -->
+<Map Number="143" MinMoneyCount="1500000" MaxMoneyCount="3000000" Disable="0" /> <!-- Kardamahal (Lv 1500) -->
+
+<!-- ============================= DISABLED MAPS (Quest/Story) ============================= -->
+<Map Number="114" MinMoneyCount="10000" MaxMoneyCount="30000" Disable="1" /> <!-- Quest Zone -->
+<Map Number="115" MinMoneyCount="10000" MaxMoneyCount="30000" Disable="1" /> <!-- Labyrinth -->
+<Map Number="121" MinMoneyCount="10000" MaxMoneyCount="30000" Disable="1" /> <!-- Fourth Class Quest -->
+
+<!-- ============================= MISC / TOWNS ============================= -->
+<Map Number="62" MinMoneyCount="10000" MaxMoneyCount="30000" Disable="0" /> <!-- Santa Village -->
+<Map Number="64" MinMoneyCount="10000" MaxMoneyCount="30000" Disable="0" /> <!-- Duel Arena -->
+<Map Number="79" MinMoneyCount="10000" MaxMoneyCount="30000" Disable="0" /> <!-- Loren Market -->
+
+</ZenDropSystem>

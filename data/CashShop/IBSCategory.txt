@@ -1,0 +1,11 @@
+1@WCoin Shop@200@201@1@1@1
+2@Exp Buff@200@201@1@1@0
+3@Buff Scroll@200@201@1@1@0
+4@Elixir@200@201@1@1@0
+5@Jewel@200@201@1@1@0
+6@Chaos Items@200@201@1@1@0
+7@Pass Ticket@200@201@1@1@0
+8@5th Items@200@201@1@1@0
+9@Ring And Guardian@200@201@1@1@0
+10@Pet And Fenrir@200@201@1@1@0
+11@Custom Jewelry@200@201@1@1@0
