@@ -10,7 +10,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@500&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
 
     <script src="https://unpkg.com/lucide@latest"></script>
-    <link rel="stylesheet" href="public/css/style.css">
+    <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
     <div class="modal" id="authorModal"><div class="author-modal-content"><h2>Welcome</h2><p>Please enter your name to track your changes.</p><input type="text" id="initialAuthorName" placeholder="Your Name..." oninput="this.value ? document.getElementById('saveInitialAuthorBtn').disabled=false : document.getElementById('saveInitialAuthorBtn').disabled=true"><button id="saveInitialAuthorBtn" class="btn btn-primary" onclick="saveInitialAuthorName()" disabled>Save & Begin</button></div></div>
