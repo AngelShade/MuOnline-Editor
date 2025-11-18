@@ -17,5 +17,11 @@
     "MASTERY_EXC_OPTIONS_PATH": "data/Item/MasteryExcOptions.xml",
     "PENTAGRAM_DROP_RATE_PATH": "data/Item/Drop/PentagramItemDropRate.xml",
     "SOCKET_ITEM_DROP_RATES_PATH": "data/Item/Drop/SocketItemDropRates.xml",
-    "ITEM_DROP_RATE_CONTROL_PATH": "data/Item/Drop/ItemDropRateControl.ini"
+    "ITEM_DROP_RATE_CONTROL_PATH": "data/Item/Drop/ItemDropRateControl.ini",
+    "EVENT_SCHEDULE_PATH": "data/Event/Event.xml",
+    "EVENT_BACKUP_DIR": "data/Event/Backups",
+    "INVASION_MANAGER_PATH": "data/Event/InvasionManager.xml",
+    "EVENT_INI_PATH": "data/Event/Event.ini",
+    "EVENT_SEASON_MANAGER_PATH": "data/Event/EventSeasonManager.xml",
+    "INVASION_MONSTERS_PATH": "data/Event/InvasionMonsters.xml"
 }

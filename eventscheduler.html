@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Event Scheduler</title>
+
+    <!-- Fonts and Icons -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@500&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link rel="stylesheet" href="css/style.css">
+
+</head>
+<body>
+
+    <div class="container glass-effect">
+        <!-- Main Dashboard Header -->
+        <header class="header">
+            <h1><i data-lucide="calendar-clock"></i>Event Scheduler Manager</h1>
+            <p>Visually schedule invasions, blood castle, devil square, and other server events.</p>
+        </header>
+
+        <!-- Event Scheduler UI -->
+        <div class="main-content">
+            <div class="sidebar glass-effect" style="padding: 20px;">
+                <h3><i data-lucide="folder"></i>Categories</h3>
+                <div class="search-bar">
+                    <input type="text" id="category-search" placeholder="Search categories...">
+                </div>
+                <div id="category-list" class="map-list"></div>
+            </div>
+            <div class="editor-panel">
+                <div class="glass-effect" style="padding: 20px;">
+                    <div id="event-controls" style="margin-bottom: 20px; display: flex; justify-content: space-between;">
+                        <input type="text" id="event-search" class="search-bar" placeholder="Search events...">
+                        <div>
+                            <button id="add-event" class="btn btn-primary"><i data-lucide="plus"></i> Add Event</button>
+                            <button id="delete-selected" class="btn btn-danger"><i data-lucide="trash-2"></i> Delete Selected</button>
+                            <button id="save-category" class="btn btn-success"><i data-lucide="save"></i> Save</button>
+                        </div>
+                    </div>
+                    <div id="event-table-container"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal for editing/adding events -->
+    <div class="modal" id="event-modal">
+        <div class="modal-content glass-effect">
+            <div class="modal-header">
+                <h2 id="modal-title">Edit Event</h2>
+                <button class="close-btn" id="close-modal"><i data-lucide="x"></i></button>
+            </div>
+            <div class="modal-body" id="modal-body">
+                <!-- Form fields will be dynamically inserted here -->
+            </div>
+            <div class="modal-footer">
+                <button id="save-modal" class="btn btn-success">Save</button>
+                <button id="cancel-modal" class="btn btn-outline">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/eventscheduler.js"></script>
+    <script>
+        // Render all icons on load
+        document.addEventListener('DOMContentLoaded', () => {
+            lucide.createIcons();
+        });
+    </script>
+</body>
+</html>
