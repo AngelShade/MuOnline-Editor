@@ -313,7 +313,7 @@
     </div>
 
         <script>
-        const SERVER_URL = 'http://localhost:3000';
+        const SERVER_URL = 'http://149.202.139.156:3000';
         
         // --- Application State ---
         let monsterList = {}; // { "ID": "Name" }
@@ -435,8 +435,10 @@
             loadData();
         });
 
-        // --- Undo/Redo Logic ---
-
+        /**
+         * @description Updates the undo/redo history stack with a new state.
+         * @param {object} data - The current state data to be saved to history.
+         */
         function updateHistory(data) {
             // Trim forward history
             if (historyIndex < history.length - 1) {
@@ -456,6 +458,9 @@
             updateUndoRedoButtons();
         }
 
+        /**
+         * @description Updates the enabled/disabled state of the Undo and Redo buttons.
+         */
         function updateUndoRedoButtons() {
             const undoBtn = document.getElementById('undoBtn');
             const redoBtn = document.getElementById('redoBtn');
@@ -464,6 +469,9 @@
             if (redoBtn) redoBtn.disabled = historyIndex >= history.length - 1;
         }
 
+        /**
+         * @description Reverts the current data to the previous state in the history.
+         */
         function undoChange() {
             if (historyIndex > 0) {
                 historyIndex--;
@@ -477,6 +485,9 @@
             }
         }
 
+        /**
+         * @description Advances the current data to the next state in the history.
+         */
         function redoChange() {
             if (historyIndex < history.length - 1) {
                 historyIndex++;
@@ -509,7 +520,13 @@
         });
 
 
-        // --- Confirmation Modal Logic ---
+        /**
+         * @description Displays a confirmation modal.
+         * @param {string} title - The title for the modal.
+         * @param {string} message - The message to display.
+         * @param {function} onConfirm - The callback to execute on confirmation.
+         * @param {string} [buttonClass='btn-danger'] - The CSS class for the confirm button.
+         */
         function confirmAction(title, message, onConfirm, buttonClass = 'btn-danger') {
             document.getElementById('confirmTitle').textContent = title;
             document.getElementById('confirmMessage').textContent = message;
@@ -523,11 +540,19 @@
             lucide.createIcons();
         }
 
+        /**
+         * @description Closes the confirmation modal.
+         */
         function closeConfirmModal() {
             document.getElementById('confirmModal').classList.remove('show');
         }
 
-        // --- Status Logic ---
+        /**
+         * @description Displays a status message bar.
+         * @param {string} message - The message to display.
+         * @param {boolean} [isError=false] - If true, styles the message as an error.
+         * @param {boolean} [isWarning=false] - If true, styles the message as a warning.
+         */
         function showStatus(message, isError = false, isWarning = false) {
             const statusBar = document.getElementById('statusBar');
             statusBar.textContent = message;
@@ -542,7 +567,9 @@
             setTimeout(() => { statusBar.style.display = 'none'; }, 5000);
         }
 
-        // --- Data Loading & Parsing ---
+        /**
+         * @description Loads all initial data from the server.
+         */
         async function loadData() {
             try {
                 const response = await fetch(`${SERVER_URL}/api/map-drop-data`);
@@ -599,6 +626,10 @@
             }
         }
 
+        /**
+         * @description Parses the MonsterList.xml content into the global `monsterList` object.
+         * @param {string} xmlText - The XML content from the server.
+         */
         function parseMonsterList(xmlText) {
             const parser = new DOMParser();
             const xmlDoc = parser.parseFromString(xmlText, 'text/xml');
@@ -608,7 +639,10 @@
             }
         }
 
-        // --- MODIFIED: Swapped to use Shop Editor's parsing logic ---
+        /**
+         * @description Parses the ItemList.xml content into the global `itemList` and `itemCategories` objects.
+         * @param {string} xmlText - The XML content from the server.
+         */
         function parseItemList(xmlText) {
             const parser = new DOMParser();
             const xmlDoc = parser.parseFromString(xmlText, "text/xml");
@@ -632,6 +666,11 @@
             }
         }
         
+        /**
+         * @description Parses the XML content of a map drop file into an array of drop objects.
+         * @param {string} xmlText - The XML content of the map drop file.
+         * @returns {object[]} An array of drop item objects.
+         */
         function parseMapDropXML(xmlText) {
             const parser = new DOMParser();
             const xmlDoc = parser.parseFromString(xmlText, 'text/xml');
@@ -685,7 +724,9 @@
             return drops;
         }
 
-        // --- Map File List Rendering ---
+        /**
+         * @description Renders the list of map bag files in the sidebar.
+         */
         function renderMapFileList() {
             const fileListEl = document.getElementById('mapFileList');
             fileListEl.innerHTML = '';
@@ -709,6 +750,9 @@
             });
         }
 
+        /**
+         * @description Filters the map file list based on the search input.
+         */
         function filterMapFiles() {
             const searchTerm = document.getElementById('mapSearch').value.toLowerCase();
             document.querySelectorAll('.map-item').forEach(item => {
@@ -716,6 +760,10 @@
             });
         }
         
+        /**
+         * @description Selects a map file, loads its content, and renders the editor panel.
+         * @param {string} filename - The name of the map file to select.
+         */
         async function selectMapFile(filename) { // --- Make function async ---
             if (currentFile === filename) return;
             
@@ -772,7 +820,9 @@
             }
         }
         
-        // --- Editor Panel Rendering ---
+        /**
+         * @description Renders the main editor panel for the currently selected file.
+         */
         function renderEditorPanel() {
             if (!currentFile) {
                 document.getElementById('editorContent').innerHTML = `<div class="empty-state"><h3>Select a Map Bag File</h3><p>Choose a file from the list on the left to start editing drops.</p></div>`;
@@ -835,13 +885,20 @@
             updateUndoRedoButtons(); // Ensure button state is current
         }
 
-        // --- NEW: Load More Function ---
+        /**
+         * @description Loads and displays the next page of rows in the drop table.
+         */
         function loadMoreRows() {
             currentVisibleRows += ROWS_PER_PAGE;
             renderEditorPanel();
         }
         
-        // --- MODIFIED: Use new itemList structure ---
+        /**
+         * @description Generates the HTML for a single row in the drop table.
+         * @param {object} drop - The drop item data object.
+         * @param {number} index - The index of the drop in the `currentDropData` array.
+         * @returns {string} The HTML string for the table row.
+         */
         function getDropRowHtml(drop, index) {
             const monsterName = monsterList[drop.MonsterID] || 'Unknown Monster';
             // MODIFIED: Look up item name from nested structure
@@ -868,6 +925,12 @@
             `;
         }
         
+        /**
+         * @description Updates a single field for a drop item directly from an inline input.
+         * @param {number} index - The index of the drop to update.
+         * @param {string} field - The property name of the drop to update.
+         * @param {string} value - The new value.
+         */
         function updateDropValue(index, field, value) {
             // Store current state for potential undo BEFORE modification
             updateHistory(currentDropData); 
@@ -883,6 +946,12 @@
             updateHistory(currentDropData);
         }
         
+        /**
+         * @description Updates min/max pair values (e.g., Level, Reset) from a single semicolon-separated input.
+         * @param {number} index - The index of the drop to update.
+         * @param {string} type - The type of min/max pair ('Level', 'Reset', 'PLevel').
+         * @param {string} value - The new semicolon-separated value (e.g., "0;15").
+         */
         function updateMinMax(index, type, value) {
             // Store current state for potential undo BEFORE modification
             updateHistory(currentDropData); 
@@ -911,7 +980,9 @@
             updateHistory(currentDropData);
         }
 
-        // --- MODIFIED: Use new itemList structure and add more search fields ---
+        /**
+         * @description Filters the drop table based on the search input, checking against monster and item names/IDs.
+         */
         function filterDropTable() {
             const searchTerm = document.getElementById('dropSearch').value.toLowerCase();
             const table = document.getElementById('dropTable');
@@ -945,7 +1016,9 @@
             });
         }
         
-        // --- Modal & Editing Logic ---
+        /**
+         * @description Opens the modal for adding a new drop item.
+         */
         function openAddModal() {
             editingDropIndex = null;
             document.getElementById('modalTitle').textContent = 'Add New Drop Item';
@@ -976,7 +1049,10 @@
             lucide.createIcons();
         }
         
-        // --- NEW: Function to open modal for viewing/editing ---
+        /**
+         * @description Opens the modal for viewing and editing an existing drop item.
+         * @param {number} index - The index of the drop to view/edit.
+         */
         function openViewModal(index) {
             editingDropIndex = index;
             const drop = currentDropData[index];
@@ -1020,11 +1096,16 @@
             lucide.createIcons();
         }
         
+        /**
+         * @description Closes the main add/edit drop modal.
+         */
         function closeModal() {
             document.getElementById('dropModal').classList.remove('show');
         }
         
-        // --- NEW: Bulk Edit Modal Logic ---
+        /**
+         * @description Opens the bulk edit modal.
+         */
         function openBulkModal() {
             if (!currentFile) {
                 showStatus('Please select a map file first.', true);
@@ -1041,13 +1122,16 @@
             lucide.createIcons();
         }
         
+        /**
+         * @description Closes the bulk edit modal.
+         */
         function closeBulkModal() {
             document.getElementById('bulkEditModal').classList.remove('show');
         }
-        // --- End Bulk Edit Modal Logic ---
 
-        // --- NEW: Rate Adjust Modal Logic ---
-        
+        /**
+         * @description Opens the rate adjustment modal.
+         */
         function openRateAdjustModal() {
             if (!currentFile) {
                 showStatus('Please select a map file first.', true);
@@ -1060,10 +1144,16 @@
             lucide.createIcons();
         }
         
+        /**
+         * @description Closes the rate adjustment modal.
+         */
         function closeRateAdjustModal() {
             document.getElementById('rateAdjustModal').classList.remove('show');
         }
 
+        /**
+         * @description Calculates and displays a preview of the rate changes in the rate adjustment modal.
+         */
         function calculateRateChange() {
             const percentInput = document.getElementById('rateAdjustPercent');
             const previewEl = document.getElementById('rateAdjustPreview');
@@ -1162,6 +1252,10 @@
             updateHistory(currentDropData); // Final history state after bulk operation
         });
 
+        /**
+         * @description Deletes a drop item from the current table after confirmation.
+         * @param {number} index - The index of the drop to delete.
+         */
         function deleteDrop(index) {
             confirmAction(
                 'Delete Drop?',
@@ -1176,6 +1270,10 @@
             );
         }
         
+        /**
+         * @description Duplicates a drop item and inserts it below the original in the table.
+         * @param {number} index - The index of the drop to duplicate.
+         */
         function duplicateDrop(index) {
             // Store current state for potential undo
             updateHistory(currentDropData); 
@@ -1208,13 +1306,23 @@
             suggestionsDiv.classList.toggle('show', !!html);
         });
 
+        /**
+         * @description Callback function to select a monster from a suggestion list.
+         * @param {string} id - The ID of the selected monster.
+         * @param {string} name - The name of the selected monster.
+         */
         function selectMonster(id, name) {
             document.getElementById('monsterSearch').value = `[${id}] ${name}`;
             document.getElementById('monsterID').value = id;
             document.getElementById('monsterSuggestions').classList.remove('show');
         }
         
-        // --- MODIFIED: Item Search Suggestions (Modal) ---
+        /**
+         * @description Callback function to select an item from a suggestion list in the main modal.
+         * @param {string} cat - The category of the selected item.
+         * @param {string} index - The index of the selected item.
+         * @param {string} name - The name of the selected item.
+         */
         document.getElementById('itemSearch').addEventListener('input', function(e) {
             let html = '';
             let count = 0;
@@ -1337,12 +1445,25 @@
             suggestions.classList.toggle('show', !!html);
         });
 
+        /**
+         * @description Callback function to select a monster from a suggestion list in the bulk edit modal.
+         * @param {string} type - The type of selection ('Find' or 'Replace').
+         * @param {string} id - The ID of the selected monster.
+         * @param {string} name - The name of the selected monster.
+         */
         function selectBulkMonster(type, id, name) {
             document.getElementById(`bulk${type}MonsterSearch`).value = `[${id}] ${name}`;
             document.getElementById(`bulk${type}MonsterID`).value = id;
             document.getElementById(`bulk${type}MonsterSuggestions`).classList.remove('show');
         }
 
+        /**
+         * @description Callback function to select an item from a suggestion list in the bulk edit modal.
+         * @param {string} type - The type of selection ('Find' or 'Replace').
+         * @param {string} cat - The category of the selected item.
+         * @param {string} index - The index of the selected item.
+         * @param {string} name - The name of the selected item.
+         */
         function selectBulkItem(type, cat, index, name) {
             document.getElementById(`bulk${type}ItemSearch`).value = `[${cat}_${index}] ${name}`;
             document.getElementById(`bulk${type}ItemCat`).value = cat;
@@ -1517,8 +1638,9 @@
         });
 
 
-        // --- Guide Modal Logic ---
+        /** @description Opens the guide modal. */
         function openGuideModal() { document.getElementById('guideModal').classList.add('show'); lucide.createIcons(); }
+        /** @description Closes the guide modal. */
         function closeGuideModal() { document.getElementById('guideModal').classList.remove('show'); }
         
         // Close modals on outside click
@@ -1548,7 +1670,10 @@
             }
         });
         
-        // --- Save to Server ---
+        /**
+         * @description Builds the XML content for the current map drop file from the `currentDropData` array.
+         * @returns {string} The complete XML string.
+         */
         function buildXmlFromData() {
             let xml = originalXMLHeaders[currentFile] || '<?xml version="1.0" encoding="utf-8"?>\n';
             xml += '<MonsterMapItemDrop>\n';
@@ -1571,6 +1696,9 @@
             return xml;
         }
         
+        /**
+         * @description Saves the changes for the current file to the server.
+         */
         async function saveChangesToServer() { 
             if (!currentFile) {
                 showStatus('No file selected to save.', true);

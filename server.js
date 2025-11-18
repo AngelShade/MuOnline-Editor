@@ -8,7 +8,11 @@ const app = express();
 const PORT = 3000; // The port your server will run on. Ensure it's open.
 
 // --- Path Resolution ---
-// Resolve all paths from config.json relative to the application's root directory
+/**
+ * Resolves a relative path from the application's root directory.
+ * @param {string} relativePath - The relative path to resolve.
+ * @returns {string} The absolute path.
+ */
 const resolvePath = (relativePath) => path.resolve(__dirname, relativePath);
 
 const MONSTER_SPAWN_PATH = resolvePath(config.MONSTER_SPAWN_PATH);
@@ -30,8 +34,6 @@ const MASTERY_EXC_OPTIONS_PATH = resolvePath(config.MASTERY_EXC_OPTIONS_PATH);
 const PENTAGRAM_DROP_RATE_PATH = resolvePath(config.PENTAGRAM_DROP_RATE_PATH);
 const SOCKET_ITEM_DROP_RATES_PATH = resolvePath(config.SOCKET_ITEM_DROP_RATES_PATH);
 const ITEM_DROP_RATE_CONTROL_PATH = resolvePath(config.ITEM_DROP_RATE_CONTROL_PATH);
-const EVENT_DIR = resolvePath(config.EVENT_DIR || 'data/Event');
-const EVENT_BACKUP_DIR = resolvePath(config.EVENT_BACKUP_DIR || path.join('data', 'Event', 'Backups'));
 
 // --- Mix Editor Paths ---
 const MIX_PATH = path.join(MIX_DIR, 'Mix.xml');
@@ -50,37 +52,81 @@ app.use(express.json({ limit: '10mb' }));
 // Serve static assets from the 'public' directory
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Explicitly serve the HTML files from the root directory
+/**
+ * @api {get} / Request main editor page
+ * @apiName GetIndex
+ * @apiGroup Static
+ *
+ * @apiSuccess {File} index.html The main editor page.
+ */
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
 });
 
+/**
+ * @api {get} /index.html Request main editor page
+ * @apiName GetIndexHTML
+ * @apiGroup Static
+ *
+ * @apiSuccess {File} index.html The main editor page.
+ */
 app.get('/index.html', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
 });
 
+/**
+ * @api {get} /monsterspawneditor.html Request monster spawn editor page
+ * @apiName GetMonsterSpawnEditor
+ * @apiGroup Static
+ *
+ * @apiSuccess {File} monsterspawneditor.html The monster spawn editor page.
+ */
 app.get('/monsterspawneditor.html', (req, res) => {
     res.sendFile(path.join(__dirname, 'monsterspawneditor.html'));
 });
 
+/**
+ * @api {get} /shopeditor.html Request shop editor page
+ * @apiName GetShopEditor
+ * @apiGroup Static
+ *
+ * @apiSuccess {File} shopeditor.html The shop editor page.
+ */
 app.get('/shopeditor.html', (req, res) => {
     res.sendFile(path.join(__dirname, 'shopeditor.html'));
 });
 
+/**
+ * @api {get} /mixeditor.html Request mix editor page
+ * @apiName GetMixEditor
+ * @apiGroup Static
+ *
+ * @apiSuccess {File} mixeditor.html The mix editor page.
+ */
 app.get('/mixeditor.html', (req, res) => {
     res.sendFile(path.join(__dirname, 'mixeditor.html'));
 });
 
+/**
+ * @api {get} /monsterdropeditor.html Request monster drop editor page
+ * @apiName GetMonsterDropEditor
+ * @apiGroup Static
+ *
+ * @apiSuccess {File} monsterdropeditor.html The monster drop editor page.
+ */
 app.get('/monsterdropeditor.html', (req, res) => {
     res.sendFile(path.join(__dirname, 'monsterdropeditor.html'));
 });
 
+/**
+ * @api {get} /zendropeditor.html Request zen drop editor page
+ * @apiName GetZenDropEditor
+ * @apiGroup Static
+ *
+ * @apiSuccess {File} zendropeditor.html The zen drop editor page.
+ */
 app.get('/zendropeditor.html', (req, res) => {
     res.sendFile(path.join(__dirname, 'zendropeditor.html'));
-});
-
-app.get('/eventscheduler.html', (req, res) => {
-    res.sendFile(path.join(__dirname, 'eventscheduler.html'));
 });
 
 
@@ -89,6 +135,7 @@ app.get('/eventscheduler.html', (req, res) => {
  * Creates a timestamped backup of a file.
  * @param {string} filePath - The full path to the file to back up.
  * @param {string} backupDir - The directory to store the backup in.
+ * @returns {Promise<void>}
  */
 async function createBackup(filePath, backupDir) {
     try {
@@ -111,86 +158,16 @@ async function createBackup(filePath, backupDir) {
 }
 
 /**
- * Read the top-of-file header from a text/XML/INI file without parsing the entire content.
- * Returns an object { header: string, body: string }
+ * @api {get} /api/files Get Monster Spawn and List Files
+ * @apiName GetMonsterFiles
+ * @apiGroup MonsterSpawnEditor
+ *
+ * @apiSuccess {Object} data The monster spawn and list files.
+ * @apiSuccess {String} data.monsterSpawnXml The content of MonsterSpawn.xml.
+ * @apiSuccess {String} data.monsterListXml The content of MonsterList.xml.
+ *
+ * @apiError {String} 500 A required file was not found or could not be read.
  */
-async function readFileHeader(filePath, maxChars = 10000) {
-    try {
-        const content = await fs.readFile(filePath, 'utf8');
-        const sample = content.slice(0, maxChars);
-
-        // If XML and has leading comment blocks <!-- ... -->, extract them
-        const xmlCommentMatch = sample.match(/^\s*(?:<\?xml[^>]*>\s*)?(?:<!--([\s\S]*?)-->\s*)+/);
-        if (xmlCommentMatch) {
-            // Collect consecutive comment blocks
-            const commentBlocks = [];
-            const commentRegex = /<!--([\s\S]*?)-->/g;
-            let m;
-            while ((m = commentRegex.exec(sample)) !== null) {
-                commentBlocks.push(m[1].trim());
-            }
-            const header = commentBlocks.join('\n');
-            const restIndex = sample.indexOf('-->') + 3;
-            const body = content.slice(restIndex).trimStart();
-            return { header: header.trim(), body };
-        }
-
-        // Otherwise, read lines until a blank line or a non-comment line (for INI-like or code files)
-        const lines = sample.split(/\r?\n/);
-        const headerLines = [];
-        let i = 0;
-        for (; i < lines.length; i++) {
-            const ln = lines[i];
-            if (ln.trim() === '') break;
-            // consider comment markers
-            if (/^\s*(?:\/\/|;|#)/.test(ln) || /^\s*\/\*/.test(ln) || /^\s*<!--/.test(ln)) {
-                headerLines.push(ln.replace(/^\s*(?:\/\/|;|#)\s?/, '').replace(/^\s*<!--\s?/, '').replace(/-->\s*$/, ''));
-                continue;
-            }
-            // For INI files, lines like [Section] or key=value at top could be part of header as well
-            if (/^[a-zA-Z0-9_\[\];#\-\s=:,]+$/.test(ln) && ln.length < 200) {
-                headerLines.push(ln);
-                continue;
-            }
-            // otherwise stop
-            break;
-        }
-
-        const header = headerLines.join('\n').trim();
-        const body = content.slice(i ? content.indexOf(lines[i]) : 0).trimStart();
-        return { header, body };
-    } catch (err) {
-        return { header: '', body: '' };
-    }
-}
-
-/**
- * Parse a simple header block into key/value pairs.
- * Supports lines like `Key=Value`, `Key: Value`, `key value` and CSV-like directives.
- */
-function parseHeaderToKV(header) {
-    if (!header) return {};
-    const lines = header.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
-    const out = {};
-    for (const ln of lines) {
-        // key = value
-        const mEq = ln.match(/^([^=:\s]+)\s*=\s*(.+)$/);
-        if (mEq) { out[mEq[1]] = mEq[2]; continue; }
-
-        const mColon = ln.match(/^([^:]+):\s*(.+)$/);
-        if (mColon) { out[mColon[1].trim()] = mColon[2].trim(); continue; }
-
-        const mSpace = ln.match(/^([A-Za-z0-9_]+)\s+(.+)$/);
-        if (mSpace) { out[mSpace[1]] = mSpace[2]; continue; }
-
-        // fallback: push as raw line entries
-        const key = `line_${Object.keys(out).length+1}`;
-        out[key] = ln;
-    }
-    return out;
-}
-
-// Route to get the spawn and monster list files
 app.get('/api/files', async (req, res) => {
     try {
         // Ensure files exist before trying to read them
@@ -210,7 +187,18 @@ app.get('/api/files', async (req, res) => {
     }
 });
 
-// Route for Combined Drop Rate Editor Data
+/**
+ * @api {get} /api/drop-data Get Drop Rate Editor Data
+ * @apiName GetDropData
+ * @apiGroup ZenDropEditor
+ *
+ * @apiSuccess {Object} data The drop rate editor data.
+ * @apiSuccess {String} data.zenDropXml The content of ZenDrop.xml.
+ * @apiSuccess {String} data.itemExcellentOptionsXml The content of ItemExcellentOptions.xml.
+ * @apiSuccess {String} data.itemListXml The content of ItemList.xml.
+ *
+ * @apiError {String} 500 A required file was not found or could not be read.
+ */
 app.get('/api/drop-data', async (req, res) => {
     try {
         // Check access for all required files for the Drop Editor, including ItemList.xml
@@ -234,7 +222,19 @@ app.get('/api/drop-data', async (req, res) => {
     }
 });
 
-// Route for Shop Editor Data
+/**
+ * @api {get} /api/shop-data Get Shop Editor Data
+ * @apiName GetShopData
+ * @apiGroup ShopEditor
+ *
+ * @apiSuccess {Object} data The shop editor data.
+ * @apiSuccess {String} data.shopListXml The content of ShopList.xml.
+ * @apiSuccess {String} data.itemListXml The content of ItemList.xml.
+ * @apiSuccess {String} data.itemExcellentOptionsXml The content of ItemExcellentOptions.xml.
+ * @apiSuccess {String} data.itemStackXml The content of ItemStack.xml.
+ *
+ * @apiError {String} 500 A required file was not found or could not be read.
+ */
 app.get('/api/shop-data', async (req, res) => {
     try {
         await fs.access(SHOP_LIST_PATH);
@@ -259,7 +259,20 @@ app.get('/api/shop-data', async (req, res) => {
     }
 });
 
-// --- Route to get individual shop file content ---
+/**
+ * @api {get} /api/shop-file/:filename Get individual shop file content
+ * @apiName GetShopFile
+ * @apiGroup ShopEditor
+ *
+ * @apiParam {String} filename The name of the shop file to retrieve.
+ *
+ * @apiSuccess {Object} data The shop file content.
+ * @apiSuccess {String} data.shopFileXml The content of the requested shop file.
+ *
+ * @apiError {String} 400 Invalid shop filename.
+ * @apiError {String} 404 Shop file not found.
+ * @apiError {String} 500 Could not read shop file.
+ */
 app.get('/api/shop-file/:filename', async (req, res) => {
     const { filename } = req.params;
 
@@ -285,7 +298,23 @@ app.get('/api/shop-file/:filename', async (req, res) => {
     }
 });
 
-// Route for Mix Editor Data
+/**
+ * @api {get} /api/mix-data Get Mix Editor Data
+ * @apiName GetMixData
+ * @apiGroup MixEditor
+ *
+ * @apiSuccess {Object} data The mix editor data.
+ * @apiSuccess {String} data.itemListXml The content of ItemList.xml.
+ * @apiSuccess {String} data.mixXml The content of Mix.xml.
+ * @apiSuccess {String} data.angelWeaponUpgradeXml The content of AngelWeaponUpgrade.xml.
+ * @apiSuccess {String} data.masteryItemMixXml The content of MasteryItemMix.xml.
+ * @apiSuccess {String} data.mixDisableXml The content of MixDisable.xml.
+ * @apiSuccess {String} data.mixJewelTemplateXml The content of MixJewelTemplate.xml.
+ * @apiSuccess {String} data.mixLuckyTemplateXml The content of MixLuckyTemplate.xml.
+ * @apiSuccess {String} data.mixSpellStoneXml The content of MixSpellStone.xml.
+ *
+ * @apiError {String} 500 A required file was not found or could not be read.
+ */
 app.get('/api/mix-data', async (req, res) => {
     try {
         // This is the critical dependency for item names
@@ -335,7 +364,22 @@ app.get('/api/mix-data', async (req, res) => {
     }
 });
 
-// --- NEW: Route for Monster Map Drop Editor Data ---
+/**
+ * @api {get} /api/map-drop-data Get Monster Map Drop Editor Data
+ * @apiName GetMapDropData
+ * @apiGroup MonsterDropEditor
+ *
+ * @apiSuccess {Object} data The monster map drop editor data.
+ * @apiSuccess {String} data.monsterListXml The content of MonsterList.xml.
+ * @apiSuccess {String} data.itemListXml The content of ItemList.xml.
+ * @apiSuccess {String} data.masteryExcOptionsXml The content of MasteryExcOptions.xml.
+ * @apiSuccess {String} data.pentagramDropRateXml The content of PentagramDropRate.xml.
+ * @apiSuccess {String} data.socketItemDropRatesXml The content of SocketItemDropRates.xml.
+ * @apiSuccess {String} data.itemDropRateControlIni The content of ItemDropRateControl.ini.
+ * @apiSuccess {String[]} data.mapDropFiles An array of map drop filenames.
+ *
+ * @apiError {String} 500 A required file or directory was not found or could not be read.
+ */
 app.get('/api/map-drop-data', async (req, res) => {
     try {
         // 1. Read dependencies
@@ -392,7 +436,19 @@ app.get('/api/map-drop-data', async (req, res) => {
 });
 // --- End of new route ---
 
-// --- NEW: Route to get single map drop file content ---
+/**
+ * @api {get} /api/map-drop-file-content Get single map drop file content
+ * @apiName GetMapDropFileContent
+ * @apiGroup MonsterDropEditor
+ *
+ * @apiParam {String} filename The name of the map drop file to retrieve.
+ *
+ * @apiSuccess {String} fileContent The content of the requested map drop file.
+ *
+ * @apiError {String} 400 Invalid map drop filename.
+ * @apiError {String} 404 File not found.
+ * @apiError {String} 500 Could not read file.
+ */
 app.get('/api/map-drop-file-content', async (req, res) => {
     const { filename } = req.query;
 
@@ -421,132 +477,20 @@ app.get('/api/map-drop-file-content', async (req, res) => {
 // --- End of new route ---
 
 
-// --- Event Scheduler API ---
-app.get('/api/event-data', async (req, res) => {
-    try {
-        // Ensure event directory exists
-        await fs.access(EVENT_DIR);
-
-        // Read Event.ini if present
-        const eventIniPath = path.join(EVENT_DIR, 'Event.ini');
-        let eventIni = '';
-        try {
-            await fs.access(eventIniPath);
-            eventIni = await fs.readFile(eventIniPath, 'utf8');
-        } catch (e) {
-            // file may not exist; that's fine
-            eventIni = '';
-        }
-
-        // Read other useful event files if present
-        const invasionMonstersPath = path.join(EVENT_DIR, 'InvasionMonsters.xml');
-        const invasionManagerPath = path.join(EVENT_DIR, 'InvasionManager.xml');
-        const eventSeasonManagerPath = path.join(EVENT_DIR, 'EventSeasonManager.xml');
-
-        const invasionMonsters = await (async () => {
-            try { await fs.access(invasionMonstersPath); return await fs.readFile(invasionMonstersPath, 'utf8'); } catch { return ''; }
-        })();
-        const invasionManager = await (async () => {
-            try { await fs.access(invasionManagerPath); return await fs.readFile(invasionManagerPath, 'utf8'); } catch { return ''; }
-        })();
-        const eventSeasonManager = await (async () => {
-            try { await fs.access(eventSeasonManagerPath); return await fs.readFile(eventSeasonManagerPath, 'utf8'); } catch { return ''; }
-        })();
-
-        // List subfolders and files for discovery
-        const entries = await fs.readdir(EVENT_DIR, { withFileTypes: true });
-        const files = [];
-        const dirs = [];
-        for (const e of entries) {
-            if (e.isDirectory()) dirs.push(e.name);
-            else files.push(e.name);
-        }
-
-        // For each file present, attempt to extract a header and parse it
-        const fileDetails = [];
-        for (const f of files) {
-            const fp = path.join(EVENT_DIR, f);
-            try {
-                const { header } = await readFileHeader(fp);
-                const parsed = parseHeaderToKV(header);
-                fileDetails.push({ filename: f, header, parsed });
-            } catch (e) {
-                fileDetails.push({ filename: f, header: '', parsed: {} });
-            }
-        }
-
-        res.json({
-            eventIni,
-            invasionMonsters,
-            invasionManager,
-            eventSeasonManager,
-            files,
-            dirs,
-            fileDetails
-        });
-    } catch (error) {
-        console.error('Error reading Event directory:', error);
-        if (error.code === 'ENOENT') {
-            res.status(500).send(`Error: Event directory not found: ${EVENT_DIR}`);
-        } else {
-            res.status(500).send('Error: Could not read Event directory.');
-        }
-    }
-});
-
-// Serve raw event file content by filename (safe basename only)
-app.get('/api/event-file', async (req, res) => {
-    const { filename } = req.query;
-    if (!filename || filename.includes('..') || filename.includes('/')) {
-        return res.status(400).send('Invalid filename');
-    }
-    const filePath = path.join(EVENT_DIR, filename);
-    try {
-        await fs.access(filePath);
-        const content = await fs.readFile(filePath, 'utf8');
-        // If parse query param present, include header and parsed metadata
-        if (req.query.parse === '1' || req.query.parse === 'true') {
-            const { header, body } = await readFileHeader(filePath);
-            const parsed = parseHeaderToKV(header);
-            res.json({ filename, header, parsed, body, raw: content });
-            return;
-        }
-
-        res.header('Content-Type', 'text/plain');
-        res.send(content);
-    } catch (err) {
-        console.error(`Error reading event file ${filename}:`, err);
-        res.status(404).send('File not found');
-    }
-});
-
-
-app.post('/api/save-event-data', async (req, res) => {
-    const { filename, newContent } = req.body;
-    // If no filename provided, default to Event.ini
-    const target = filename ? path.join(EVENT_DIR, filename) : path.join(EVENT_DIR, 'Event.ini');
-
-    if (!newContent) return res.status(400).send('Error: No content provided.');
-
-    try {
-        // Ensure event dir exists
-        await fs.mkdir(EVENT_DIR, { recursive: true });
-        await createBackup(target, EVENT_BACKUP_DIR);
-        await fs.writeFile(target, newContent, 'utf8');
-        console.log(`Saved event data to ${target}`);
-        res.status(200).send('Saved');
-    } catch (error) {
-        console.error('Error saving event data:', error);
-        res.status(500).send('Error: Could not save event data.');
-    }
-});
-
-// --- End Event Scheduler API ---
-
-
 // --- SAVE ENDPOINTS ---
 
-// Save route for MonsterSpawn.xml
+/**
+ * @api {post} /api/save Save MonsterSpawn.xml
+ * @apiName SaveMonsterSpawn
+ * @apiGroup MonsterSpawnEditor
+ *
+ * @apiParam {String} newXmlContent The new content of MonsterSpawn.xml.
+ *
+ * @apiSuccess {String} 200 File saved successfully.
+ *
+ * @apiError {String} 400 No XML content provided.
+ * @apiError {String} 500 Could not save file to disk.
+ */
 app.post('/api/save', async (req, res) => {
     const { newXmlContent } = req.body;
     if (!newXmlContent) {
@@ -563,7 +507,18 @@ app.post('/api/save', async (req, res) => {
     }
 });
 
-// Save route for ItemExcellentOptions.xml
+/**
+ * @api {post} /api/save-excellent-options Save ItemExcellentOptions.xml
+ * @apiName SaveExcellentOptions
+ * @apiGroup ZenDropEditor
+ *
+ * @apiParam {String} newXmlContent The new content of ItemExcellentOptions.xml.
+ *
+ * @apiSuccess {String} 200 File saved successfully.
+ *
+ * @apiError {String} 400 No XML content provided.
+ * @apiError {String} 500 Could not save file to disk.
+ */
 app.post('/api/save-excellent-options', async (req, res) => {
     const { newXmlContent } = req.body;
     if (!newXmlContent) {
@@ -580,7 +535,18 @@ app.post('/api/save-excellent-options', async (req, res) => {
     }
 });
 
-// Save route for ZenDrop.xml
+/**
+ * @api {post} /api/save-zendrop Save ZenDrop.xml
+ * @apiName SaveZenDrop
+ * @apiGroup ZenDropEditor
+ *
+ * @apiParam {String} newXmlContent The new content of ZenDrop.xml.
+ *
+ * @apiSuccess {String} 200 File saved successfully.
+ *
+ * @apiError {String} 400 No XML content provided.
+ * @apiError {String} 500 Could not save file to disk.
+ */
 app.post('/api/save-zendrop', async (req, res) => {
     const { newXmlContent } = req.body;
     if (!newXmlContent) {
@@ -597,7 +563,19 @@ app.post('/api/save-zendrop', async (req, res) => {
     }
 });
 
-// Save route for individual shop files
+/**
+ * @api {post} /api/save-shop-file/:filename Save individual shop file
+ * @apiName SaveShopFile
+ * @apiGroup ShopEditor
+ *
+ * @apiParam {String} filename The name of the shop file to save.
+ * @apiParam {String} newXmlContent The new content of the shop file.
+ *
+ * @apiSuccess {String} 200 File saved successfully.
+ *
+ * @apiError {String} 400 No XML content provided or invalid shop filename.
+ * @apiError {String} 500 Could not save shop file to disk.
+ */
 app.post('/api/save-shop-file/:filename', async (req, res) => {
     const { filename } = req.params;
     const { newXmlContent } = req.body;
@@ -624,7 +602,18 @@ app.post('/api/save-shop-file/:filename', async (req, res) => {
     }
 });
 
-// Save route for the master ShopList.xml
+/**
+ * @api {post} /api/save-shoplist Save ShopList.xml
+ * @apiName SaveShopList
+ * @apiGroup ShopEditor
+ *
+ * @apiParam {String} newXmlContent The new content of ShopList.xml.
+ *
+ * @apiSuccess {String} 200 File saved successfully.
+ *
+ * @apiError {String} 400 No XML content provided.
+ * @apiError {String} 500 Could not save file to disk.
+ */
 app.post('/api/save-shoplist', async (req, res) => {
     const { newXmlContent } = req.body;
     if (!newXmlContent) {
@@ -648,7 +637,19 @@ app.post('/api/save-shoplist', async (req, res) => {
     }
 });
 
-// Generic Save Route for Mix Editor Files
+/**
+ * @api {post} /api/save-mix-file Save Mix Editor File
+ * @apiName SaveMixFile
+ * @apiGroup MixEditor
+ *
+ * @apiParam {String} filename The name of the mix file to save.
+ * @apiParam {String} newXmlContent The new content of the mix file.
+ *
+ * @apiSuccess {String} 200 File saved successfully.
+ *
+ * @apiError {String} 400 Missing filename or XML content, or invalid filename.
+ * @apiError {String} 500 Could not save mix file to disk.
+ */
 app.post('/api/save-mix-file', async (req, res) => {
     const { filename, newXmlContent } = req.body;
     if (!filename || !newXmlContent) {
@@ -684,7 +685,19 @@ app.post('/api/save-mix-file', async (req, res) => {
     }
 });
 
-// --- NEW: Save Route for Monster Map Drop Files ---
+/**
+ * @api {post} /api/save-map-drop-file Save Monster Map Drop File
+ * @apiName SaveMapDropFile
+ * @apiGroup MonsterDropEditor
+ *
+ * @apiParam {String} filename The name of the map drop file to save.
+ * @apiParam {String} newXmlContent The new content of the map drop file.
+ *
+ * @apiSuccess {String} 200 File saved successfully.
+ *
+ * @apiError {String} 400 No XML content provided or invalid map drop filename.
+ * @apiError {String} 500 Could not save map drop file to disk.
+ */
 app.post('/api/save-map-drop-file', async (req, res) => {
     const { filename, newXmlContent } = req.body;
     
@@ -715,7 +728,12 @@ app.post('/api/save-map-drop-file', async (req, res) => {
 // --- End of new save route ---
 
 
-// Start the server
+/**
+ * Starts the Express server and listens for connections on the specified port.
+ * It also performs a startup check to ensure all required files and directories are accessible.
+ * @param {number} PORT - The port to listen on.
+ * @param {Function} callback - The callback function to execute once the server is running.
+ */
 app.listen(PORT, async () => {
     try {
         // Check file paths on startup

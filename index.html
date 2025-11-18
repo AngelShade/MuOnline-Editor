@@ -84,15 +84,15 @@
                 </div>
             </a>
 
-            <!-- Module 6: Event Scheduler -->
-            <a href="eventscheduler.html" class="module-card glass-effect">
+            <!-- Module 6: Event Scheduler (Coming Soon) -->
+            <a href="#" class="module-card glass-effect disabled" onclick="return false;">
                 <div class="module-card-icon">
                     <i data-lucide="calendar-clock"></i>
                 </div>
                 <h2>Event Scheduler</h2>
                 <p>Visually schedule invasions, blood castle, devil square, and other server events. Set times and monster configurations.</p>
                 <div class="module-card-footer">
-                    <span>Launch Editor <i data-lucide="arrow-right"></i></span>
+                    <span>Coming Soon...</span>
                 </div>
             </a>
 
@@ -100,7 +100,10 @@
     </div>
 
     <script>
-        // Render all icons on load
+        /**
+         * @file Renders all Lucide icons on the page after the DOM is fully loaded.
+         * @description This script finds all elements with the `data-lucide` attribute and replaces them with SVG icons.
+         */
         document.addEventListener('DOMContentLoaded', () => {
             lucide.createIcons();
         });

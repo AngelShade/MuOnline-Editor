@@ -1,10 +1,17 @@
+/**
+ * @file Contains all logic for parsing, manipulating, and rendering the Main Mix (Mix.xml) data.
+ * @namespace MixMainMix
+ * @description Global object holding all functions for the Main Mix editor tab.
+ * Assumes access to global variables and functions from the main editor script,
+ * such as `mixData`, `pushUndo`, `saveToCache`, `renderEditor`, `getItemName`, etc.
+ */
 // Global placeholder for Main Mix data and functions
 // NOTE: This file assumes global access to mixData, originalXmlHeaders,
 // pushUndo, saveToCache, renderTabControls, getCatAndIndex, getItemName, and parseItemType
 const MixMainMix = {};
 
 /**
- * Parses the Mix.xml string and populates mixData.main.
+ * Parses the Mix.xml string and populates the `mixData.main` array.
  * NOTE: This implementation is read-only for item groups due to complexity.
  * @param {string} xmlText The XML content of Mix.xml.
  */
@@ -61,10 +68,10 @@ MixMainMix.parseMix = function(xmlText) {
 };
 
 /**
- * Updates a value in the Mix.xml data structure.
- * @param {number} index Index of the mix entry in mixData.main.
- * @param {string} field Field name to update (e.g., 'ReqMoney').
- * @param {string} value New value.
+ * Updates a top-level value in a specific Mix.xml data entry.
+ * @param {number} index The index of the mix entry in `mixData.main`.
+ * @param {string} field The property name to update (e.g., 'ReqMoney', 'MaxRate_0').
+ * @param {string} value The new value to set.
  */
 MixMainMix.updateMixValue = function(index, field, value) {
     if (mixData.main[index]) {
@@ -93,12 +100,12 @@ MixMainMix.calculateFlatId = function(cat, index) {
 };
 
 /**
- * Updates a specific data field within a group.
- * @param {number} mixIndex The index of the mix.
+ * Updates a specific data field for an item requirement within a group.
+ * @param {number} mixIndex The index of the mix entry.
  * @param {number} groupIndex The index of the group within the mix.
- * @param {number} dataIndex The index of the data element within the group.
- * @param {string} field The field name to update (e.g., 'ItemMin').
- * @param {string} value The new value.
+ * @param {number} dataIndex The index of the item data element within the group.
+ * @param {string} field The property name to update (e.g., 'ItemMin', 'LevelMax').
+ * @param {string} value The new value for the field.
  */
 MixMainMix.updateGroupData = function(mixIndex, groupIndex, dataIndex, field, value) {
     if (mixData.main[mixIndex] && mixData.main[mixIndex].groups[groupIndex] && mixData.main[mixIndex].groups[groupIndex].data[dataIndex]) {
@@ -119,11 +126,15 @@ MixMainMix.updateGroupData = function(mixIndex, groupIndex, dataIndex, field, va
 };
 
 /**
- * Handles the callback from the item search modal for ItemMin/ItemMax.
- * NOTE: This function is the new entry point for item selection.
- * @param {number} cat Item Category.
- * @param {number} index Item Index.
- * @param {object} context The context object passed by openItemModal.
+ * Handles the callback from the item search modal for updating `ItemMin` or `ItemMax`.
+ * This function is the entry point for item selection via the modal.
+ * @param {number} cat The selected item's category.
+ * @param {number} index The selected item's index.
+ * @param {object} context The context object passed from the modal opener.
+ * @param {number} context.mixIndex The index of the mix.
+ * @param {number} context.groupIndex The index of the group.
+ * @param {number} context.dataIndex The index of the data element.
+ * @param {string} context.field The field being updated ('ItemMin' or 'ItemMax').
  */
 MixMainMix.handleItemModalCallback = function(cat, index, context) {
     const { mixIndex, groupIndex, dataIndex, field } = context;
@@ -135,9 +146,9 @@ MixMainMix.handleItemModalCallback = function(cat, index, context) {
 };
 
 /**
- * Adds a new item requirement (<Data>) to a Group.
- * @param {number} mixIndex Index of the mix.
- * @param {number} groupIndex Index of the group within the mix.
+ * Adds a new item requirement (`<Data>`) to a specified group.
+ * @param {number} mixIndex The index of the mix entry.
+ * @param {number} groupIndex The index of the group within the mix.
  */
 MixMainMix.addItemToGroup = function(mixIndex, groupIndex) {
     if (mixData.main[mixIndex] && mixData.main[mixIndex].groups[groupIndex]) {
@@ -158,10 +169,10 @@ MixMainMix.addItemToGroup = function(mixIndex, groupIndex) {
 };
 
 /**
- * Removes an item requirement (<Data>) from a Group.
- * @param {number} mixIndex Index of the mix.
- * @param {number} groupIndex Index of the group within the mix.
- * @param {number} dataIndex Index of the data item to remove.
+ * Removes an item requirement (`<Data>`) from a specified group after user confirmation.
+ * @param {number} mixIndex The index of the mix entry.
+ * @param {number} groupIndex The index of the group within the mix.
+ * @param {number} dataIndex The index of the data item to remove.
  */
 MixMainMix.removeItemFromGroup = function(mixIndex, groupIndex, dataIndex) {
     if (mixData.main[mixIndex] && mixData.main[mixIndex].groups[groupIndex] && mixData.main[mixIndex].groups[groupIndex].data.length > 0) {
@@ -178,8 +189,9 @@ MixMainMix.removeItemFromGroup = function(mixIndex, groupIndex, dataIndex) {
 
 
 /**
- * Adds a new empty requirement group (<Group>) to a Mix entry.
- * @param {number} mixIndex Index of the mix entry in mixData.main.
+ * Adds a new, empty requirement group (`<Group>`) to a mix entry.
+ * The new group will have one default item rule.
+ * @param {number} mixIndex The index of the mix entry in `mixData.main`.
  */
 MixMainMix.addGroup = function(mixIndex) {
     if (mixData.main[mixIndex]) {
@@ -206,8 +218,8 @@ MixMainMix.addGroup = function(mixIndex) {
 };
 
 /**
- * Removes the last requirement group (<Group>) from a Mix entry.
- * @param {number} mixIndex Index of the mix entry in mixData.main.
+ * Removes the last requirement group (`<Group>`) from a mix entry after user confirmation.
+ * @param {number} mixIndex The index of the mix entry in `mixData.main`.
  */
 MixMainMix.removeGroup = function(mixIndex) {
     if (mixData.main[mixIndex] && mixData.main[mixIndex].groups.length > 0) {

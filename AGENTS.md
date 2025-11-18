@@ -6,15 +6,6 @@ Give concise, actionable guidance so an AI coding agent can be productive immedi
 - **Runtime:** Single-process Express server in `server.js` listening on port `3000` by default. Static assets served from `public/` and multiple HTML editors exist at repository root (e.g. `index.html`, `mixeditor.html`, `monsterspawneditor.html`, `shopeditor.html`, `monsterdropeditor.html`, `zendropeditor.html`).
 - **Data flow:** Frontend fetches editor data from endpoints under `/api/*`. The server reads XML/INI files from paths configured in `config.json`, may create timestamped backups, and writes updated content back to disk via `/api/*` POST save endpoints.
 
-```instructions
-## Purpose
-Give concise, actionable guidance so an AI coding agent can be productive immediately in this repo.
-
-## Big picture
-- **What this repo is:** A small Node.js/Express web editor that serves static HTML editors (root-level HTML files) and exposes JSON APIs to read/write game server configuration files stored under `data/`.
-- **Runtime:** Single-process Express server in `server.js` listening on port `3000` by default. Static assets served from `public/` and multiple HTML editors exist at repository root.
-- **Data flow:** Frontend fetches editor data from endpoints under `/api/*`. The server reads XML/INI files from paths configured in `config.json`, creates timestamped backups, and writes updated content back to disk via `/api/*` POST save endpoints.
-
 ## Current important files (root)
 - `index.html` — Main landing/editor page.
 - `mixeditor.html` — Mix editor frontend.
@@ -83,8 +74,6 @@ Give concise, actionable guidance so an AI coding agent can be productive immedi
 
 If anything here is unclear or you'd like more detail on a specific area (example requests for a route, format of files in `data/`, or test harnesses), tell me which area to expand and I'll iterate.
 
-```
-
 ## Event Scheduler (new module)
 - The UI: an `eventscheduler.html` page should let operators create scheduled events (Blood Castle, Devil Square, Invasion, Castle Siege, custom invasions) and map/monster configurations. A basic stub exists at `eventscheduler.html`.
 - Backend: add `/api/event-data` (GET) to return `{ events: [...] }` and a save endpoint (POST `/api/save-event-data`) that accepts `{ newEventXmlContent }` or a JSON structure depending on storage format.
@@ -104,4 +93,3 @@ If anything here is unclear or you'd like more detail on a specific area (exampl
 ## Notes for agents
 - When adding editors for Season 19 files, always check the top-of-file header comments before assuming field order.
 - Prefer minimal parsing for the UI: surface editable fields first (time, repeat, maps, monsters, spawn counts), then provide an advanced raw-edit view for power users.
-

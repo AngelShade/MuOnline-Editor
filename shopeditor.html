@@ -281,6 +281,10 @@
             document.addEventListener('mouseup', handleDragEnd);
         });
         
+        /**
+         * Checks if there are any unsaved changes in the current shop or shop list.
+         * @returns {boolean} True if there are unsaved changes, false otherwise.
+         */
         function hasUnsavedChanges() {
              const hasModifiedItems = currentShopData.tabs.some(tab => 
                  tab.some(item => item.isModified || item.isNew)
@@ -292,6 +296,9 @@
              return hasModifiedItems || isShopListModified;
         }
 
+        /**
+         * Checks for unsaved changes and prompts the user before redirecting to the dashboard.
+         */
         function checkUnsavedChangesAndRedirect() {
             if (hasUnsavedChanges()) {
                 confirmAction(
@@ -312,6 +319,10 @@
             }
         }
         
+        /**
+         * @description Handles global keydown events for Undo (Ctrl+Z) and Delete item.
+         * @param {KeyboardEvent} e - The keyboard event.
+         */
         document.addEventListener('keydown', (e) => { 
             if (e.ctrlKey && e.key === 'z') { 
                 e.preventDefault(); 
@@ -347,6 +358,11 @@
             }
         });
         
+        /**
+         * Initiates a drag operation for a grid item.
+         * @param {MouseEvent} event - The mousedown event.
+         * @param {number} itemIndex - The index of the item being dragged.
+         */
         function handleDragStart(event, itemIndex) {
             if (event.button !== 0 || currentView !== 'grid') return; 
             
@@ -381,6 +397,10 @@
             dragOffset.y = dragItemMetadata.height * SLOT_SIZE * 0.5; 
         }
         
+        /**
+         * Creates and initializes the visual representation of the dragged item once the drag threshold is met.
+         * @param {MouseEvent} event - The mousemove event.
+         */
         function initializeDragVisual(event) {
              if (isDraggingConfirmed) return;
              
@@ -411,6 +431,10 @@
              populateTooltip(item, event); 
         }
 
+        /**
+         * Handles the movement of a dragged item, updating its position and showing drop targets.
+         * @param {MouseEvent} event - The mousemove event.
+         */
         function handleDragMove(event) {
             if (!dragOriginalWrapper) return; 
             
@@ -456,6 +480,10 @@
             }
         }
 
+        /**
+         * Finalizes the drag-and-drop operation, either swapping, moving, or reverting the item.
+         * @param {MouseEvent} event - The mouseup event.
+         */
         function handleDragEnd(event) {
             if (!dragOriginalWrapper || dragOriginalIndex === null) return; 
 
@@ -541,6 +569,12 @@
             isDraggingConfirmed = false;
         }
 
+        /**
+         * Calculates the grid slot index based on client coordinates.
+         * @param {number} clientX - The clientX coordinate.
+         * @param {number} clientY - The clientY coordinate.
+         * @returns {number|null} The index of the grid slot, or null if outside the grid.
+         */
         function getDropSlot(clientX, clientY) {
             if (!dragBounds) return null;
 
@@ -557,6 +591,13 @@
             return row * GRID_COLS + col;
         }
 
+        /**
+         * Checks if an item of a given size can be dropped at a specific slot without overlapping other items.
+         * @param {number} startSlot - The top-left slot index for the drop.
+         * @param {number} width - The width of the item in grid cells.
+         * @param {number} height - The height of the item in grid cells.
+         * @returns {boolean} True if the placement is valid, false otherwise.
+         */
         function checkDropValidity(startSlot, width, height) {
              const startCol = startSlot % GRID_COLS;
              const startRow = Math.floor(startSlot / GRID_COLS);
@@ -579,6 +620,10 @@
             return true;
         }
         
+        /**
+         * Clears the grid state reservation for a specific item.
+         * @param {number} itemIndex - The index of the item to clear.
+         */
         function clearReservation(itemIndex) {
             gridState.forEach((index, slot) => {
                 if (index === itemIndex) {
@@ -589,6 +634,12 @@
             if (item) item.gridSlot = null;
         }
 
+        /**
+         * Calculates the new order ID for an item moved to a new slot in the grid.
+         * @param {number} droppedSlot - The slot index where the item was dropped.
+         * @param {number} originalItemIndex - The original index of the item being moved.
+         * @returns {number} The new calculated order ID.
+         */
         function calculateNewOrderId(droppedSlot, originalItemIndex) {
             const items = currentShopData.tabs[activeTab];
             
@@ -646,6 +697,10 @@
         }
 
 
+        /**
+         * Re-sorts and re-assigns order IDs for all items in the active tab to ensure sequential ordering.
+         * @param {object|null} movedItem - The item that was just moved, used for reference (can be null).
+         */
         function reorganizeShopItems(movedItem) {
             const items = currentShopData.tabs[activeTab];
 
@@ -675,6 +730,12 @@
             initializeGridState();
         }
         
+        /**
+         * Handles item selection and swapping logic on left-click in the grid view.
+         * @param {MouseEvent} event - The click event.
+         * @param {number} itemIndex - The index of the clicked item.
+         * @returns {boolean} True to indicate the click was handled.
+         */
         function performClickSelection(event, itemIndex) {
             
             event.stopPropagation();
@@ -742,6 +803,13 @@
             }
         }
 
+        /**
+         * Displays a confirmation modal.
+         * @param {string} title The title for the modal.
+         * @param {string} message The message to display.
+         * @param {function} onConfirm The callback function to execute on confirmation.
+         * @param {string} [buttonClass='btn-danger'] The CSS class for the confirm button.
+         */
         function confirmAction(title, message, onConfirm, buttonClass = 'btn-danger') {
             document.getElementById('confirmTitle').textContent = title;
             document.getElementById('confirmMessage').textContent = message;
@@ -755,10 +823,12 @@
             lucide.createIcons();
         }
 
+        /** Closes the confirmation modal. */
         function closeConfirmModal() {
             document.getElementById('confirmModal').classList.remove('show');
         }
 
+        /** Initializes the author lock feature, prompting for a name if not set. */
         function initializeAuthorLock() {
             const authorName = localStorage.getItem('shopEditorAuthor'); 
             if (authorName && authorName.trim() !== '') {
@@ -770,6 +840,7 @@
             }
         }
 
+        /** Saves the initial author name from the modal to local storage. */
         function saveInitialAuthorName() {
             const authorInput = document.getElementById('initialAuthorName');
             const authorName = authorInput.value.trim();
@@ -781,6 +852,7 @@
             }
         }
 
+        /** Renders the author name and controls in the header. */
         function renderAuthorControls() {
             const authorName = localStorage.getItem('shopEditorAuthor') || 'Unknown';
             document.getElementById('authorNameDisplay').textContent = authorName;
@@ -789,12 +861,17 @@
             lucide.createIcons();
         }
 
+        /**
+         * Toggles the author display between view and edit modes.
+         * @param {boolean} isEditing - True to switch to edit mode.
+         */
         function toggleAuthorEdit(isEditing) {
             document.getElementById('authorDisplayView').style.display = isEditing ? 'none' : 'flex';
             document.getElementById('authorEditView').style.display = isEditing ? 'flex' : 'none';
             if (isEditing) document.getElementById('authorNameInput').focus();
         }
 
+        /** Saves the updated author name from the edit input. */
         function saveAuthorName() {
             const authorName = document.getElementById('authorNameInput').value.trim();
             if (authorName) {
@@ -805,8 +882,20 @@
             }
         }
 
+        /**
+         * Gets the author's name from local storage.
+         * @returns {string} The author's name.
+         */
         function getAuthorName() { return localStorage.getItem('shopEditorAuthor') || 'Unknown Editor'; }
 
+        /**
+         * Displays a status message bar.
+         * @param {string} message The message to display.
+         * @param {boolean} [isError=false] If true, shows an error style.
+         * @param {boolean} [isWarning=false] If true, shows a warning style.
+         * @param {boolean} [isInfo=false] If true, shows an info style.
+         * @param {object[]} [controls=null] Optional buttons to add to the status bar.
+         */
         function showStatus(message, isError = false, isWarning = false, isInfo = false, controls = null) {
             const statusBar = document.getElementById('statusBar');
             statusBar.innerHTML = '';
@@ -836,6 +925,7 @@
             }
         }
 
+        /** Displays a confirmation modal to clear all local data. */
         function confirmClearCache() {
             confirmAction(
                 'Clear Local Cache?',
@@ -848,6 +938,7 @@
             );
         }
 
+        /** Saves the current shop's data to local storage. */
         function saveToCache() {
             if (!isDataLoaded || !currentShopID) return;
             let cache = JSON.parse(localStorage.getItem(CACHE_KEY) || '{}');
@@ -860,6 +951,11 @@
             localStorage.setItem(CACHE_KEY, JSON.stringify(cache));
         }
 
+        /**
+         * Loads a shop's data from local storage.
+         * @param {string} shopId - The ID of the shop to load.
+         * @returns {boolean} True if data was loaded from cache, false otherwise.
+         */
         function loadFromCache(shopId) {
             try {
                 const cache = JSON.parse(localStorage.getItem(CACHE_KEY));
@@ -885,6 +981,7 @@
             return false;
         }
 
+        /** Loads all initial data (ShopList, ItemList, etc.) from the server. */
         async function loadData() {
             let serverData;
             try {
@@ -912,6 +1009,10 @@
             lucide.createIcons();
         }
 
+        /**
+         * Parses the ShopList.xml content.
+         * @param {string} xmlText - The XML content of ShopList.xml.
+         */
         function parseShopList(xmlText) {
             const headerMatch = xmlText.match(/^[\s\S]*?(?=<ShopList>)/i);
             originalShopListHeader = headerMatch ? headerMatch[0] : '<?xml version="1.0" encoding="utf-8"?>\n';
@@ -934,6 +1035,10 @@
             }
         }
 
+        /**
+         * Parses the ItemList.xml content.
+         * @param {string} xmlText - The XML content of ItemList.xml.
+         */
         function parseItemList(xmlText) {
             const parser = new DOMParser();
             const xmlDoc = parser.parseFromString(xmlText, "text/xml");
@@ -961,6 +1066,10 @@
             console.log("Parsed ItemList.xml and extracted Name, Slot, Width, Height.");
         }
         
+        /**
+         * Parses the ItemExcellentOptions.xml content.
+         * @param {string} xmlText - The XML content of ItemExcellentOptions.xml.
+         */
         function parseExcellentOptions(xmlText) {
             excellentOptions = {};
             const parser = new DOMParser();
@@ -984,6 +1093,10 @@
             parseSection('Wings');
         }
         
+        /**
+         * Parses the ItemStack.xml content to determine item stack sizes.
+         * @param {string} xmlText - The XML content of ItemStack.xml.
+         */
         function parseItemStack(xmlText) {
             itemStackData = {};
             const parser = new DOMParser();
@@ -1003,6 +1116,12 @@
             }
         }
         
+        /**
+         * Selects a shop from the list, loads its data, and renders the editor.
+         * @param {string} shopId - The ID of the shop to select.
+         * @param {string} shopName - The name of the shop.
+         * @param {string} filename - The filename of the shop's script file.
+         */
         async function selectShop(shopId, shopName, filename) {
             if (!filename) {
                 showStatus(`Shop '${shopName}' has no script file defined in ShopList.xml.`, true);
@@ -1044,6 +1163,10 @@
             }
         }
 
+        /**
+         * Parses the content of a specific shop file (e.g., Shop(0).xml).
+         * @param {string} xmlText - The XML content of the shop file.
+         */
         function parseShopFile(xmlText) {
             const headerMatch = xmlText.match(/^[\s\S]*?(?=<ShopItem>)/i);
             originalXMLHeader = headerMatch ? headerMatch[0] : '<?xml version="1.0" encoding="utf-8"?>\n';
@@ -1093,6 +1216,11 @@
             }
         }
         
+        /**
+         * Finalizes the shop loading process after data is parsed.
+         * @param {string} shopName - The name of the loaded shop.
+         * @param {string} shopType - The currency type of the shop.
+         */
         function finishShopLoad(shopName, shopType) { 
             activeTab = 0; 
             undoHistory = [];
@@ -1105,6 +1233,7 @@
             saveToCache(); 
         }
 
+        /** Pushes the current shop state to the undo history. */
         function pushUndo() {
             if (!currentShopID) return;
             if (undoHistory.length >= 50) undoHistory.shift();
@@ -1113,6 +1242,7 @@
             saveToCache();
         }
 
+        /** Reverts the shop state to the last entry in the undo history. */
         function executeUndo() {
             if (undoHistory.length === 0) return;
             const lastState = undoHistory.pop();
@@ -1128,6 +1258,7 @@
             saveToCache();
         }
 
+        /** Updates the state and text of the undo button. */
         function updateUndoButton() {
             const btn = document.getElementById('undoBtn');
             if (btn) {
@@ -1137,6 +1268,7 @@
             }
         }
         
+        /** Updates the state of various action buttons (add, delete, paste) based on the current state. */
         function updateActionButtons() {
             const container = document.getElementById('tabContentContainer');
             if (!container) return;
@@ -1179,6 +1311,7 @@
             lucide.createIcons();
         }
 
+        /** Renders the list of shops in the sidebar. */
         function renderShopList() {
             const shopListEl = document.getElementById('shopList');
             shopListEl.innerHTML = '';
@@ -1192,6 +1325,7 @@
             });
         }
 
+        /** Filters the shop list based on user input. */
         function filterShops() {
             const searchTerm = document.getElementById('shopSearch').value.toLowerCase();
             document.querySelectorAll('.shop-item-entry').forEach(item => {
@@ -1199,6 +1333,10 @@
             });
         }
         
+        /**
+         * Sets the current view (grid or table) and re-renders the editor.
+         * @param {string} view - The view to set ('grid' or 'table').
+         */
         function setView(view) {
             currentView = view;
             selectedItemToReplaceIndex = null; 
@@ -1209,6 +1347,11 @@
             }
         }
         
+        /**
+         * Renders the main shop editor panel, including header, tabs, and content area.
+         * @param {string} shopName - The name of the current shop.
+         * @param {string} shopType - The currency type of the shop.
+         */
         function renderShopEditor(shopName, shopType) { 
             const shopInfo = shopList.find(s => s.id === currentShopID);
             const isShopListModified = shopInfo && shopInfo.isModified;
@@ -1276,6 +1419,10 @@
             renderTabContent();
         }
         
+        /**
+         * Selects a tab and re-renders its content.
+         * @param {number} tabIndex - The index of the tab to select.
+         */
         function selectTab(tabIndex) {
             activeTab = tabIndex;
             document.querySelectorAll('.tab-btn').forEach((btn, i) => btn.classList.toggle('active', i === tabIndex));
@@ -1287,6 +1434,7 @@
             renderTabContent();
         }
 
+        /** Renders the content for the currently active tab based on the current view. */
         function renderTabContent() {
             const container = document.getElementById('tabContentContainer');
             if (!container) return;
@@ -1337,6 +1485,12 @@
             }
         }
         
+        /**
+         * Renders the control buttons (Add, Copy, Paste, etc.) for the table view.
+         * @param {number} tabId - The ID of the current tab.
+         * @param {number} itemCount - The number of items in the tab.
+         * @returns {string} The HTML for the table controls.
+         */
         function renderTableControls(tabId, itemCount) {
             const isLimit = itemCount >= MAX_SHOP_ITEMS;
             return `
@@ -1350,6 +1504,11 @@
             `;
         }
         
+        /**
+         * Generates a summary string for an item's excellent options.
+         * @param {string} exelString - The semicolon-separated string of excellent option IDs.
+         * @returns {string} A summary of the excellent options (e.g., "Yes (3 Opts)").
+         */
         function getExcellentOptionSummary(exelString) {
             if (!exelString || exelString === '-1' || exelString === '0') {
                 return 'No';
@@ -1358,6 +1517,12 @@
             return `Yes (${count} Opts)`;
         }
 
+        /**
+         * Renders the HTML for the item table view.
+         * @param {object[]} items - The array of items for the current tab.
+         * @param {number} tabId - The ID of the current tab.
+         * @returns {string} The HTML for the item table.
+         */
         function renderItemTable(items, tabId) {
             if (items.length === 0) {
                 return `<div class="empty-state"><h3>Tab ${tabId + 1} is empty</h3><p>Click "+ Add Item" to add new items to this tab.</p></div>`;
@@ -1482,6 +1647,12 @@
             return tableHtml;
         }
 
+        /**
+         * Renders the HTML for the item grid view.
+         * @param {object[]} items - The array of items for the current tab.
+         * @param {number} tabId - The ID of the current tab.
+         * @returns {string} The HTML for the item grid.
+         */
         function renderItemGrid(items, tabId) {
             let gridHtml = `<div class="item-grid" id="shopGrid-${tabId}" oncontextmenu="event.preventDefault()">`;
             
@@ -1527,6 +1698,12 @@
             return gridHtml;
         }
 
+        /**
+         * Renders the side panel for the grid view, showing info and actions.
+         * @param {object[]} items - The array of items for the current tab.
+         * @param {number} tabId - The ID of the current tab.
+         * @returns {string} The HTML for the visual editing panel.
+         */
         function renderVisualEditingPanel(items, tabId) {
             const unplacedCount = items.filter(i => i.gridSlot === null).length;
             let unplacedWarning = '';
@@ -1555,6 +1732,10 @@
             return html;
         }
 
+        /**
+         * Confirms and clears all items from a specific tab.
+         * @param {number} tabId - The ID of the tab to clear.
+         */
         function confirmClearItems(tabId) {
             confirmAction(
                 `Clear Tab ${tabId + 1}?`,
@@ -1571,6 +1752,12 @@
             );
         }
 
+        /**
+         * Retrieves metadata for an item (name, slot, width, height).
+         * @param {string|number} cat - The item category.
+         * @param {string|number} index - The item index.
+         * @returns {object} An object containing the item's metadata.
+         */
         function getItemMetadata(cat, index) {
             const catNum = parseInt(cat, 10);
             const indexNum = parseInt(index, 10);
@@ -1587,10 +1774,21 @@
             };
         }
         
+        /**
+         * Gets the name of an item.
+         * @param {string|number} cat - The item category.
+         * @param {string|number} index - The item index.
+         * @returns {string} The item's name.
+         */
         function getItemName(cat, index) {
             return getItemMetadata(cat, index).name;
         }
 
+        /**
+         * Gets the display name for an ancient set value.
+         * @param {string} val - The ancient value from the item data.
+         * @returns {string} The display name of the ancient set.
+         */
         function getAncientName(val) {
              switch(val) {
                 case '5': return 'Set 1 (+5)';
@@ -1601,6 +1799,11 @@
             }
         }
         
+        /**
+         * Converts a semicolon-separated string of excellent option IDs into an array of names.
+         * @param {string} exelString - The string of excellent option IDs.
+         * @returns {string[]} An array of excellent option names.
+         */
         function getExcellentOptionList(exelString) {
             if (!exelString || exelString === '-1' || exelString === '0') {
                 return [];
@@ -1608,6 +1811,11 @@
             return exelString.split(';').map(id => excellentOptions[id] || `Unknown Option (${id})`);
         }
         
+        /**
+         * Gets the display name for a currency type.
+         * @param {string} type - The currency type ID.
+         * @returns {string} The name of the currency.
+         */
         function getCurrencyName(type) {
             switch (String(type)) {
                 case '0': return 'Zen';
@@ -1623,6 +1831,7 @@
             }
         }
         
+        /** Initializes the grid state by placing items sequentially based on their order ID. */
         function initializeGridState() {
             gridState = Array(GRID_SIZE).fill(null);
             const items = currentShopData.tabs[activeTab];
@@ -1657,6 +1866,13 @@
             console.log(`Auto-placed ${placedCount}/${items.length} items in the grid.`);
         }
 
+        /**
+         * Checks if a specified area in the grid is already occupied.
+         * @param {number} startSlot - The top-left slot index of the area.
+         * @param {number} width - The width of the area.
+         * @param {number} height - The height of the area.
+         * @returns {boolean} True if the area is occupied, false otherwise.
+         */
         function isAreaOccupied(startSlot, width, height) {
             const startCol = startSlot % GRID_COLS;
             const startRow = Math.floor(startSlot / GRID_COLS);
@@ -1680,6 +1896,13 @@
             return false;
         }
 
+        /**
+         * Marks a specified area in the grid as occupied by an item.
+         * @param {number} startSlot - The top-left slot index of the area.
+         * @param {number} width - The width of the area.
+         * @param {number} height - The height of the area.
+         * @param {number} itemIndex - The index of the item occupying the area.
+         */
         function reserveArea(startSlot, width, height, itemIndex) {
             const startCol = startSlot % GRID_COLS;
             const startRow = Math.floor(startSlot / GRID_COLS);
@@ -1696,6 +1919,12 @@
             }
         }
 
+        /**
+         * Finds the first available empty slot in the grid that can accommodate an item of a given size.
+         * @param {number} width - The width of the item.
+         * @param {number} height - The height of the item.
+         * @returns {number|null} The top-left slot index if a placement is found, otherwise null.
+         */
         function findEmptyPlacement(width, height) {
             for (let i = 0; i < GRID_SIZE; i++) {
                 if (gridState[i] === null) {
@@ -1712,6 +1941,11 @@
             return null; 
         }
         
+        /**
+         * Populates and shows the item tooltip with detailed information.
+         * @param {object} item - The item data object.
+         * @param {MouseEvent} event - The mouse event for positioning.
+         */
         function populateTooltip(item, event) {
             const tooltip = document.getElementById('itemTooltip');
             if (!item) {
@@ -1771,6 +2005,10 @@
             updateTooltipPosition(event);
         }
 
+        /**
+         * Updates the position of the item tooltip based on the mouse event.
+         * @param {MouseEvent} event - The mouse event.
+         */
         function updateTooltipPosition(event) {
             const tooltip = document.getElementById('itemTooltip');
             if (!tooltip.classList.contains('show')) return;
@@ -1802,6 +2040,13 @@
             tooltip.style.top = `${y}px`;
         }
 
+        /**
+         * Handles hover events on the grid to show or hide the item tooltip.
+         * @param {MouseEvent} event - The mouse event.
+         * @param {number} slotIndex - The index of the hovered slot.
+         * @param {boolean} isEntering - True if the mouse is entering the item area.
+         * @param {number} itemIndex - The index of the item.
+         */
         function handleGridHover(event, slotIndex, isEntering, itemIndex) {
             
             if (dragItemWrapper) {
@@ -1817,6 +2062,11 @@
             }
         }
         
+        /**
+         * Adjusts the value of a numeric inline input by a given amount.
+         * @param {HTMLElement} button - The plus or minus button that was clicked.
+         * @param {number} amount - The amount to add or subtract.
+         */
         function adjustItemProperty(button, amount) {
             const wrapper = button.parentElement;
             const input = wrapper.querySelector('.inline-input');
@@ -1851,6 +2101,10 @@
             input.dispatchEvent(changeEvent);
         }
 
+        /**
+         * Updates an item's property from an inline input in the table view.
+         * @param {Event} event - The change event from the input/select element.
+         */
         function updateItemProperty(event) {
             const { tabId, itemIndex, property } = event.target.dataset;
             let value = event.target.value;
@@ -1879,6 +2133,12 @@
             renderShopEditor(shopInfo.name, shopInfo.type);
         }
         
+        /**
+         * Shows inline item suggestions for the table view's item name editor.
+         * @param {Event} event - The input or focus event.
+         * @param {number} tabId - The ID of the current tab.
+         * @param {number} itemIndex - The index of the item being edited.
+         */
         function showInlineSuggestions(event, tabId, itemIndex) { 
             const input = event.target;
             const searchTerm = input.value.toLowerCase();
@@ -1913,6 +2173,12 @@
             suggestionsEl.classList.add('show');
         }
 
+        /**
+         * Hides the inline item suggestions and restores the input's display value.
+         * @param {Event} event - The blur event.
+         * @param {number} tabId - The ID of the current tab.
+         * @param {number} itemIndex - The index of the item being edited.
+         */
         function hideInlineSuggestions(event, tabId, itemIndex) {
             const suggestionsEl = document.getElementById(`inline-suggestions-${tabId}-${itemIndex}`);
             setTimeout(() => {
@@ -1926,6 +2192,14 @@
             }, 200);
         }
 
+        /**
+         * Selects an item from the inline suggestions and updates the item data.
+         * @param {number} tabId - The ID of the current tab.
+         * @param {number} itemIndex - The index of the item being edited.
+         * @param {string} cat - The category of the selected item.
+         * @param {string} index - The index of the selected item.
+         * @param {string} name - The name of the selected item.
+         */
         function selectInlineItem(tabId, itemIndex, cat, index, name) {
             pushUndo(); 
 
@@ -1950,6 +2224,10 @@
             showStatus(`Item updated to '${name}' in Tab ${tabId + 1}.`, false, false, true);
         }
         
+        /**
+         * Populates the excellent options checkboxes in the item modal.
+         * @param {string} exelString - The semicolon-separated string of active excellent option IDs.
+         */
         function populateExcellentOptionsModal(exelString) {
             const container = document.getElementById('exelOptionsContainer');
             container.innerHTML = ''; 
@@ -1981,6 +2259,11 @@
             }
         }
         
+        /**
+         * Updates the 'Durability' field label to 'Stack Size' if the item is stackable.
+         * @param {string|number} cat - The item category.
+         * @param {string|number} index - The item index.
+         */
         function updateDurabilityField(cat, index) {
             const label = document.getElementById('itemDurLabel');
             const input = document.getElementById('itemDur');
@@ -2000,6 +2283,10 @@
             input.value = Math.min(input.value, input.max); 
         }
         
+        /**
+         * Opens the modal to add a new item to a specific tab.
+         * @param {number} tabId - The ID of the tab to add the item to.
+         */
         function openAddModal(tabId) {
             if (currentShopData.tabs[tabId].length >= MAX_SHOP_ITEMS) {
                 showStatus(`✗ Cannot add item: Tab ${tabId + 1} has reached the maximum limit of ${MAX_SHOP_ITEMS} items.`, true);
@@ -2037,6 +2324,11 @@
             lucide.createIcons();
         }
         
+        /**
+         * Opens the modal to edit an existing item.
+         * @param {number} tabId - The ID of the tab the item is in.
+         * @param {number} itemIndex - The index of the item to edit.
+         */
         function openEditModal(tabId, itemIndex) {
             const item = currentShopData.tabs[tabId][itemIndex];
             if (!item) return;
@@ -2075,10 +2367,16 @@
             lucide.createIcons();
         }
 
+        /** Closes the main item add/edit modal. */
         function closeModal() {
             document.getElementById('itemModal').classList.remove('show');
         }
         
+        /**
+         * Duplicates an item in a tab.
+         * @param {number} tabId - The ID of the tab.
+         * @param {number} itemIndex - The index of the item to duplicate.
+         */
         function duplicateItem(tabId, itemIndex) {
             if (currentShopData.tabs[tabId].length >= MAX_SHOP_ITEMS) {
                 showStatus(`✗ Cannot duplicate item: Tab ${tabId + 1} has reached the maximum limit of ${MAX_SHOP_ITEMS} items.`, true);
@@ -2114,6 +2412,11 @@
             showStatus(`Item '${getItemName(newItem.cat, newItem.index)}' duplicated.`, false, false, true);
         }
 
+        /**
+         * Deletes an item from a tab after confirmation.
+         * @param {number} tabId - The ID of the tab.
+         * @param {number} itemIndex - The index of the item to delete.
+         */
         function deleteItem(tabId, itemIndex) {
             const item = currentShopData.tabs[tabId][itemIndex];
             const itemName = getItemName(item.cat, item.index);
@@ -2133,6 +2436,11 @@
             );
         }
 
+        /**
+         * Toggles the selection of all items in a tab's table view.
+         * @param {HTMLInputElement} checkbox - The "select all" checkbox.
+         * @param {number} tabId - The ID of the current tab.
+         */
         function toggleSelectAll(checkbox, tabId) {
             document.querySelectorAll(`.item-checkbox-${tabId}`).forEach(cb => {
                 cb.checked = checkbox.checked;
@@ -2140,6 +2448,10 @@
             updateActionButtons(); 
         }
 
+        /**
+         * Copies all selected items from a tab to the internal clipboard.
+         * @param {number} tabId - The ID of the current tab.
+         */
         function copySelectedItems(tabId) {
             const checkboxes = document.querySelectorAll(`#tabContentContainer .item-checkbox:checked`);
             if (checkboxes.length === 0) {
@@ -2169,6 +2481,7 @@
             if(selectAllCheckbox) selectAllCheckbox.checked = false;
         }
 
+        /** Pastes items from the clipboard into the current tab. */
         function pasteItems() {
             if (itemClipboard.length === 0) {
                 showStatus('Clipboard is empty.', true);
@@ -2206,6 +2519,7 @@
             saveToCache();
         }
 
+        /** Clears the item clipboard. */
         function clearClipboard() {
             if (itemClipboard.length > 0) {
                 itemClipboard = [];
@@ -2214,6 +2528,10 @@
             }
         }
         
+        /**
+         * Confirms and then deletes all selected items in a tab.
+         * @param {number} tabId - The ID of the current tab.
+         */
         function confirmDeleteSelected(tabId) {
             const checkboxes = document.querySelectorAll(`#tabContentContainer .item-checkbox:checked`);
             if (checkboxes.length === 0) {
@@ -2230,6 +2548,10 @@
             );
         }
 
+        /**
+         * Deletes all selected items in a tab.
+         * @param {number} tabId - The ID of the tab.
+         */
         function deleteSelectedItems(tabId) {
             const checkboxes = document.querySelectorAll(`#tabContentContainer .item-checkbox:checked`);
             if (checkboxes.length === 0) return; 
@@ -2256,6 +2578,10 @@
             saveToCache();
         }
 
+        /**
+         * @description Handles input for the main item search modal to show suggestions.
+         * @param {Event} e - The input event.
+         */
         document.getElementById('itemSearch').addEventListener('input', function(e) {
             let html = '';
             let count = 0;
@@ -2290,6 +2616,12 @@
             suggestions.classList.toggle('show', !!html);
         });
         
+        /**
+         * Selects an item from the main modal's suggestion list.
+         * @param {string} cat - The item category.
+         * @param {string} index - The item index.
+         * @param {string} name - The item name.
+         */
         function selectItem(cat, index, name) {
             document.getElementById('itemSearch').value = `(${cat}, ${index}) ${name}`;
             document.getElementById('itemCat').value = cat;
@@ -2302,6 +2634,10 @@
             updateDurabilityField(cat, index); 
         }
         
+        /**
+         * @description Handles the submission of the add/edit item form.
+         * @param {Event} e - The submit event.
+         */
         document.getElementById('itemForm').addEventListener('submit', function(e) {
             e.preventDefault();
             
@@ -2376,6 +2712,10 @@
             saveToCache();
         });
 
+        /**
+         * Updates the currency type for the current shop.
+         * @param {Event} event - The change event from the currency select dropdown.
+         */
         function updateShopCurrency(event) {
             const newType = event.target.value;
             const shopInfo = shopList.find(s => s.id === currentShopID);
@@ -2395,6 +2735,10 @@
             showStatus('Shop currency type changed. Click "Save ShopList" to make this change permanent.', false, true);
         }
 
+        /**
+         * Generates the XML content for ShopList.xml from the current `shopList` data.
+         * @returns {string} The complete XML string for ShopList.xml.
+         */
         function generateShopListXml() {
             let xml = originalShopListHeader + '<ShopList>\n';
             
@@ -2406,6 +2750,7 @@
             return xml;
         }
 
+        /** Saves the modified ShopList.xml data to the server. */
         async function saveShopList() {
             const saveButton = document.getElementById('saveShopListBtn');
             saveButton.disabled = true;
@@ -2446,6 +2791,7 @@
             }
         }
 
+        /** Opens the guide modal, preventing it from opening during a drag operation. */
         function openGuideModal() { 
              if (dragItemWrapper || dragOriginalWrapper) {
                  showStatus('Please complete the drag operation before opening the guide.', true);
@@ -2454,6 +2800,7 @@
              document.getElementById('guideModal').classList.add('show'); 
              lucide.createIcons(); 
         }
+        /** Closes the guide modal. */
         function closeGuideModal() { document.getElementById('guideModal').classList.remove('show'); }
         
         document.getElementById('itemModal').addEventListener('click', function (e) { if (e.target === this) closeModal(); }); 
@@ -2467,6 +2814,10 @@
             }
         });
         
+        /**
+         * Generates the XML content for the current shop file.
+         * @returns {string} The complete XML string for the shop file.
+         */
         function generateShopFileXml() {
             let xml = originalXMLHeader + '<ShopItem>\n';
             
@@ -2498,6 +2849,7 @@
             return xml;
         }
 
+        /** Saves the current shop's data to the server. */
         async function saveChangesToServer() { 
             if (!currentShopFilename) {
                 showStatus('No shop selected. Cannot save.', true);

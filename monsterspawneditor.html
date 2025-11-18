@@ -218,7 +218,13 @@
             initializeAuthorLock();
         });
 
-        // --- Confirmation Modal Logic ---
+        /**
+         * Displays a confirmation modal.
+         * @param {string} title - The title for the modal header.
+         * @param {string} message - The message to display in the modal body.
+         * @param {function} onConfirm - The callback function to execute when the confirm button is clicked.
+         * @param {string} [buttonClass='btn-danger'] - The CSS class for the confirm button.
+         */
         function confirmAction(title, message, onConfirm, buttonClass = 'btn-danger') {
             document.getElementById('confirmTitle').textContent = title;
             document.getElementById('confirmMessage').textContent = message;
@@ -232,11 +238,16 @@
             lucide.createIcons();
         }
 
+        /**
+         * Closes the confirmation modal.
+         */
         function closeConfirmModal() {
             document.getElementById('confirmModal').classList.remove('show');
         }
 
-        // --- Author Logic ---
+        /**
+         * Initializes the author lock feature, prompting for a name if not set, then loading data.
+         */
         function initializeAuthorLock() {
             const authorName = localStorage.getItem('spawnEditorAuthor');
             if (authorName && authorName.trim() !== '') {
@@ -248,6 +259,9 @@
             }
         }
 
+        /**
+         * Saves the initial author name from the welcome modal to local storage.
+         */
         function saveInitialAuthorName() {
             const authorInput = document.getElementById('initialAuthorName');
             const authorName = authorInput.value.trim();
@@ -259,6 +273,9 @@
             }
         }
 
+        /**
+         * Renders the author name display and input controls in the header.
+         */
         function renderAuthorControls() {
             const authorName = localStorage.getItem('spawnEditorAuthor') || 'Unknown';
             document.getElementById('authorNameDisplay').textContent = authorName;
@@ -267,6 +284,10 @@
             lucide.createIcons();
         }
 
+        /**
+         * Toggles between displaying and editing the author's name.
+         * @param {boolean} isEditing - True to switch to edit mode, false to switch to display mode.
+         */
         function toggleAuthorEdit(isEditing) {
             document.getElementById('authorDisplayView').style.display = isEditing ? 'none' : 'flex';
             document.getElementById('authorEditView').style.display = isEditing ? 'flex' : 'none';
@@ -275,6 +296,9 @@
             }
         }
 
+        /**
+         * Saves the updated author name from the edit input to local storage.
+         */
         function saveAuthorName() {
             const authorName = document.getElementById('authorNameInput').value.trim();
             if (authorName) {
@@ -292,9 +316,20 @@
             }
         }
 
+        /**
+         * Gets the author's name from local storage.
+         * @returns {string} The author's name or a default value.
+         */
         function getAuthorName() { return localStorage.getItem('spawnEditorAuthor') || 'Unknown Editor'; }
 
-        // --- Status & Cache Logic ---
+        /**
+         * Displays a status message bar at the top of the editor.
+         * @param {string} message - The message to display.
+         * @param {boolean} [isError=false] - If true, styles the bar as an error.
+         * @param {boolean} [isWarning=false] - If true, styles the bar as a warning.
+         * @param {boolean} [isInfo=false] - If true, styles the bar as informational.
+         * @param {object[]} [controls=null] - An array of control objects {text, className, onClick} to add as buttons.
+         */
         function showStatus(message, isError = false, isWarning = false, isInfo = false, controls = null) {
             const statusBar = document.getElementById('statusBar');
             statusBar.innerHTML = ''; // Clear previous content
@@ -328,6 +363,9 @@
             }
         }
 
+        /**
+         * Displays a confirmation modal to clear the local storage cache.
+         */
         function confirmClearCache() {
             confirmAction(
                 'Clear Local Cache?',
@@ -340,6 +378,9 @@
             );
         }
 
+        /**
+         * Saves the current state of the spawn data and UI to local storage.
+         */
         function saveToCache() {
             if (!isDataLoaded) return; // Don't save incomplete data
             const cache = {
@@ -351,6 +392,10 @@
             localStorage.setItem(CACHE_KEY, JSON.stringify(cache));
         }
 
+        /**
+         * Loads the application state from local storage if available.
+         * @returns {boolean} True if data was loaded from cache, false otherwise.
+         */
         function loadFromCache() {
             try {
                 const cache = JSON.parse(localStorage.getItem(CACHE_KEY));
@@ -367,7 +412,9 @@
             return false;
         }
 
-        // --- Data Loading & Parsing ---
+        /**
+         * Loads initial data from the server and handles cache recovery.
+         */
         async function loadData() {
             // 1. Try to load files from server
             let serverData;
@@ -410,6 +457,10 @@
             }
         }
         
+        /**
+         * Finalizes the data loading process, renders the UI, and handles cache state.
+         * @param {boolean} usedCache - Indicates if the data was loaded from the local cache.
+         */
         function finishLoading(usedCache) {
             isDataLoaded = true;
             document.getElementById('mainContent').style.display = 'grid';
@@ -430,6 +481,10 @@
             lucide.createIcons();
         }
 
+        /**
+         * Parses the MonsterList.xml content and populates the global monsterList object.
+         * @param {string} xmlText - The XML content of the monster list file.
+         */
         function parseMonsterList(xmlText) {
             const parser = new DOMParser();
             const xmlDoc = parser.parseFromString(xmlText, 'text/xml');
@@ -445,6 +500,10 @@
             }
         }
 
+        /**
+         * Parses the MonsterSpawn.xml content and populates the global spawnData object.
+         * @param {string} xmlText - The XML content of the monster spawn file.
+         */
         function parseMonsterSpawn(xmlText) {
             const headerMatch = xmlText.match(/^[\s\S]*?(?=<MonsterSpawn>)/i);
             originalXMLHeader = headerMatch ? headerMatch[0] : '<?xml version="1.0" encoding="utf-8"?>\n';
@@ -486,7 +545,9 @@
             }
         }
 
-        // --- Undo System ---
+        /**
+         * Pushes the current state of the active map's data onto the undo history stack.
+         */
         function pushUndo() {
             if (currentMap === null || !spawnData[currentMap]) return;
             if (undoHistory.length >= 50) undoHistory.shift();
@@ -495,6 +556,9 @@
             saveToCache(); // Save state on undo
         }
 
+        /**
+         * Reverts the current map's data to the last state in the undo history.
+         */
         function executeUndo() {
             if (undoHistory.length === 0) return;
             const lastState = undoHistory.pop();
@@ -510,6 +574,9 @@
             saveToCache(); // Save state after undo
         }
 
+        /**
+         * Updates the state and label of the Undo button based on the history stack.
+         */
         function updateUndoButton() {
             const btn = document.getElementById('undoBtn');
             if (btn) {
@@ -519,13 +586,19 @@
             }
         }
 
+        /**
+         * Attaches author and timestamp information to a spawn object.
+         * @param {object} spawn - The spawn object to modify.
+         */
         function setModificationInfo(spawn) {
             spawn.modificationInfo = { author: getAuthorName(), timestamp: new Date().toLocaleString() };
         }
 
         document.addEventListener('keydown', (e) => { if (e.ctrlKey && e.key === 'z') { e.preventDefault(); executeUndo(); } });
         
-        // --- Map & Spawn Rendering ---
+        /**
+         * Renders the list of maps in the sidebar.
+         */
         function renderMapList() {
             const mapListEl = document.getElementById('mapList');
             mapListEl.innerHTML = '';
@@ -540,6 +613,10 @@
             });
         }
 
+        /**
+         * Selects a map, updates the UI, and renders the editor for that map.
+         * @param {string} mapNum - The number of the map to select.
+         */
         function selectMap(mapNum) {
             if (activeInlineEditor) cancelActiveInlineEdit();
             currentMap = mapNum;
@@ -555,11 +632,20 @@
             renderMapEditor(mapNum);
         }
 
+        /**
+         * Gets the human-readable description for a spot type.
+         * @param {string} type - The spot type number (e.g., '0', '1').
+         * @returns {string} The description of the spot type.
+         */
         function getSpotDescription(type) {
             const desc = { '0': 'NPC/Traps', '1': 'Multi-Spawn', '2': 'Single-Spawn', '3': 'Multi-Elemental', '4': 'Single-Elemental' };
             return desc[type] || 'Unknown';
         }
 
+        /**
+         * Renders the main editor content for a specific map.
+         * @param {string} mapNum - The number of the map to render.
+         */
         function renderMapEditor(mapNum) {
             cancelActiveInlineEdit();
             const map = spawnData[mapNum];
@@ -672,7 +758,11 @@
             lucide.createIcons();
         }
 
-        // Helper to check if a monster is an NPC/Trap
+        /**
+         * Checks if a monster is an NPC or a trap based on its type.
+         * @param {string} monsterIndex - The ID/Index of the monster.
+         * @returns {boolean} True if the monster is an NPC or trap.
+         */
         function isNpc(monsterIndex) {
             const details = monsterList[monsterIndex];
             if (!details) return false;
@@ -680,6 +770,13 @@
             return details.type === '4' || details.type === '8';
         }
         
+        /**
+         * Generates the HTML string for a single spawn row in the table.
+         * @param {number} spotIndex - The index of the spot within the current map.
+         * @param {number} spawnIndex - The index of the spawn within the spot.
+         * @param {string} spotType - The type of the spot (e.g., '0', '1').
+         * @returns {string} The HTML for the table row.
+         */
         function getSpawnRowHtml(spotIndex, spawnIndex, spotType) {
             const spawn = spawnData[currentMap].spots[spotIndex].spawns[spawnIndex];
             const monsterDetails = monsterList[spawn.index];
@@ -732,6 +829,9 @@
             // Removed input for NpcFunction here
         }
         
+        /**
+         * Filters the map list in the sidebar based on the search input.
+         */
         function filterMaps() {
             const searchTerm = document.getElementById('mapSearch').value.toLowerCase();
             document.querySelectorAll('.map-item').forEach(item => {
@@ -739,6 +839,9 @@
             });
         }
         
+        /**
+         * Filters the spawn rows in the main editor based on the search input.
+         */
         function filterSpawns() {
             const searchTerm = document.getElementById('spawnSearch').value.toLowerCase();
             document.querySelectorAll('.spawn-table').forEach(table => {
@@ -759,12 +862,26 @@
             });
         }
         
+        /**
+         * Toggles the collapsed state of a spot/category table.
+         * @param {HTMLElement} tableElement - The table's container element.
+         * @param {string} mapNum - The current map number.
+         * @param {string} spotType - The type of the spot being toggled.
+         */
         function toggleSpot(tableElement, mapNum, spotType) { 
             tableElement.classList.toggle('collapsed'); 
             collapsedStates[`${mapNum}-${spotType}`] = tableElement.classList.contains('collapsed'); 
         }
         
-        // --- Refactored Spawn Value Update (No Full Re-render) ---
+        /**
+         * Updates a single value of a spawn from an inline input without a full re-render.
+         * @param {HTMLInputElement} inputElement - The input element that triggered the change.
+         * @param {number} spotIndex - The index of the spot.
+         * @param {number} spawnIndex - The index of the spawn.
+         * @param {string} field - The property/field of the spawn to update.
+         * @param {string} value - The new value.
+         * @param {boolean} [isRequired=false] - Whether the field is required.
+         */
         function updateSpawnValue(inputElement, spotIndex, spawnIndex, field, value, isRequired = false) { 
             const spawn = spawnData[currentMap].spots[spotIndex].spawns[spawnIndex]; 
             
@@ -803,6 +920,11 @@
             }
         }
         
+        /**
+         * Validates the required fields of a spawn row and updates its visual state.
+         * @param {number} spotIndex - The index of the spot.
+         * @param {number} spawnIndex - The index of the spawn.
+         */
         function validateSpawnRow(spotIndex, spawnIndex, changedInputElement = null) {
             const row = document.querySelector(`tr[data-spot-index="${spotIndex}"][data-spawn-index="${spawnIndex}"]`);
             if (!row) return;
@@ -854,6 +976,10 @@
             row.classList.toggle('spawn-row-empty', isInvalid);
         }
 
+        /**
+         * Adds a new, empty spot/category to the current map.
+         * @param {string|number} type - The type of the spot to add.
+         */
         function addMissingCategory(type) { 
             pushUndo(); 
             const typeStr = type.toString(); 
@@ -864,6 +990,10 @@
             saveToCache();
         }
         
+        /**
+         * Adds a new, empty spawn row to the top of a specified spot/category.
+         * @param {number} spotIndex - The index of the spot to add the spawn to.
+         */
         function addNewSpawnRow(spotIndex) { 
             pushUndo(); 
             // Default NpcFunction to 'None' or the inherent value if the monster is later selected.
@@ -874,6 +1004,9 @@
             saveToCache();
         }
         
+        /**
+         * Cancels the currently active inline monster editor and restores the cell's display.
+         */
         function cancelActiveInlineEdit() {
             if (!activeInlineEditor) return;
             document.removeEventListener('click', handleGlobalClickForInlineEdit);
@@ -903,6 +1036,12 @@
             lucide.createIcons();
         }
 
+        /**
+         * Activates the inline editor for a monster name cell.
+         * @param {HTMLElement} td - The table cell element to transform into an editor.
+         * @param {number} spotIndex - The index of the spot.
+         * @param {number} spawnIndex - The index of the spawn.
+         */
         function editMonsterInline(td, spotIndex, spawnIndex) {
             cancelActiveInlineEdit();
             activeInlineEditor = { td, spotIndex, spawnIndex };
@@ -919,8 +1058,17 @@
             setTimeout(() => document.addEventListener('click', handleGlobalClickForInlineEdit), 0);
         }
         
+        /**
+         * Handles global clicks to close the active inline editor when clicking outside of it.
+         * @param {Event} event - The click event.
+         */
         function handleGlobalClickForInlineEdit(event) { if (activeInlineEditor && !activeInlineEditor.td.contains(event.target)) cancelActiveInlineEdit(); }
         
+        /**
+         * Shows monster suggestions for the inline editor based on the input.
+         * @param {HTMLInputElement} input - The search input element.
+         * @param {number} spotIndex - The index of the spot being edited.
+         */
         function showInlineSuggestions(input, spotIndex, spawnIndex) {
             const searchTerm = input.value.toLowerCase();
             const suggestionsDiv = input.nextElementSibling;
@@ -941,6 +1089,12 @@
             suggestionsDiv.classList.toggle('show', !!html);
         }
 
+        /**
+         * Selects a monster from the inline suggestions and updates the spawn data.
+         * @param {number} spotIndex - The index of the spot.
+         * @param {number} spawnIndex - The index of the spawn.
+         * @param {string} newIndex - The ID/Index of the newly selected monster.
+         */
         function selectMonsterInline(spotIndex, spawnIndex, newIndex) {
             const spawn = spawnData[currentMap].spots[spotIndex].spawns[spawnIndex];
             
@@ -968,7 +1122,10 @@
             saveToCache();
         }
         
-        // --- Modal & Editing Logic ---
+        /**
+         * Opens the modal to add a new spawn, pre-selecting a spot type.
+         * @param {string|number} preselectedType - The type of spot to pre-select.
+         */
         function openAddModal(preselectedType) { 
             editingSpawnIndex = null; 
             addingToSpotIndex = null; 
@@ -989,6 +1146,11 @@
             lucide.createIcons(); 
         }
         
+        /**
+         * Duplicates a spawn row and inserts it below the original.
+         * @param {number} spotIndex - The index of the spot.
+         * @param {number} spawnIndex - The index of the spawn to duplicate.
+         */
         function duplicateSpawn(spotIndex, spawnIndex) { 
             pushUndo(); 
             const originalSpawn = spawnData[currentMap].spots[spotIndex].spawns[spawnIndex]; 
@@ -1002,6 +1164,11 @@
             saveToCache();
         }
         
+        /**
+         * Opens the modal to edit an existing spawn.
+         * @param {number} spotIndex - The index of the spot.
+         * @param {number} spawnIndex - The index of the spawn to edit.
+         */
         function editSpawn(spotIndex, spawnIndex) { 
             const spawn = spawnData[currentMap].spots[spotIndex].spawns[spawnIndex]; 
             editingSpawnIndex = { spot: spotIndex, spawn: spawnIndex }; 
@@ -1032,6 +1199,11 @@
             lucide.createIcons(); 
         }
         
+        /**
+         * Deletes a spawn row after confirmation.
+         * @param {number} spotIndex - The index of the spot.
+         * @param {number} spawnIndex - The index of the spawn to delete.
+         */
         function deleteSpawn(spotIndex, spawnIndex) { 
             confirmAction(
                 'Delete Spawn?',
@@ -1048,6 +1220,9 @@
             );
         }
         
+        /**
+         * Closes the main spawn editing modal.
+         */
         function closeModal() { document.getElementById('spawnModal').classList.remove('show'); }
         
         document.getElementById('monsterSearch').addEventListener('input', function (e) { 
@@ -1069,6 +1244,11 @@
             suggestions.classList.toggle('show', !!html); 
         });
         
+        /**
+         * Handles the selection of a monster from the modal's suggestion list.
+         * @param {string} id - The ID of the selected monster.
+         * @param {string} name - The name of the selected monster.
+         */
         function selectMonster(id, name) { 
             document.getElementById('monsterSearch').value = `[${id}] ${name}`; 
             document.getElementById('monsterIndex').value = id; 
@@ -1086,6 +1266,9 @@
             // The input remains hidden/disabled, but its value is correctly set.
         }
         
+        /**
+         * Updates the spawn modal form based on the selected spawn type (e.g., disables 'Count' for single spawns).
+         */
         function updateSpawnTypeRestrictions() { 
             const spawnType = document.getElementById('spawnType').value; 
             document.getElementById('npcWarning').style.display = spawnType === '0' ? 'inline' : 'none'; 
@@ -1095,6 +1278,11 @@
             if (isSingle) document.getElementById('spawnCount').value = '1';
         }
         
+        /**
+         * Sets the End X/Y coordinates based on the Start X/Y plus an offset value in the modal.
+         * @param {number} addValue - The value to add to the start coordinates.
+         * @param {string} mode - The context, should be 'modal'.
+         */
         function setEndCoords(addValue, mode) { 
             if (mode === 'modal') { 
                 const startX = parseInt(document.getElementById('startX').value) || 0; 
@@ -1104,6 +1292,12 @@
             } 
         }
         
+        /**
+         * Sets the End X/Y coordinates for an inline-edited spawn row.
+         * @param {number} spotIndex - The index of the spot.
+         * @param {number} spawnIndex - The index of the spawn.
+         * @param {number} addValue - The offset to add to the start coordinates.
+         */
         function setInlineEndCoords(spotIndex, spawnIndex, addValue) { 
             pushUndo(); 
             const spawn = spawnData[currentMap].spots[spotIndex].spawns[spawnIndex]; 
@@ -1117,6 +1311,11 @@
             saveToCache();
         }
         
+        /**
+         * Sorts a spot's spawn table by a specific column.
+         * @param {number} spotIndex - The index of the spot to sort.
+         * @param {string} columnKey - The spawn property to sort by (e.g., 'index', 'startX').
+         */
         function sortTable(spotIndex, columnKey) { 
             const sortKey = `${currentMap}-${spotIndex}-${columnKey}`; 
             sortDirections[sortKey] = sortDirections[sortKey] === 'asc' ? 'desc' : 'asc'; 
@@ -1181,7 +1380,9 @@
             saveToCache();
         });
         
-        // --- Selection & Clipboard Logic ---
+        /**
+         * Updates the state (enabled/disabled) of clipboard and delete buttons based on current selections.
+         */
         function updateControls() { 
             if (!spawnData[currentMap]) return; 
             spawnData[currentMap].spots.forEach((spot, spotIndex) => { 
@@ -1204,8 +1405,19 @@
             lucide.createIcons(); 
         }
         
+        /**
+         * Finds the index of a selected spawn in the `selectedSpawns` array.
+         * @param {number} spotIndex - The spot index of the spawn.
+         * @param {number} spawnIndex - The spawn index of the spawn.
+         * @returns {number} The index in the selection array, or -1 if not found.
+         */
         function findSelectionIndex(spotIndex, spawnIndex) { return selectedSpawns.findIndex(s => s.spotIndex === spotIndex && s.spawnIndex === spawnIndex); }
         
+        /**
+         * Toggles the selection state of a single spawn row.
+         * @param {number} spotIndex - The spot index of the spawn.
+         * @param {number} spawnIndex - The spawn index.
+         */
         function toggleSelection(spotIndex, spawnIndex) { 
             const selectionIndex = findSelectionIndex(spotIndex, spawnIndex); 
             const row = document.querySelector(`tr[data-spot-index="${spotIndex}"][data-spawn-index="${spawnIndex}"]`); 
@@ -1221,6 +1433,11 @@
             updateControls(); 
         }
         
+        /**
+         * Toggles the selection for all spawns within a specific spot/category.
+         * @param {number} spotIndex - The index of the spot.
+         * @param {HTMLInputElement} masterCheckbox - The "select all" checkbox element.
+         */
         function toggleSelectAll(spotIndex, masterCheckbox) { 
             const shouldSelect = masterCheckbox.checked; 
             
@@ -1251,6 +1468,10 @@
             // We don't need a full renderMapEditor call here, as we update the visuals directly in the loop.
         }
         
+        /**
+         * Copies the selected spawns from a group to the internal clipboard.
+         * @param {number} spotIndexToCopy - The index of the spot to copy from.
+         */
         function copySelectedSpawnsFromGroup(spotIndexToCopy) { 
             const spawnsToCopy = selectedSpawns.filter(sel => sel.spotIndex === spotIndexToCopy); 
             if (spawnsToCopy.length === 0) return; 
@@ -1263,6 +1484,10 @@
             renderMapEditor(currentMap); // Full re-render needed
         }
         
+        /**
+         * Pastes spawns from the clipboard into a destination spot group.
+         * @param {number} destinationSpotIndex - The index of the spot to paste into.
+         */
         function pasteSpawns(destinationSpotIndex) { 
             if (spawnClipboard.length === 0) return; 
             if ((clipboardSourceType === '0') !== (spawnData[currentMap].spots[destinationSpotIndex].type === '0')) { 
@@ -1282,6 +1507,10 @@
             saveToCache();
         }
         
+        /**
+         * Deletes all selected spawns within a specific group after confirmation.
+         * @param {number} spotIndex - The index of the spot from which to delete spawns.
+         */
         function deleteSelectedSpawns(spotIndex) { 
             const spawnsToDelete = selectedSpawns.filter(sel => sel.spotIndex === spotIndex);
             if (spawnsToDelete.length === 0) return; 
@@ -1303,7 +1532,11 @@
             );
         }
 
-        // --- Bulk Actions ---
+        /**
+         * Changes the value of an input in the table header by a given delta.
+         * @param {string} inputId - The ID of the input element.
+         * @param {number} delta - The amount to add or subtract.
+         */
         function changeThInputValue(inputId, delta) {
             const input = document.getElementById(inputId);
             if (input) {
@@ -1313,6 +1546,12 @@
             }
         }
 
+        /**
+         * Displays a confirmation modal before performing a bulk action on a group.
+         * @param {number} spotIndex - The index of the spot to perform the action on.
+         * @param {string} action - The name of the action function to call ('applyCoordOffset' or 'applyValue').
+         * @param {...*} args - Arguments to pass to the action function.
+         */
         function confirmBulkAction(spotIndex, action, ...args) {
             let title = 'Apply Bulk Action?';
             let message = 'Are you sure you want to apply this change to ALL spawns in this group?';
@@ -1346,6 +1585,11 @@
             }, 'btn-warning');
         }
 
+        /**
+         * Applies a coordinate offset to all spawns in a group (EndXY = StartXY + offset).
+         * @param {number} spotIndex - The index of the spot.
+         * @param {number} offset - The offset value to apply.
+         */
         function applyCoordOffsetToGroup(spotIndex, offset) { 
             pushUndo(); 
             spawnData[currentMap].spots[spotIndex].spawns.forEach(spawn => { 
@@ -1362,6 +1606,12 @@
             saveToCache();
         }
         
+        /**
+         * Applies a specific value to a field for all spawns in a group.
+         * @param {number} spotIndex - The index of the spot.
+         * @param {string} field - The spawn property to update.
+         * @param {string} value - The new value to set.
+         */
         function applyValueToGroup(spotIndex, field, value) { 
             pushUndo(); 
             spawnData[currentMap].spots[spotIndex].spawns.forEach(spawn => { 
@@ -1375,8 +1625,9 @@
             saveToCache();
         }
         
-        // --- Modal & Guide Logic ---
+        /** Opens the guide modal. */
         function openGuideModal() { document.getElementById('guideModal').classList.add('show'); lucide.createIcons(); }
+        /** Closes the guide modal. */
         function closeGuideModal() { document.getElementById('guideModal').classList.remove('show'); }
         
         // Close modals on outside click
@@ -1387,7 +1638,9 @@
         // Global click listener for suggestions
         document.addEventListener('click', function (e) { if (!e.target.closest('.monster-search')) document.getElementById('monsterSuggestions').classList.remove('show'); });
         
-        // --- Save to Server ---
+        /**
+         * Generates the final XML content from the spawnData object and sends it to the server to be saved.
+         */
         async function saveChangesToServer() { 
             const saveButton = document.querySelector('.btn-success'); 
             saveButton.disabled = true; 

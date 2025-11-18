@@ -211,7 +211,11 @@
         const ZEN_CAP = 2147483647; // Max signed 32-bit integer
         const RATE_SUM_REQUIRED = 10000; // The required sum for Excellent Drop Rates
         
-        // --- Utility Function for XML Escaping ---
+        /**
+         * Escapes special characters in a string for safe inclusion in XML.
+         * @param {string} unsafe - The string to escape.
+         * @returns {string} The escaped string.
+         */
         function escapeXml(unsafe) {
             if (!unsafe) return '';
             // Escape the 5 reserved XML characters: <, >, &, ", '
@@ -270,7 +274,13 @@
             initializeAuthorLock(); 
         });
 
-        // --- Confirmation Modal Logic (reused) ---
+        /**
+         * Displays a confirmation modal.
+         * @param {string} title - The title of the modal.
+         * @param {string} message - The message to display.
+         * @param {function} onConfirm - The callback function to execute on confirmation.
+         * @param {string} [buttonClass='btn-danger'] - The CSS class for the confirm button.
+         */
         function confirmAction(title, message, onConfirm, buttonClass = 'btn-danger') {
             document.getElementById('confirmTitle').textContent = title;
             document.getElementById('confirmMessage').textContent = message;
@@ -284,20 +294,25 @@
             lucide.createIcons();
         }
 
+        /**
+         * Closes any modal by its ID.
+         * @param {string} id - The ID of the modal to close.
+         */
         function closeModal(id) {
             document.getElementById(id).classList.remove('show');
         }
 
+        /** Closes the confirmation modal. */
         function closeConfirmModal() {
             closeModal('confirmModal');
         }
         
-        // FIX: Added function to open the guide modal
+        /** Opens the guide modal. */
         function openGuideModal() {
             document.getElementById('guideModal').classList.add('show');
         }
 
-        // --- Author Logic (reused) ---
+        /** Initializes the author lock feature, prompting for a name if not set. */
         function initializeAuthorLock() {
             const authorName = localStorage.getItem('dropRateEditorAuthor'); 
             if (authorName && authorName.trim() !== '') {
@@ -309,6 +324,7 @@
             }
         }
 
+        /** Saves the initial author name from the modal to local storage. */
         function saveInitialAuthorName() {
             const authorInput = document.getElementById('initialAuthorName');
             const authorName = authorInput.value.trim();
@@ -320,6 +336,7 @@
             }
         }
 
+        /** Renders the author name and controls in the header. */
         function renderAuthorControls() {
             const authorName = localStorage.getItem('dropRateEditorAuthor') || 'Unknown';
             document.getElementById('authorNameDisplay').textContent = authorName;
@@ -328,12 +345,17 @@
             lucide.createIcons();
         }
 
+        /**
+         * Toggles the author display between view and edit modes.
+         * @param {boolean} isEditing - True to switch to edit mode.
+         */
         function toggleAuthorEdit(isEditing) {
             document.getElementById('authorDisplayView').style.display = isEditing ? 'none' : 'flex';
             document.getElementById('authorEditView').style.display = isEditing ? 'flex' : 'none';
             if (isEditing) document.getElementById('authorNameInput').focus();
         }
 
+        /** Saves the updated author name from the edit input. */
         function saveAuthorName() {
             const authorName = document.getElementById('authorNameInput').value.trim();
             if (authorName) {
@@ -351,9 +373,20 @@
             }
         }
 
+        /**
+         * Gets the author's name from local storage.
+         * @returns {string} The author's name.
+         */
         function getAuthorName() { return localStorage.getItem('dropRateEditorAuthor') || 'Unknown Editor'; }
 
-        // --- Status & Cache Logic (reused) ---
+        /**
+         * Displays a status message bar.
+         * @param {string} message The message to display.
+         * @param {boolean} [isError=false] If true, shows an error style.
+         * @param {boolean} [isWarning=false] If true, shows a warning style.
+         * @param {boolean} [isInfo=false] If true, shows an info style.
+         * @param {object[]} [controls=null] Optional buttons to add to the status bar.
+         */
         function showStatus(message, isError = false, isWarning = false, isInfo = false, controls = null) {
             const statusBar = document.getElementById('statusBar');
             statusBar.innerHTML = '';
@@ -383,6 +416,7 @@
             }
         }
 
+        /** Displays a confirmation modal to clear all local data. */
         function confirmClearCache() {
             confirmAction(
                 'Clear Local Cache?',
@@ -395,6 +429,7 @@
             );
         }
 
+        /** Saves the current editor state to local storage. */
         function saveToCache() {
             if (!isDataLoaded) return;
             const cache = {
@@ -411,6 +446,10 @@
             localStorage.setItem(CACHE_KEY, JSON.stringify(cache));
         }
 
+        /**
+         * Loads the editor state from local storage.
+         * @returns {boolean} True if data was loaded from cache, false otherwise.
+         */
         function loadFromCache() {
             try {
                 const cache = JSON.parse(localStorage.getItem(CACHE_KEY));
@@ -431,7 +470,7 @@
             return false;
         }
 
-        // --- Data Loading & Parsing ---
+        /** Loads all initial data from the server and handles cache recovery. */
         async function loadData() {
             let serverData;
             try {
@@ -488,6 +527,10 @@
             }
         }
         
+        /**
+         * Finalizes the data loading process, renders the UI, and handles cache state.
+         * @param {boolean} usedCache - Indicates if the data was loaded from the local cache.
+         */
         function finishLoading(usedCache) {
             isDataLoaded = true;
             document.getElementById('mainContent').style.display = 'grid';
@@ -504,7 +547,10 @@
             lucide.createIcons();
         }
 
-        // --- ZenDrop Parsing (Unchanged from original) ---
+        /**
+         * Parses the ZenDrop.xml content.
+         * @param {string} xmlText - The XML content of ZenDrop.xml.
+         */
         function parseZenDropXml(xmlText) {
             const headerMatch = xmlText.match(/^[\s\S]*?(?=<ZenDropSystem>)/i);
             originalZenXMLHeader = headerMatch ? headerMatch[0] : '<?xml version="1.0" encoding="utf-8"?>\n';
@@ -592,7 +638,10 @@
             }
         }
         
-        // --- Excellent Drop Rate (Count) Parsing ---
+        /**
+         * Parses the excellent option drop rate counts from ItemExcellentOptions.xml.
+         * @param {string} xmlText - The XML content of ItemExcellentOptions.xml.
+         */
         function parseExcellentDropXml(xmlText) {
             const parser = new DOMParser();
             const xmlDoc = parser.parseFromString(xmlText, "text/xml");
@@ -606,6 +655,12 @@
             excellentDropRates.wings = parseDropRateSection(xmlDoc, 'WingOptionDropRate');
         }
 
+        /**
+         * Parses a specific drop rate section (Common or Wings) from the XML document.
+         * @param {XMLDocument} xmlDoc - The parsed XML document.
+         * @param {string} tagName - The name of the root tag for the section (e.g., 'OptionDropRate').
+         * @returns {object[]} An array of drop rate objects.
+         */
         function parseDropRateSection(xmlDoc, tagName) {
             const list = [];
             const dropRateNode = xmlDoc.getElementsByTagName(tagName)[0];
@@ -634,7 +689,10 @@
             return list;
         }
         
-        // --- MODIFIED: Item Category List Parsing to build comprehensive item data including a flat list for easy filtering ---
+        /**
+         * Parses the ItemList.xml to build a comprehensive item data structure for lookups.
+         * @param {string} xmlText - The XML content of ItemList.xml.
+         */
         function parseItemCategoryList(xmlText) {
             const parser = new DOMParser();
             const xmlDoc = parser.parseFromString(xmlText, "text/xml");
@@ -676,7 +734,10 @@
             console.log(`[DEBUG] Parsed ${Object.keys(itemCategories).length} item categories and ${flatAllItems.length} total items for filtering.`);
         }
 
-        // --- NEW: Excellent Option Definition Parsing (Unchanged) ---
+        /**
+         * Parses the individual excellent option definitions from ItemExcellentOptions.xml.
+         * @param {string} xmlText - The XML content of ItemExcellentOptions.xml.
+         */
         function parseExcellentOptions(xmlText) {
             const parser = new DOMParser();
             const xmlDoc = parser.parseFromString(xmlText, "text/xml");
@@ -685,6 +746,12 @@
             excellentOptions.wings = parseOptionSection(xmlDoc, 'Wings');
         }
 
+        /**
+         * Parses a specific section of excellent option definitions (Common or Wings).
+         * @param {XMLDocument} xmlDoc - The parsed XML document.
+         * @param {string} tagName - The name of the section tag ('Common' or 'Wings').
+         * @returns {object[]} An array of option definition objects.
+         */
         function parseOptionSection(xmlDoc, tagName) {
             const list = [];
             const sectionNode = xmlDoc.getElementsByTagName(tagName)[0];
@@ -724,7 +791,7 @@
         }
 
 
-        // --- Undo System ---
+        /** Pushes the current state of the active tab's data to the undo history. */
         function pushUndo() {
             if (undoHistory.length >= 50) undoHistory.shift();
             
@@ -741,6 +808,7 @@
             saveToCache();
         }
 
+        /** Reverts the editor state to the last entry in the undo history. */
         function executeUndo() {
             if (undoHistory.length === 0) return;
             const lastState = undoHistory.pop();
@@ -758,6 +826,7 @@
             saveToCache();
         }
 
+        /** Updates the state and label of the undo button. */
         function updateUndoButton() {
             const btn = document.getElementById('undoBtn');
             if (btn) {
@@ -767,26 +836,36 @@
             }
         }
 
+        /**
+         * Attaches author and timestamp information to a map object.
+         * @param {object} map - The map data object.
+         */
         function setModificationInfo(map) {
             map.modificationInfo = { author: getAuthorName(), timestamp: new Date().toLocaleString() };
         }
         
         document.addEventListener('keydown', (e) => { if (e.ctrlKey && e.key === 'z') { e.preventDefault(); executeUndo(); } });
         
-        // --- UI Rendering ---
+        /**
+         * Sets the active main tab ('zen' or 'exel') and re-renders the editor.
+         * @param {string} tabName - The name of the tab to activate.
+         */
         function setActiveTab(tabName) {
             activeTab = tabName;
             document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.toggle('active', btn.dataset.tabName === tabName));
             renderEditor(); 
         }
         
-        // NEW: Function to set the active sub-tab for Excellent Options
+        /**
+         * Sets the active sub-tab for the excellent options panel and re-renders.
+         * @param {string} subTabName - The name of the sub-tab ('count' or 'option').
+         */
         function setActiveExelSubTab(subTabName) {
             activeExelSubTab = subTabName;
             renderEditor(); // Force re-render of the Exel panel content
         }
 
-
+        /** Renders the main editor content based on the active tab. */
         function renderEditor() {
             // Re-render the main controls based on the active tab
             let htmlContent = '';
@@ -823,7 +902,11 @@
             }
         }
         
-        // NEW: Function to toggle the detail row visibility
+        /**
+         * Toggles the visibility of a detail row in the excellent option count tables.
+         * @param {string} type - The type of section ('common' or 'wings').
+         * @param {number} index - The index of the row to toggle.
+         */
         function toggleDetailRow(type, index) {
             const key = `${type}_${index}`;
             const detailRow = document.getElementById(`detail-row-${key}`);
@@ -848,8 +931,13 @@
         }
 
 
-        // --- MODIFIED: Item View Modal Logic to show all filtered items and provide better debug context ---
-        // ADDED: isIndividualOption flag to change filtering behavior
+        /**
+         * Opens a modal to view all items that match a specific Kind A/B filter.
+         * @param {string} type - The type of item group ('common' or 'wings').
+         * @param {string|string[]} kindA - The Kind A filter value, or an array of values for individual options.
+         * @param {string|null} kindB - The Kind B filter value (for wings).
+         * @param {boolean} [isIndividualOption=false] - Flag to indicate if the filter logic is for an individual option.
+         */
         function openItemViewModal(type, kindA, kindB, isIndividualOption = false) {
             const titleEl = document.getElementById('itemViewModalTitle');
             const descEl = document.getElementById('itemViewDescription');
@@ -918,7 +1006,10 @@
             lucide.createIcons();
         }
 
-        // --- Zen Drop Panel (Modified from original) ---
+        /**
+         * Renders the HTML for the Zen Drop panel.
+         * @returns {string} The HTML content for the Zen Drop panel.
+         */
         function renderZenDropPanel() {
             let html = `
                 <!-- Global Settings (ZEN) -->
@@ -963,7 +1054,10 @@
             return html;
         }
 
-        // --- Excellent Drop Panel (Modified to include sub-tabs) ---
+        /**
+         * Renders the HTML for the Excellent Options panel, including sub-tabs.
+         * @returns {string} The HTML content for the Excellent Options panel.
+         */
         function renderExcellentDropPanel() {
             let html = `<div id="exelDropPanelContent">`;
             
@@ -1003,7 +1097,12 @@
             return html;
         }
         
-        // --- MODIFIED: Render Individual Option Rate Table to only include centered button ---
+        /**
+         * Renders the table for individual excellent option rates.
+         * @param {object[]} options - The array of option data for the section.
+         * @param {string} type - The type of section ('common' or 'wings').
+         * @returns {string} The HTML content for the table.
+         */
         function renderOptionRateTable(options, type) {
             const tableTitle = "Rate controls the chance (n/10000) for this specific option to be selected from the available pool when an item drops with Excellent status.";
             
@@ -1089,6 +1188,13 @@
             `;
         }
 
+        /**
+         * Updates the rate of an individual excellent option.
+         * @param {HTMLInputElement} inputElement - The input element that was changed.
+         * @param {string} type - The type of section ('common' or 'wings').
+         * @param {number} index - The index of the option to update.
+         * @param {string} value - The new rate value.
+         */
         function updateIndividualOptionRate(inputElement, type, index, value) {
             let dataList = excellentOptions[type];
             let option = dataList[index];
@@ -1115,8 +1221,11 @@
             }
         }
         
-        // --- Option Count Drop Rate Table Rendering (MODIFIED: Replaced hint with button) ---
-        
+        /**
+         * Renders the table for common item excellent option counts.
+         * @param {object[]} rates - The array of rate data for common items.
+         * @returns {string} The HTML content for the table.
+         */
         function renderCommonDropTable(rates) {
             const tableTitle = "Kind A corresponds to the item filter value (ItemKindA) used in ItemExcellentOptions.xml. The Sum must equal 10000.";
             // Keys for columns 1 through 5
@@ -1148,6 +1257,11 @@
             `;
         }
         
+        /**
+         * Renders the table for wing excellent option counts.
+         * @param {object[]} rates - The array of rate data for wings.
+         * @returns {string} The HTML content for the table.
+         */
         function renderWingDropTable(rates) {
             const tableTitle = "Kind A/Kind B define the specific Wing Item Kind attributes used for filtering in ItemExcellentOptions.xml. The Sum must equal 10000.";
             const columnHeaders = [0, 1, 2, 3, 4, 5]; // 0 through 5
@@ -1179,7 +1293,13 @@
             `;
         }
 
-        // --- MODIFIED: Uses button to launch item view modal ---
+        /**
+         * Generates the HTML for a single row in an excellent option count table.
+         * @param {object} item - The rate data for the row.
+         * @param {number} index - The index of the row.
+         * @param {string} type - The type of section ('common' or 'wings').
+         * @returns {string} The HTML content for the table row and its detail row.
+         */
         function getExelDropRowHtml(item, index, type) {
             const isInvalid = item.currentSum !== RATE_SUM_REQUIRED;
             const key = `${type}_${index}`;
@@ -1282,8 +1402,14 @@
             return html;
         }
 
-        // --- Excellent Drop Rate (Count) Logic ---
-
+        /**
+         * Updates a value in an excellent option count rate row.
+         * @param {HTMLInputElement} inputElement - The input element that was changed.
+         * @param {string} type - The type of section ('common' or 'wings').
+         * @param {number} index - The index of the row to update.
+         * @param {string} key - The rate key to update (e.g., 'One', 'Two').
+         * @param {string} value - The new value.
+         */
         function updateExcellentDropRateValue(inputElement, type, index, key, value) {
             let dataList = excellentDropRates[type];
             let item = dataList[index];
@@ -1300,6 +1426,11 @@
             }
         }
         
+        /**
+         * Validates the sum of rates for a row in the excellent option count table and updates its visual state.
+         * @param {string} type - The type of section ('common' or 'wings').
+         * @param {number} index - The index of the row to validate.
+         */
         function validateExcellentDropRow(type, index) {
             const dataList = excellentDropRates[type];
             const item = dataList[index];
@@ -1351,6 +1482,7 @@
             }
         }
 
+        /** Revalidates all rows in the excellent option count tables. */
         function revalidateAllExcellentDropRows(forceReRender = false) {
             excellentDropRates.common.forEach((item, index) => {
                 validateExcellentDropRow('common', index);
@@ -1366,8 +1498,12 @@
             }
         }
         
-        // --- Zen Drop Rate Logic (kept as functions) ---
-
+        /**
+         * Renders a table for a specific category of Zen drop maps.
+         * @param {object} category - The category object containing maps.
+         * @param {number} categoryIndex - The index of the category.
+         * @returns {string} The HTML content for the category table.
+         */
         function renderCategoryTable(category, categoryIndex) {
             const isCollapsed = collapsedStates[category.name] || false;
             return `
@@ -1398,6 +1534,13 @@
             `;
         }
 
+        /**
+         * Generates the HTML for a single row in a Zen drop map table.
+         * @param {object} map - The map data object.
+         * @param {number} categoryIndex - The index of the category.
+         * @param {number} mapIndex - The index of the map within the category.
+         * @returns {string} The HTML content for the table row.
+         */
         function getMapRowHtml(map, categoryIndex, mapIndex) {
             const { isInvalid, isWarning } = validateMap(map); 
             let rowClass = map.isNew ? 'map-row-new' : (map.isModified ? 'map-row-modified' : '');
@@ -1445,11 +1588,17 @@
             `;
         }
 
+        /**
+         * Toggles the collapsed state of a Zen drop category table.
+         * @param {HTMLElement} tableElement - The container element of the table.
+         * @param {string} categoryName - The name of the category.
+         */
         function toggleCategory(tableElement, categoryName) {
             const isCollapsed = tableElement.classList.toggle('collapsed');
             collapsedStates[categoryName] = isCollapsed;
         }
 
+        /** Filters the Zen drop map tables based on the search input. */
         function filterMaps() {
             const searchTerm = document.getElementById('mapSearch').value.toLowerCase();
             document.querySelectorAll('.map-table-container').forEach(table => {
@@ -1471,6 +1620,11 @@
             });
         }
         
+        /**
+         * Updates a global Zen drop setting.
+         * @param {string} field - The name of the global setting to update.
+         * @param {string} value - The new value.
+         */
         function updateGlobalValue(field, value) {
             if (zenDropData.globals[field] !== value) {
                 pushUndo();
@@ -1479,6 +1633,14 @@
             }
         }
 
+        /**
+         * Updates a value for a specific map in the Zen drop table.
+         * @param {number} categoryIndex - The index of the category.
+         * @param {number} mapIndex - The index of the map.
+         * @param {string} field - The property of the map to update.
+         * @param {string} value - The new value.
+         * @param {HTMLInputElement} inputElement - The input element that triggered the change.
+         */
         function updateMapValue(categoryIndex, mapIndex, field, value, inputElement) {
             const map = zenDropData.categories[categoryIndex].maps[mapIndex];
             if (map[field] !== value) {
@@ -1497,6 +1659,11 @@
             }
         }
         
+        /**
+         * Validates a single map's data for errors and warnings.
+         * @param {object} map - The map data object.
+         * @returns {{isInvalid: boolean, isWarning: boolean}} An object indicating if the map data is invalid or has a warning.
+         */
         function validateMap(map) {
             let isInvalid = false;
             let isWarning = false;
@@ -1515,7 +1682,11 @@
             return { isInvalid, isWarning };
         }
         
-        // Fix: Adding the optional inputElement check to the Zen validation to prevent potential null errors
+        /**
+         * Validates a row in the Zen drop map table and updates its visual state.
+         * @param {number} categoryIndex - The index of the category.
+         * @param {number} mapIndex - The index of the map.
+         */
         function validateMapRow(categoryIndex, mapIndex, inputElement) {
             const row = document.querySelector(`tr[data-map-indices="${categoryIndex},${mapIndex}"]`);
             if (!row) return;
@@ -1550,6 +1721,7 @@
             }
         }
 
+        /** Revalidates all rows in the Zen drop map tables. */
         function revalidateAllRows() {
             zenDropData.categories.forEach((category, categoryIndex) => {
                 category.maps.forEach((map, mapIndex) => {
@@ -1558,6 +1730,7 @@
             });
         }
 
+        /** Confirms and applies a bulk percentage increase to all Zen drop values. */
         function confirmBulkIncrease() {
             const input = document.getElementById('bulkPercent');
             const percent = parseFloat(input.value);
@@ -1579,6 +1752,10 @@
             );
         }
 
+        /**
+         * Applies a bulk percentage increase to all Min/Max Zen values.
+         * @param {number} percent - The percentage to increase values by.
+         */
         function applyBulkIncrease(percent) {
             pushUndo(); 
             
@@ -1609,6 +1786,10 @@
             document.getElementById('bulkPercent').value = ''; 
         }
 
+        /**
+         * Opens the modal to add a new map entry to a Zen drop category.
+         * @param {number} categoryIndex - The index of the category to add to.
+         */
         function openAddModal(categoryIndex) { 
             document.getElementById('modalTitle').textContent = 'Add New Map Entry';
             document.getElementById('mapForm').reset();
@@ -1617,6 +1798,11 @@
             lucide.createIcons();
         }
         
+        /**
+         * Deletes a map entry from a Zen drop category after confirmation.
+         * @param {number} categoryIndex - The index of the category.
+         * @param {number} mapIndex - The index of the map to delete.
+         */
         function deleteMap(categoryIndex, mapIndex) {
             const map = zenDropData.categories[categoryIndex].maps[mapIndex];
             confirmAction(
@@ -1666,9 +1852,10 @@
             saveToCache();
         });
         
-        // --- Save to Server Functions ---
-
-        // Zen Drop Save
+        /**
+         * Generates the XML content for ZenDrop.xml from the current data.
+         * @returns {{xml: string, invalidMapsSkipped: number}} An object containing the generated XML and the count of skipped invalid maps.
+         */
         function generateZenDropXml() {
             let xml = originalZenXMLHeader;
             const globals = zenDropData.globals;
@@ -1709,6 +1896,7 @@
             return { xml, invalidMapsSkipped };
         }
 
+        /** Saves the changes to ZenDrop.xml to the server. */
         async function saveZenChangesToServer() { 
             const saveButton = document.getElementById('saveButton'); 
             saveButton.disabled = true; 
@@ -1747,7 +1935,10 @@
             } 
         }
         
-        // --- NEW: XML Generation for Individual Options (<Common> and <Wings>) ---
+        /**
+         * Generates the XML content for the <Common> and <Wings> sections of excellent option definitions.
+         * @returns {{commonXml: string, wingsXml: string}} An object containing the XML for both sections.
+         */
         function generateOptionsXml() {
             let commonXml = '\t<Common> <!-- Common excellent options -->\n';
             excellentOptions.common.forEach(opt => {
@@ -1769,7 +1960,10 @@
         }
 
 
-        // Excellent Options Save
+        /**
+         * Generates the complete XML content for ItemExcellentOptions.xml by merging updated sections.
+         * @returns {{xml: string, invalidRatesSkipped: number}} An object containing the final XML and the count of skipped invalid rate groups.
+         */
         function generateExcellentDropXml() {
             // 1. Generator for a drop rate section
             const generateRateSection = (rates, tagName) => {
@@ -1830,6 +2024,7 @@
             return { xml: finalXml, invalidRatesSkipped: invalidRatesSkipped };
         }
 
+        /** Saves the changes to ItemExcellentOptions.xml to the server. */
         async function saveExcellentOptionsToServer() {
             // Check again for invalid rows before starting the save process (Only count rates matter for this check)
             const totalInvalidCountRows = [...excellentDropRates.common, ...excellentDropRates.wings].filter(i => i.currentSum !== RATE_SUM_REQUIRED).length;
