@@ -1,12 +1,5 @@
 // Shared utility functions
 
-/**
- * Displays a confirmation modal with a specified title, message, and action.
- * @param {string} title - The title of the confirmation modal.
- * @param {string} message - The message to display in the modal body.
- * @param {function} onConfirm - The callback function to execute when the confirm button is clicked.
- * @param {string} [buttonClass='btn-danger'] - The CSS class for the confirm button.
- */
 function confirmAction(title, message, onConfirm, buttonClass = 'btn-danger') {
     document.getElementById('confirmTitle').textContent = title;
     document.getElementById('confirmMessage').textContent = message;
@@ -20,18 +13,10 @@ function confirmAction(title, message, onConfirm, buttonClass = 'btn-danger') {
     lucide.createIcons();
 }
 
-/**
- * Closes the confirmation modal.
- */
 function closeConfirmModal() {
     document.getElementById('confirmModal').classList.remove('show');
 }
 
-/**
- * Initializes the author lock feature. If an author name is found in local storage,
- * it renders the author controls and loads data. Otherwise, it displays a modal to
- * prompt for the author's name.
- */
 function initializeAuthorLock() {
     const authorName = localStorage.getItem('spawnEditorAuthor');
     if (authorName && authorName.trim() !== '') {
@@ -43,9 +28,6 @@ function initializeAuthorLock() {
     }
 }
 
-/**
- * Saves the initial author name from the author modal to local storage.
- */
 function saveInitialAuthorName() {
     const authorInput = document.getElementById('initialAuthorName');
     const authorName = authorInput.value.trim();
@@ -57,9 +39,6 @@ function saveInitialAuthorName() {
     }
 }
 
-/**
- * Renders the author controls, displaying the author's name and setting up the edit functionality.
- */
 function renderAuthorControls() {
     const authorName = localStorage.getItem('spawnEditorAuthor') || 'Unknown';
     document.getElementById('authorNameDisplay').textContent = authorName;
@@ -68,10 +47,6 @@ function renderAuthorControls() {
     lucide.createIcons();
 }
 
-/**
- * Toggles the author display between view and edit mode.
- * @param {boolean} isEditing - True to switch to edit mode, false to switch to view mode.
- */
 function toggleAuthorEdit(isEditing) {
     document.getElementById('authorDisplayView').style.display = isEditing ? 'none' : 'flex';
     document.getElementById('authorEditView').style.display = isEditing ? 'flex' : 'none';
@@ -80,9 +55,6 @@ function toggleAuthorEdit(isEditing) {
     }
 }
 
-/**
- * Saves the updated author name from the edit input to local storage.
- */
 function saveAuthorName() {
     const authorName = document.getElementById('authorNameInput').value.trim();
     if (authorName) {
@@ -100,20 +72,8 @@ function saveAuthorName() {
     }
 }
 
-/**
- * Retrieves the author's name from local storage.
- * @returns {string} The author's name, or 'Unknown Editor' if not set.
- */
 function getAuthorName() { return localStorage.getItem('spawnEditorAuthor') || 'Unknown Editor'; }
 
-/**
- * Displays a status message at the bottom of the page.
- * @param {string} message - The message to display.
- * @param {boolean} [isError=false] - True to display an error message style.
- * @param {boolean} [isWarning=false] - True to display a warning message style.
- * @param {boolean} [isInfo=false] - True to display an info message style.
- * @param {object[]} [controls=null] - An array of control objects to add to the status bar, each with `text`, `className`, and `onClick` properties.
- */
 function showStatus(message, isError = false, isWarning = false, isInfo = false, controls = null) {
     const statusBar = document.getElementById('statusBar');
     statusBar.innerHTML = ''; // Clear previous content
@@ -147,10 +107,6 @@ function showStatus(message, isError = false, isWarning = false, isInfo = false,
     }
 }
 
-/**
- * Displays a confirmation modal to clear local storage for a given key.
- * @param {string} cacheKey - The local storage key to remove.
- */
 function confirmClearCache(cacheKey) {
     confirmAction(
         'Clear Local Cache?',
