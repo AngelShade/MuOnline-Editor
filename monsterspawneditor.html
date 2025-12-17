@@ -11,22 +11,37 @@
 
     <script src="https://unpkg.com/lucide@latest"></script>
     <link rel="stylesheet" href="css/style.css">
+    <style>
+        /* Safari Compatibility Fixes */
+        .glass-effect {
+            -webkit-backdrop-filter: blur(10px);
+            backdrop-filter: blur(10px);
+        }
+        body {
+            -webkit-user-select: none;
+            user-select: none;
+        }
+        input, textarea, [contenteditable] {
+            -webkit-user-select: text;
+            user-select: text;
+        }
+    </style>
 </head>
 <body>
-    <div class="modal" id="authorModal"><div class="author-modal-content"><h2>Welcome</h2><p>Please enter your name to track your changes.</p><input type="text" id="initialAuthorName" placeholder="Your Name..." oninput="this.value ? document.getElementById('saveInitialAuthorBtn').disabled=false : document.getElementById('saveInitialAuthorBtn').disabled=true"><button id="saveInitialAuthorBtn" class="btn btn-primary" onclick="saveInitialAuthorName()" disabled>Save & Begin</button></div></div>
+    <div class="modal" id="authorModal"><div class="author-modal-content"><h2>Welcome</h2><p>Please enter your name to track your changes.</p><input type="text" id="initialAuthorName" placeholder="Your Name..." title="Enter your author name" oninput="this.value ? document.getElementById('saveInitialAuthorBtn').disabled=false : document.getElementById('saveInitialAuthorBtn').disabled=true"><button type="button" id="saveInitialAuthorBtn" class="btn btn-primary" onclick="saveInitialAuthorName()" disabled>Save & Begin</button></div></div>
     
     <div class="modal" id="confirmModal">
         <div class="modal-content glass-effect" style="max-width: 500px;">
             <div class="modal-header">
                 <h2 id="confirmTitle">Are you sure?</h2>
-                <button class="close-btn" onclick="closeConfirmModal()"><i data-lucide="x"></i></button>
+                <button type="button" class="close-btn" onclick="closeConfirmModal()" title="Close"><i data-lucide="x"></i></button>
             </div>
             <div class="modal-body">
                 <p id="confirmMessage" style="color: var(--text-secondary); line-height: 1.6;">This action cannot be undone.</p>
             </div>
             <div class="modal-footer">
-                <button class="btn btn-outline" onclick="closeConfirmModal()">Cancel</button>
-                <button id="confirmButton" class="btn btn-danger">Confirm</button>
+                <button type="button" class="btn btn-outline" onclick="closeConfirmModal()">Cancel</button>
+                <button type="button" id="confirmButton" class="btn btn-danger">Confirm</button>
             </div>
         </div>
     </div>
@@ -37,11 +52,11 @@
                 <label>Author:</label>
                 <div id="authorDisplayView" style="display: flex; align-items: center;">
                     <span id="authorNameDisplay" style="color: var(--accent-amber); font-weight: bold; font-family: var(--font-data);"></span>
-                    <button class="btn btn-outline btn-sm" onclick="toggleAuthorEdit(true)" style="padding: 4px 8px; margin-left: 8px;">Change</button>
+                    <button type="button" class="btn btn-outline btn-sm" onclick="toggleAuthorEdit(true)" style="padding: 4px 8px; margin-left: 8px;">Change</button>
                 </div>
                 <div id="authorEditView" style="display: none;">
-                    <input type="text" id="authorNameInput" placeholder="Enter name..." style="padding: 4px 8px; font-size: 14px; border-radius: 4px; border: 1px solid var(--accent-blue); background: var(--bg-dark); color: var(--text-primary);">
-                    <button class="btn btn-success btn-sm" onclick="saveAuthorName()" style="padding: 4px 8px; margin-left: 8px;">Save</button>
+                    <input type="text" id="authorNameInput" placeholder="Enter name..." title="Edit author name" style="padding: 4px 8px; font-size: 14px; border-radius: 4px; border: 1px solid var(--accent-blue); background: var(--bg-dark); color: var(--text-primary);">
+                    <button type="button" class="btn btn-success btn-sm" onclick="saveAuthorName()" style="padding: 4px 8px; margin-left: 8px;">Save</button>
                 </div>
             </div>
             <h1><i data-lucide="siren"></i>MU Spawn Editor<i data-lucide="siren"></i></h1>
@@ -50,7 +65,7 @@
                 <a href="dashboard.html" class="btn btn-outline" title="Back to Dashboard">
                     <i data-lucide="layout-dashboard"></i>Dashboard
                 </a>
-                <button class="btn btn-outline" onclick="openGuideModal()"><i data-lucide="help-circle"></i>Guide</button>
+                <button type="button" class="btn btn-outline" onclick="openGuideModal()"><i data-lucide="help-circle"></i>Guide</button>
             </div>
             </div>
         
@@ -62,7 +77,7 @@
                     <h3><i data-lucide="database"></i>Data Management</h3>
                     <p style="font-size: 14px; color: var(--text-secondary);">Server-side merging is handled automatically on save.</p>
                 </div>
-                <button class="btn btn-danger" onclick="confirmClearCache()">
+                <button type="button" class="btn btn-danger" onclick="confirmClearCache()">
                     <i data-lucide="trash-2"></i> Clear Local Cache
                 </button>
             </div>
@@ -71,7 +86,7 @@
         <div class="main-content" id="mainContent" style="display: none;">
             <div class="sidebar glass-effect" style="padding: 20px;">
                 <h3><i data-lucide="map"></i>Maps</h3>
-                <div class="search-bar" style="margin-bottom: 15px;"><input type="text" id="mapSearch" oninput="filterMaps()" placeholder="Search maps..."></div>
+                <div class="search-bar" style="margin-bottom: 15px;"><input type="text" id="mapSearch" oninput="filterMaps()" placeholder="Search maps..." title="Search maps"></div>
                 <div class="map-list" id="mapList"></div>
             </div>
             <div class="editor-panel glass-effect" style="padding: 25px;">
@@ -83,21 +98,22 @@
     <div class="modal" id="spawnModal">
         <div class="modal-content glass-effect">
             <div class="modal-header">
+            <div class="modal-header">
                 <h2 id="modalTitle"></h2>
-                <button class="close-btn" onclick="closeModal()"><i data-lucide="x"></i></button>
+                <button type="button" class="close-btn" onclick="closeModal()" title="Close"><i data-lucide="x"></i></button>
             </div>
             <form id="spawnForm">
                 <div class="modal-body">
                     <div class="form-grid">
                         <div class="form-group full-width monster-search">
                             <label>Monster * <span id="npcWarning" style="color: var(--accent-pink); font-size: 12px; display: none;">(NPCs/Traps only)</span></label>
-                            <input type="text" id="monsterSearch" autocomplete="off" required>
+                            <input type="text" id="monsterSearch" title="Search for a monster" autocomplete="off" required>
                             <input type="hidden" id="monsterIndex">
                             <div class="monster-suggestions" id="monsterSuggestions"></div>
                         </div>
                         <div class="form-group">
                             <label>Spawn Type *</label>
-                            <select id="spawnType" required onchange="updateSpawnTypeRestrictions()">
+                            <select id="spawnType" title="Select spawn type" required onchange="updateSpawnTypeRestrictions()">
                                 <option value="0">NPC/Traps</option>
                                 <option value="1">Multiple Monsters</option>
                                 <option value="2">Single Monster</option>
@@ -107,24 +123,24 @@
                         </div>
                         <div class="form-group">
                             <label>Count</label>
-                            <input type="number" id="spawnCount" value="1" min="0">
+                            <input type="number" id="spawnCount" title="Number of monsters to spawn" value="1" min="0">
                         </div>
-                        <div class="form-group"><label>Start X *</label><input type="number" id="startX" required min="0"></div>
-                        <div class="form-group"><label>Start Y *</label><input type="number" id="startY" required min="0"></div>
-                        <div class="form-group"><label>End X</label><input type="number" id="endX" value="0" min="0"></div>
+                        <div class="form-group"><label>Start X *</label><input type="number" id="startX" title="Start X Coordinate" required min="0"></div>
+                        <div class="form-group"><label>Start Y *</label><input type="number" id="startY" title="Start Y Coordinate" required min="0"></div>
+                        <div class="form-group"><label>End X</label><input type="number" id="endX" title="End X Coordinate" value="0" min="0"></div>
                         <div class="form-group">
                             <label>End Y</label>
                             <div class="input-group">
-                                <input type="number" id="endY" value="0" min="0">
-                                <button type="button" class="btn-coord-preset" onclick="setEndCoords(3, 'modal')">+3</button>
-                                <button type="button" class="btn-coord-preset" onclick="setEndCoords(4, 'modal')">+4</button>
-                                <button type="button" class="btn-coord-preset" onclick="setEndCoords(5, 'modal')">+5</button>
+                                <input type="number" id="endY" title="End Y Coordinate" value="0" min="0">
+                                <button type="button" class="btn-coord-preset" title="Add 3 to End Coords" onclick="setEndCoords(3, 'modal')">+3</button>
+                                <button type="button" class="btn-coord-preset" title="Add 4 to End Coords" onclick="setEndCoords(4, 'modal')">+4</button>
+                                <button type="button" class="btn-coord-preset" title="Add 5 to End Coords" onclick="setEndCoords(5, 'modal')">+5</button>
                             </div>
                         </div>
-                        <div class="form-group"><label>Distance</label><input type="number" id="distance" value="0" min="0"></div>
-                        <div class="form-group"><label>Direction</label><input type="number" id="dir" value="-1" min="-1" max="7"></div>
-                        <div class="form-group"><label>Element</label><input type="number" id="element" value="0" min="0" max="5"></div>
-                        <div class="form-group full-width" id="npcFunctionGroup" style="display: none;"><label>NPC Function</label><input type="text" id="npcFunction" placeholder="None"></div>
+                        <div class="form-group"><label>Distance</label><input type="number" id="distance" title="Spawn Distance" value="0" min="0"></div>
+                        <div class="form-group"><label>Direction</label><input type="number" id="dir" title="Spawn Direction" value="-1" min="-1" max="7"></div>
+                        <div class="form-group"><label>Element</label><input type="number" id="element" title="Elemental Attribute" value="0" min="0" max="5"></div>
+                        <div class="form-group full-width" id="npcFunctionGroup" style="display: none;"><label>NPC Function</label><input type="text" id="npcFunction" title="NPC Function" placeholder="None"></div>
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -139,7 +155,7 @@
         <div class="modal-content glass-effect">
             <div class="modal-header">
                 <h2><i data-lucide="help-circle"></i> How to Use the Spawn Editor</h2>
-                <button class="close-btn" onclick="closeGuideModal()"><i data-lucide="x"></i></button>
+                <button type="button" class="close-btn" onclick="closeGuideModal()" title="Close"><i data-lucide="x"></i></button>
             </div>
             <div class="modal-body" id="guideContent">
                 <h3>1. Getting Started</h3>
@@ -183,7 +199,7 @@
                 </ul>
             </div>
             <div class="modal-footer">
-                <button class="btn btn-primary" onclick="closeGuideModal()">Got it!</button>
+                <button type="button" class="btn btn-primary" onclick="closeGuideModal()">Got it!</button>
             </div>
         </div>
     </div>
@@ -351,6 +367,7 @@
                 controlsEl.className = 'status-bar-controls';
                 controls.forEach(control => {
                     const btn = document.createElement('button');
+                    btn.type = 'button';
                     btn.textContent = control.text;
                     btn.className = control.className;
                     btn.onclick = control.onClick;
@@ -655,29 +672,29 @@
 
             // Main header and controls
             let html = `<div><div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;"><div><h2 style="color: var(--text-bright); margin-bottom: 5px;">${map.name}</h2><p style="color: var(--text-secondary);">Map Number: <span style="font-family: var(--font-data);">${mapNum}</span></p></div><div class="controls" style="display: flex; gap: 10px;">
-                <button id="undoBtn" class="btn btn-undo" onclick="executeUndo()" disabled><i data-lucide="undo-2"></i> Undo</button>
+                <button type="button" id="undoBtn" class="btn btn-undo" onclick="executeUndo()" disabled><i data-lucide="undo-2"></i> Undo</button>
                 
                 <div class="dropdown">
-                    <button class="btn btn-primary"><i data-lucide="plus-circle"></i> New Spawn <i data-lucide="chevron-down" style="width: 16px; margin-left: 0;"></i></button>
+                    <button type="button" class="btn btn-primary"><i data-lucide="plus-circle"></i> New Spawn <i data-lucide="chevron-down" style="width: 16px; margin-left: 0;"></i></button>
                     <div class="dropdown-content">
-                        ${[0, 1, 2, 3, 4].map(type => `<button onclick="openAddModal(${type})"><i data-lucide="plus"></i> Type ${type} (${spotTypeNames[type]})</button>`).join('')}
+                        ${[0, 1, 2, 3, 4].map(type => `<button type="button" onclick="openAddModal(${type})"><i data-lucide="plus"></i> Type ${type} (${spotTypeNames[type]})</button>`).join('')}
                     </div>
                 </div>
                 
-                <button class="btn btn-success" onclick="saveChangesToServer()"><i data-lucide="save"></i> Save Changes</button>
+                <button type="button" class="btn btn-success" onclick="saveChangesToServer()"><i data-lucide="save"></i> Save Changes</button>
             </div></div>`;
 
             // Missing categories block (if any exist on map already)
             if (missingTypes.length > 0 && map.spots.length > 0) {
                 html += `<div class="glass-effect" style="padding: 15px; margin-bottom: 20px;"><h4 style="margin-bottom: 10px; color: var(--text-secondary);">Add Missing Categories:</h4><div style="display:flex; gap:10px; flex-wrap:wrap;">`;
                 missingTypes.forEach(type => {
-                    html += `<button class="btn btn-outline" onclick="addMissingCategory(${type})"><i data-lucide="plus"></i> Type ${type} (${spotTypeNames[type]})</button>`;
+                    html += `<button type="button" class="btn btn-outline" onclick="addMissingCategory(${type})"><i data-lucide="plus"></i> Type ${type} (${spotTypeNames[type]})</button>`;
                 });
                 html += `</div></div>`;
             }
 
             // Search bar
-            html += `<div class="search-bar" style="margin-bottom: 20px;"><input type="text" id="spawnSearch" placeholder="Search spawns by monster name or ID..." oninput="filterSpawns()"></div>`;
+            html += `<div class="search-bar" style="margin-bottom: 20px;"><input type="text" id="spawnSearch" placeholder="Search spawns by monster name or ID..." title="Search spawns" oninput="filterSpawns()"></div>`;
 
             // Sort spots by type
             map.spots.sort((a, b) => parseInt(a.type) - parseInt(b.type));
@@ -691,36 +708,36 @@
                     const isSingleSpawnType = spot.type === '2' || spot.type === '4';
                     
                     // Table header
-                    html += `<div class="spawn-table ${collapsedStates[`${mapNum}-${spot.type}`] ? 'collapsed' : ''}" data-spot-index="${spotIndex}"><h3 onclick="toggleSpot(this.parentElement, ${mapNum}, '${spot.type}')"><div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;"><span style="color: var(--text-bright); font-size: 1.1em;">${getSpotDescription(spot.type)}</span><button class="btn btn-primary btn-sm" style="padding: 4px 8px;" onclick="event.stopPropagation(); addNewSpawnRow(${spotIndex})"><i data-lucide="plus"></i></button><button id="copyBtn-${spotIndex}" class="btn btn-primary btn-sm" style="padding: 4px 8px;" onclick="event.stopPropagation(); copySelectedSpawnsFromGroup(${spotIndex})"><i data-lucide="clipboard-copy"></i></button><button id="pasteBtn-${spotIndex}" class="btn btn-success btn-sm" style="padding: 4px 8px;" onclick="event.stopPropagation(); pasteSpawns(${spotIndex})"><i data-lucide="clipboard-paste"></i></button><button id="deleteBtn-${spotIndex}" class="btn btn-danger btn-sm" style="padding: 4px 8px;" onclick="event.stopPropagation(); deleteSelectedSpawns(${spotIndex})"><i data-lucide="trash-2"></i></button></div><span style="display: flex; align-items: center; gap: 10px;"><span style="font-size: 14px; color: var(--text-secondary);">${spot.spawns.length} spawns</span><span class="toggle-icon"><i data-lucide="chevron-down"></i></span></span></h3><table><thead><tr><th><input type="checkbox" title="Select All" onclick="toggleSelectAll(${spotIndex}, this)"></th><th style="cursor: pointer;" onclick="sortTable(${spotIndex}, 'index')">Monster <i data-lucide="arrow-up-down" style="width:12px"></i></th><th style="cursor: pointer;" onclick="sortTable(${spotIndex}, 'startX')">Start (X,Y) <i data-lucide="arrow-up-down" style="width:12px"></i></th>
+                    html += `<div class="spawn-table ${collapsedStates[`${mapNum}-${spot.type}`] ? 'collapsed' : ''}" data-spot-index="${spotIndex}"><h3 onclick="toggleSpot(this.parentElement, ${mapNum}, '${spot.type}')"><div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;"><span style="color: var(--text-bright); font-size: 1.1em;">${getSpotDescription(spot.type)}</span><button type="button" class="btn btn-primary btn-sm" style="padding: 4px 8px;" onclick="event.stopPropagation(); addNewSpawnRow(${spotIndex})"><i data-lucide="plus"></i></button><button type="button" id="copyBtn-${spotIndex}" class="btn btn-primary btn-sm" style="padding: 4px 8px;" onclick="event.stopPropagation(); copySelectedSpawnsFromGroup(${spotIndex})"><i data-lucide="clipboard-copy"></i></button><button type="button" id="pasteBtn-${spotIndex}" class="btn btn-success btn-sm" style="padding: 4px 8px;" onclick="event.stopPropagation(); pasteSpawns(${spotIndex})"><i data-lucide="clipboard-paste"></i></button><button type="button" id="deleteBtn-${spotIndex}" class="btn btn-danger btn-sm" style="padding: 4px 8px;" onclick="event.stopPropagation(); deleteSelectedSpawns(${spotIndex})"><i data-lucide="trash-2"></i></button></div><span style="display: flex; align-items: center; gap: 10px;"><span style="font-size: 14px; color: var(--text-secondary);">${spot.spawns.length} spawns</span><span class="toggle-icon"><i data-lucide="chevron-down"></i></span></span></h3><table><thead><tr><th><input type="checkbox" title="Select All" onclick="toggleSelectAll(${spotIndex}, this)"></th><th style="cursor: pointer;" onclick="sortTable(${spotIndex}, 'index')">Monster <i data-lucide="arrow-up-down" style="width:12px"></i></th><th style="cursor: pointer;" onclick="sortTable(${spotIndex}, 'startX')">Start (X,Y) <i data-lucide="arrow-up-down" style="width:12px"></i></th>
         <th><div>End (X,Y)</div>
             <div class="th-controls">
                 <div class="th-input-group">
-                    <button class="th-input-btn" onclick="event.stopPropagation(); changeThInputValue('th-input-endxy-${spotIndex}', -1)">-</button>
-                    <input type="number" class="th-input" value="3" id="th-input-endxy-${spotIndex}" onclick="event.stopPropagation();">
-                    <button class="th-input-btn" onclick="event.stopPropagation(); changeThInputValue('th-input-endxy-${spotIndex}', 1)">+</button>
+                    <button type="button" class="th-input-btn" title="Decrease offset" onclick="event.stopPropagation(); changeThInputValue('th-input-endxy-${spotIndex}', -1)">-</button>
+                    <input type="number" class="th-input" value="3" id="th-input-endxy-${spotIndex}" title="End coord offset" onclick="event.stopPropagation();">
+                    <button type="button" class="th-input-btn" title="Increase offset" onclick="event.stopPropagation(); changeThInputValue('th-input-endxy-${spotIndex}', 1)">+</button>
                 </div>
-                <button class="btn-th-apply" onclick="event.stopPropagation(); confirmBulkAction(${spotIndex}, 'applyCoordOffset', 'th-input-endxy-${spotIndex}')">Apply</button>
+                <button type="button" class="btn-th-apply" title="Apply offset to all spawns" onclick="event.stopPropagation(); confirmBulkAction(${spotIndex}, 'applyCoordOffset', 'th-input-endxy-${spotIndex}')">Apply</button>
             </div>
         </th>
         ${!isSingleSpawnType ? `<th style="cursor: pointer;" onclick="sortTable(${spotIndex}, 'count')"><div>Count <i data-lucide="arrow-up-down" style="width:12px"></i></div>
             <div class="th-controls">
                 <div class="th-input-group">
-                    <button class="th-input-btn" onclick="event.stopPropagation(); changeThInputValue('th-input-count-${spotIndex}', -1)">-</button>
-                    <input type="number" class="th-input" value="1" id="th-input-count-${spotIndex}" onclick="event.stopPropagation();">
-                    <button class="th-input-btn" onclick="event.stopPropagation(); changeThInputValue('th-input-count-${spotIndex}', 1)">+</button>
+                    <button type="button" class="th-input-btn" title="Decrease count" onclick="event.stopPropagation(); changeThInputValue('th-input-count-${spotIndex}', -1)">-</button>
+                    <input type="number" class="th-input" value="1" id="th-input-count-${spotIndex}" title="Bulk count value" onclick="event.stopPropagation();">
+                    <button type="button" class="th-input-btn" title="Increase count" onclick="event.stopPropagation(); changeThInputValue('th-input-count-${spotIndex}', 1)">+</button>
                 </div>
-                <button class="btn-th-apply" onclick="event.stopPropagation(); confirmBulkAction(${spotIndex}, 'applyValue', 'count', 'th-input-count-${spotIndex}')">Apply</button>
+                <button type="button" class="btn-th-apply" title="Apply count to all spawns" onclick="event.stopPropagation(); confirmBulkAction(${spotIndex}, 'applyValue', 'count', 'th-input-count-${spotIndex}')">Apply</button>
             </div>
         </th>` : ''}
         <th style="cursor: pointer;" onclick="sortTable(${spotIndex}, 'distance')">
         <div>Dist <i data-lucide="arrow-up-down" style="width:12px"></i></div>
         <div class="th-controls">
             <div class="th-input-group">
-                <button class="th-input-btn" onclick="event.stopPropagation(); changeThInputValue('th-input-dist-${spotIndex}', -1)">-</button>
-                <input type="number" class="th-input" value="3" id="th-input-dist-${spotIndex}" onclick="event.stopPropagation();">
-                <button class="th-input-btn" onclick="event.stopPropagation(); changeThInputValue('th-input-dist-${spotIndex}', 1)">+</button>
+                <button type="button" class="th-input-btn" title="Decrease distance" onclick="event.stopPropagation(); changeThInputValue('th-input-dist-${spotIndex}', -1)">-</button>
+                <input type="number" class="th-input" value="3" id="th-input-dist-${spotIndex}" title="Bulk distance value" onclick="event.stopPropagation();">
+                <button type="button" class="th-input-btn" title="Increase distance" onclick="event.stopPropagation(); changeThInputValue('th-input-dist-${spotIndex}', 1)">+</button>
             </div>
-            <button class="btn-th-apply" onclick="event.stopPropagation(); confirmBulkAction(${spotIndex}, 'applyValue', 'distance', 'th-input-dist-${spotIndex}')">Apply</button>
+            <button type="button" class="btn-th-apply" title="Apply distance to all spawns" onclick="event.stopPropagation(); confirmBulkAction(${spotIndex}, 'applyValue', 'distance', 'th-input-dist-${spotIndex}')">Apply</button>
         </div></th>
         <th style="cursor: pointer;" onclick="sortTable(${spotIndex}, 'dir')">Dir <i data-lucide="arrow-up-down" style="width:12px"></i></th>
         <th style="cursor: pointer;" onclick="sortTable(${spotIndex}, 'element')">Elem <i data-lucide="arrow-up-down" style="width:12px"></i></th>
@@ -803,27 +820,27 @@
             const invalidCount = !isSingleSpawnType && !spawn.count ? 'inline-input-invalid' : '';
 
             return `<tr data-spot-index="${spotIndex}" data-spawn-index="${spawnIndex}" class="${rowClass}">
-                <td><input type="checkbox" onclick="toggleSelection(${spotIndex}, ${spawnIndex})"></td>
-                <td class="monster-name-cell ${invalidIndex}" onclick="editMonsterInline(this, ${spotIndex}, ${spawnIndex})">${monsterNameHtml}</td>
+                <td><input type="checkbox" title="Select row" onclick="toggleSelection(${spotIndex}, ${spawnIndex})"></td>
+                <td class="monster-name-cell ${invalidIndex}" onclick="editMonsterInline(this, ${spotIndex}, ${spawnIndex})" title="${spawn.index ? 'Click to edit monster' : 'Click to select monster'}">${monsterNameHtml}</td>
                 <td><div class="coord-group">
-                    <input type="number" class="inline-input coord ${invalidStartX}" value="${spawn.startX}" onchange="updateSpawnValue(this, ${spotIndex}, ${spawnIndex}, 'startX', this.value, true)">, 
-                    <input type="number" class="inline-input coord ${invalidStartY}" value="${spawn.startY}" onchange="updateSpawnValue(this, ${spotIndex}, ${spawnIndex}, 'startY', this.value, true)">
+                    <input type="number" class="inline-input coord ${invalidStartX}" title="Start X" value="${spawn.startX}" onchange="updateSpawnValue(this, ${spotIndex}, ${spawnIndex}, 'startX', this.value, true)">, 
+                    <input type="number" class="inline-input coord ${invalidStartY}" title="Start Y" value="${spawn.startY}" onchange="updateSpawnValue(this, ${spotIndex}, ${spawnIndex}, 'startY', this.value, true)">
                 </div></td>
                 <td><div class="coord-group">
-                    <input type="number" class="inline-input coord" value="${spawn.endX}" onchange="updateSpawnValue(this, ${spotIndex}, ${spawnIndex}, 'endX', this.value)">, 
-                    <input type="number" class="inline-input coord" value="${spawn.endY}" onchange="updateSpawnValue(this, ${spotIndex}, ${spawnIndex}, 'endY', this.value)">
-                    <button class="inline-coord-btn" onclick="setInlineEndCoords(${spotIndex}, ${spawnIndex}, 3)">+3</button>
-                    <button class="inline-coord-btn" onclick="setInlineEndCoords(${spotIndex}, ${spawnIndex}, 4)">+4</button>
-                    <button class="inline-coord-btn" onclick="setInlineEndCoords(${spotIndex}, ${spawnIndex}, 5)">+5</button>
+                    <input type="number" class="inline-input coord" title="End X" value="${spawn.endX}" onchange="updateSpawnValue(this, ${spotIndex}, ${spawnIndex}, 'endX', this.value)">, 
+                    <input type="number" class="inline-input coord" title="End Y" value="${spawn.endY}" onchange="updateSpawnValue(this, ${spotIndex}, ${spawnIndex}, 'endY', this.value)">
+                    <button type="button" class="inline-coord-btn" title="Add 3 to End Coords" onclick="setInlineEndCoords(${spotIndex}, ${spawnIndex}, 3)">+3</button>
+                    <button type="button" class="inline-coord-btn" title="Add 4 to End Coords" onclick="setInlineEndCoords(${spotIndex}, ${spawnIndex}, 4)">+4</button>
+                    <button type="button" class="inline-coord-btn" title="Add 5 to End Coords" onclick="setInlineEndCoords(${spotIndex}, ${spawnIndex}, 5)">+5</button>
                 </div></td>
-                ${!isSingleSpawnType ? `<td><input type="number" class="inline-input ${invalidCount}" value="${spawn.count}" onchange="updateSpawnValue(this, ${spotIndex}, ${spawnIndex}, 'count', this.value, true)"></td>` : ''}
-                <td><input type="number" class="inline-input" value="${spawn.distance}" onchange="updateSpawnValue(this, ${spotIndex}, ${spawnIndex}, 'distance', this.value)"></td>
-                <td><input type="number" class="inline-input" value="${spawn.dir}" onchange="updateSpawnValue(this, ${spotIndex}, ${spawnIndex}, 'dir', this.value)"></td>
-                <td><input type="number" class="inline-input" value="${spawn.element}" onchange="updateSpawnValue(this, ${spotIndex}, ${spawnIndex}, 'element', this.value)"></td>
+                ${!isSingleSpawnType ? `<td><input type="number" class="inline-input ${invalidCount}" title="Spawn Count" value="${spawn.count}" onchange="updateSpawnValue(this, ${spotIndex}, ${spawnIndex}, 'count', this.value, true)"></td>` : ''}
+                <td><input type="number" class="inline-input" title="Distance" value="${spawn.distance}" onchange="updateSpawnValue(this, ${spotIndex}, ${spawnIndex}, 'distance', this.value)"></td>
+                <td><input type="number" class="inline-input" title="Direction" value="${spawn.dir}" onchange="updateSpawnValue(this, ${spotIndex}, ${spawnIndex}, 'dir', this.value)"></td>
+                <td><input type="number" class="inline-input" title="Element" value="${spawn.element}" onchange="updateSpawnValue(this, ${spotIndex}, ${spawnIndex}, 'element', this.value)"></td>
                 <td style="white-space: nowrap;">
-                    <button class="action-btn btn-duplicate" title="Duplicate" onclick="duplicateSpawn(${spotIndex}, ${spawnIndex})"><i data-lucide="copy"></i></button>
-                    <button class="action-btn btn-edit" title="Edit" onclick="editSpawn(${spotIndex}, ${spawnIndex})"><i data-lucide="edit"></i></button>
-                    <button class="action-btn btn-delete" title="Delete" onclick="deleteSpawn(${spotIndex}, ${spawnIndex})"><i data-lucide="trash-2"></i></button>
+                    <button type="button" class="action-btn btn-duplicate" title="Duplicate" onclick="duplicateSpawn(${spotIndex}, ${spawnIndex})"><i data-lucide="copy"></i></button>
+                    <button type="button" class="action-btn btn-edit" title="Edit" onclick="editSpawn(${spotIndex}, ${spawnIndex})"><i data-lucide="edit"></i></button>
+                    <button type="button" class="action-btn btn-delete" title="Delete" onclick="deleteSpawn(${spotIndex}, ${spawnIndex})"><i data-lucide="trash-2"></i></button>
                 </td>
             </tr>`;
             // Removed input for NpcFunction here
@@ -1050,7 +1067,7 @@
             if (tableContainer) tableContainer.classList.add('editing-child-visible');
             const spawn = spawnData[currentMap].spots[spotIndex].spawns[spawnIndex];
             const currentMonsterName = monsterList[spawn.index] ? monsterList[spawn.index].name : '';
-            td.innerHTML = `<div class="monster-search"><input type="text" class="inline-input" style="width:100%;" value="${currentMonsterName}" oninput="showInlineSuggestions(this, ${spotIndex}, ${spawnIndex})" onkeydown="if(event.key === 'Escape') cancelActiveInlineEdit();" autocomplete="off"><div class="monster-suggestions"></div></div>`;
+            td.innerHTML = `<div class="monster-search"><input type="text" class="inline-input" style="width:100%;" title="Edit monster name" value="${currentMonsterName}" oninput="showInlineSuggestions(this, ${spotIndex}, ${spawnIndex})" onkeydown="if(event.key === 'Escape') cancelActiveInlineEdit();" autocomplete="off"><div class="monster-suggestions"></div></div>`;
             const input = td.querySelector('input');
             input.focus();
             input.select();

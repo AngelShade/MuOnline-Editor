@@ -52,6 +52,7 @@
 
         .glass-effect {
             background: var(--bg-glass);
+            -webkit-backdrop-filter: blur(10px);
             backdrop-filter: blur(10px);
             border: 1px solid rgba(0, 170, 255, 0.2);
             border-radius: 12px;
@@ -138,7 +139,7 @@
             overflow: hidden; 
             margin-bottom: 20px; 
         }
-        .map-table-header { display: flex; align-items: center; justify-content: space-between; transition: background-color 0.2s; padding: 15px; background: rgba(0,0,0,0.2); border-bottom: 1px solid rgba(0, 170, 255, 0.2); cursor: pointer; user-select: none; }
+        .map-table-header { display: flex; align-items: center; justify-content: space-between; transition: background-color 0.2s; padding: 15px; background: rgba(0,0,0,0.2); border-bottom: 1px solid rgba(0, 170, 255, 0.2); cursor: pointer; -webkit-user-select: none; user-select: none; }
         .map-table-header:hover { background-color: rgba(0, 170, 255, 0.1) !important; }
         .map-table-header h3 { display: flex; align-items: center; gap: 10px; color: var(--text-bright); }
         .search-bar { margin-left: 20px; }
@@ -178,7 +179,7 @@
         .inline-select:hover, .inline-select:focus { border-color: var(--accent-blue); background: var(--bg-dark); }
         
         input[type=number]::-webkit-inner-spin-button, input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
-        input[type=number] { -moz-appearance: textfield; }
+        input[type=number] { -moz-appearance: textfield; appearance: textfield; }
         
         .map-name { font-style: italic; color: var(--text-secondary); font-size: 13px; }
         
@@ -215,7 +216,7 @@
         .header h1 i { width: 32px; height: 32px; color: var(--accent-green); } 
 
         #authorModal { z-index: 2000; }
-        .author-modal-content { background: var(--bg-glass); backdrop-filter: blur(10px); border: 1px solid rgba(0, 170, 255, 0.2); box-shadow: 0 8px 32px 0 rgba(0,0,0,0.5); text-align: center; padding: 40px; border-radius: 12px; }
+        .author-modal-content { background: var(--bg-glass); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); border: 1px solid rgba(0, 170, 255, 0.2); box-shadow: 0 8px 32px 0 rgba(0,0,0,0.5); text-align: center; padding: 40px; border-radius: 12px; }
         .author-modal-content h2 { color: var(--text-bright); }
         .author-modal-content p { color: var(--text-secondary); }
         .author-modal-content input { background-color: rgba(0,0,0,0.3); color: var(--text-primary); border-color: rgba(0, 170, 255, 0.2); text-align: center; width: 100%; padding: 12px; font-size: 16px; border-radius: 6px; margin-bottom: 20px;}
