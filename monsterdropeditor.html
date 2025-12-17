@@ -3,18 +3,307 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Monster Drop Editor (Each Map Bag)</title>
+    <title>Monster Drop Manager (Each Monster in Each Map)</title>
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@500&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/style.css">
 
     <script src="https://unpkg.com/lucide@latest"></script>
+
+    <style>
+        :root {
+            --bg-dark: #0a0f1e;
+            --bg-glass: rgba(26, 34, 63, 0.6);
+            --text-primary: #e0e0e0;
+            --text-secondary: #a0a0c0;
+            --text-bright: #ffffff;
+            --font-ui: 'Inter', sans-serif;
+            --font-data: 'Fira Code', monospace;
+            
+            --accent-blue: #00aaff;
+            --accent-green: #00ff9b;
+            --accent-amber: #ffc107;
+            --accent-pink: #ff0055;
+            --accent-purple: #6f42c1;
+        }
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: var(--font-ui);
+            background: linear-gradient(135deg, #1a223f 0%, var(--bg-dark) 100%);
+            color: var(--text-primary);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 95%; 
+            margin: 0 auto;
+            background: transparent;
+            border-radius: 12px;
+            padding: 30px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .glass-effect {
+            background: var(--bg-glass);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(0, 170, 255, 0.2);
+            border-radius: 12px;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+        }
+        
+        .header { position: relative; padding: 30px; text-align: center; }
+        .header .header-controls { position: absolute; top: 25px; left: 30px; display: flex; align-items: center; gap: 10px; background: rgba(0, 170, 255, 0.1); padding: 8px 12px; border-radius: 6px; }
+        .header .header-controls label { font-weight: 600; font-size: 14px; }
+        .header h1 { font-size: 28px; margin-bottom: 10px; color: var(--text-bright); display: flex; align-items: center; justify-content: center; gap: 15px; }
+        .header p { color: var(--text-secondary); }
+        
+        .status-bar { display: none; padding: 15px; border-radius: 8px; font-weight: 600; margin-bottom: 20px; }
+        .status-bar-success { background: rgba(0, 255, 155, 0.2); color: var(--accent-green); border: 1px solid var(--accent-green); }
+        .status-bar-error { background: rgba(255, 0, 85, 0.2); color: var(--accent-pink); border: 1px solid var(--accent-pink); }
+        .status-bar-warning { background: rgba(255, 193, 7, 0.2); color: var(--accent-amber); border: 1px solid var(--accent-amber); }
+        .status-bar-info { background: rgba(0, 170, 255, 0.2); color: var(--accent-blue); border: 1px solid var(--accent-blue); }
+        
+        .main-content { display: grid; grid-template-columns: 300px 1fr; gap: 20px; }
+        .sidebar h3 { display: flex; align-items: center; gap: 10px; margin-bottom: 15px; color: var(--text-bright); }
+        .map-list { max-height: 70vh; overflow-y: auto; }
+        .map-item { padding: 10px; margin-bottom: 5px; background: transparent; color: var(--text-secondary); border-radius: 6px; cursor: pointer; transition: all 0.2s; border-left: 3px solid transparent; font-size: 14px; }
+        .map-item:hover { background: rgba(0, 170, 255, 0.1); color: var(--text-primary); border-left-color: var(--accent-blue); }
+        .map-item.active { background: var(--accent-blue); color: var(--bg-dark); font-weight: 600; border-left-color: var(--accent-amber); }
+        .map-item-number { font-weight: bold; margin-right: 8px; font-family: var(--font-data); }
+        .search-bar input { width: 100%; padding: 12px; border: 1px solid rgba(0, 170, 255, 0.2); border-radius: 6px; font-size: 14px; background-color: rgba(0,0,0,0.3); color: var(--text-primary); }
+        .search-bar input:focus { outline: none; border-color: var(--accent-blue); }
+
+        .btn { padding: 10px 18px; border: none; border-radius: 6px; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.3s; display: inline-flex; align-items: center; gap: 8px; }
+        .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+        .btn-primary { background: var(--accent-blue); color: var(--bg-dark); }
+        .btn-primary:hover:not(:disabled) { background: #fff; }
+        .btn-success { background: var(--accent-green); color: var(--bg-dark); }
+        .btn-success:hover:not(:disabled) { background: #fff; }
+        .btn-danger { background: var(--accent-pink); color: #fff; }
+        .btn-danger:hover:not(:disabled) { background: #fff; color: var(--accent-pink); }
+        .btn-outline { background: transparent; border: 1px solid rgba(0, 170, 255, 0.5); color: var(--accent-blue); }
+        .btn-outline:hover { background: rgba(0, 170, 255, 0.1); }
+        
+        .editor-panel-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 15px; }
+        .editor-panel-header .search-bar { flex-grow: 1; min-width: 250px; }
+        
+        .table-wrapper { overflow-x: auto; max-height: 70vh; background: rgba(0,0,0,0.2); border-radius: 8px; }
+        table { width: 100%; border-collapse: collapse; min-width: 2000px; }
+        th { background: rgba(0, 170, 255, 0.1); color: var(--text-bright); padding: 10px 12px; text-align: left; font-weight: 600; font-size: 12px; vertical-align: top; position: sticky; top: 0; z-index: 10; }
+        td { padding: 8px 12px; border-bottom: 1px solid rgba(0, 170, 255, 0.1); vertical-align: middle; font-size: 13px; background: var(--bg-glass); }
+        tr:hover td { background: rgba(0, 170, 255, 0.05); }
+
+        .spawn-row-new td { background-color: rgba(0, 255, 155, 0.1) !important; }
+        .spawn-row-modified td { background-color: rgba(255, 193, 7, 0.1) !important; }
+
+        tr.selected td {
+            background: rgba(255, 0, 85, 0.2) !important;
+            outline: 1px solid var(--accent-pink);
+        }
+        th.checkbox-col, td.checkbox-col {
+            width: 40px;
+            min-width: 40px;
+            padding-left: 15px;
+            padding-right: 5px;
+            text-align: center;
+            position: sticky;
+            left: 0;
+            z-index: 1;
+        }
+        
+        th.checkbox-col {
+            z-index: 11;
+            background: rgba(0, 170, 255, 0.1);
+        }
+
+        th:nth-child(2), td:nth-child(2) {
+            position: sticky;
+            left: 40px; 
+            z-index: 1;
+        }
+        
+        th:nth-child(2) {
+             background: rgba(0, 170, 255, 0.1);
+             z-index: 11;
+        }
+
+        tr:hover td:nth-child(1), tr:hover td:nth-child(2) {
+            background: rgba(0, 170, 255, 0.05);
+        }
+        tr.selected td:nth-child(1), tr.selected td:nth-child(2) {
+            background: rgba(255, 0, 85, 0.2) !important;
+        }
+
+
+        input[type="checkbox"] {
+            width: 16px;
+            height: 16px;
+            accent-color: var(--accent-pink);
+            cursor: pointer;
+            vertical-align: middle;
+        }
+
+        .inline-input { width: 100%; min-width: 50px; padding: 4px 6px; border: 1px solid transparent; background: rgba(0,0,0,0.3); border-radius: 4px; font-family: var(--font-data); font-size: 13px; transition: all 0.2s; color: var(--text-primary); }
+        .inline-input:hover, .inline-input:focus { border-color: var(--accent-blue); background: var(--bg-dark); }
+        .inline-input.wide { min-width: 120px; }
+        
+        input[type=number]::-webkit-inner-spin-button, input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+        input[type=number] { -moz-appearance: textfield; appearance: textfield; }
+        
+        .monster-name, .item-name { font-weight: 600; color: var(--text-primary); font-size: 13px; cursor: help; white-space: nowrap; }
+        .item-name-col { min-width: 180px; }
+        .monster-name-col { min-width: 160px; }
+        
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.7); z-index: 1000; align-items: center; justify-content: center; }
+        .modal.show { display: flex; }
+        
+        .modal-content { box-shadow: 0 8px 32px 0 rgba(0,0,0,0.5); color: var(--text-primary); max-width: 1000px; width: 90%; max-height: 90vh; overflow-y: auto; }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; padding: 20px 25px; border-bottom: 1px solid rgba(0, 170, 255, 0.2); }
+        .modal-header h2 { color: var(--text-bright); }
+        .modal-body { padding: 25px; }
+        .modal-footer { display: flex; gap: 10px; justify-content: flex-end; padding: 20px 25px; border-top: 1px solid rgba(0, 170, 255, 0.2); }
+        .close-btn { color: var(--text-secondary); transition: all 0.2s; background: none; border: none; cursor: pointer;}
+        .close-btn:hover { color: var(--text-bright); transform: rotate(90deg); }
+        
+        .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; }
+        .form-group.full-width { grid-column: 1 / -1; }
+        .form-grid label { display: block; margin-bottom: 5px; font-weight: 600; color: var(--text-secondary); font-size: 12px; }
+        .form-group input, .form-group select { width: 100%; padding: 8px 10px; border: 1px solid rgba(0, 170, 255, 0.2); border-radius: 6px; font-size: 14px; background-color: rgba(0,0,0,0.3); color: var(--text-primary); font-family: var(--font-data); }
+        .form-group input:focus, .form-group select:focus { outline: none; border-color: var(--accent-blue); }
+        
+        .monster-search, .item-search { position: relative; }
+        .suggestions { background: var(--bg-dark); border: 1px solid var(--accent-blue); position: absolute; top: 100%; left: 0; right: 0; max-height: 200px; overflow-y: auto; z-index: 100; display: none; }
+        .suggestions.show { display: block; }
+        .suggestion-item { padding: 10px; cursor: pointer; border-bottom: 1px solid rgba(0, 170, 255, 0.1); }
+        .suggestion-item:hover { background: rgba(0, 170, 255, 0.1); }
+        .suggestion-item-id { color: var(--accent-blue); font-family: var(--font-data); margin-right: 8px; }
+        .suggestion-item-cat { color: var(--accent-amber); font-family: var(--font-data); margin-right: 8px; }
+
+        
+        .form-divider {
+            grid-column: 1 / -1;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 10px 0;
+            color: var(--accent-blue);
+        }
+        .form-divider hr {
+            flex-grow: 1;
+            border: none;
+            border-top: 1px solid rgba(0, 170, 255, 0.2);
+        }
+        .form-divider h4 {
+            font-weight: 600;
+        }
+
+        .action-btn { padding: 5px; border-radius: 4px; cursor: pointer; background: transparent; border: none; color: var(--text-secondary); }
+        .action-btn:hover { color: var(--text-bright); }
+        .btn-delete:hover { color: var(--accent-pink); }
+        .btn-duplicate:hover { color: var(--accent-blue); }
+        .btn-view:hover { color: var(--accent-amber); }
+        .empty-state { text-align: center; padding: 60px 20px; color: var(--text-secondary); }
+        
+        .load-more-container {
+            text-align: center;
+            padding: 20px 0;
+        }
+
+        #undoRedoControls button {
+            background: rgba(0, 170, 255, 0.1);
+            color: var(--accent-blue);
+        }
+        #undoRedoControls button:disabled {
+            opacity: 0.2;
+            cursor: not-allowed;
+            color: var(--text-secondary);
+        }
+
+
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: var(--accent-blue); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #fff; }
+
+        .btn i, .action-btn i, h1 i, h3 i { width: 16px; height: 16px; stroke-width: 2.5; }
+        .action-btn i { width: 18px; height: 18px; }
+        .header h1 i { width: 32px; height: 32px; color: var(--accent-blue); }
+    
+        /* --- New Tooltip CSS --- */
+        .rpg-tooltip {
+            display: none;
+            position: absolute;
+            z-index: 2000;
+            background: rgba(10, 15, 30, 0.95);
+            border: 1px solid var(--accent-blue);
+            border-radius: 8px;
+            padding: 12px;
+            width: 300px;
+            font-family: var(--font-ui);
+            font-size: 13px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(5px);
+            -webkit-backdrop-filter: blur(5px);
+            pointer-events: none; /* So it doesn't block mouseout events */
+            transition: opacity 0.1s;
+        }
+        .rpg-tooltip h3 {
+            color: var(--accent-amber);
+            font-size: 16px;
+            margin-bottom: 8px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid rgba(0, 170, 255, 0.2);
+            font-weight: 600;
+        }
+        .rpg-tooltip .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 4px 10px;
+        }
+        .rpg-tooltip .stat {
+            display: flex;
+            justify-content: space-between;
+        }
+        .rpg-tooltip .stat strong {
+            color: var(--text-secondary);
+        }
+        .rpg-tooltip .stat span {
+            color: var(--text-primary);
+            font-weight: 600;
+            font-family: var(--font-data);
+        }
+        .rpg-tooltip .stat-divider {
+            border: none;
+            border-top: 1px dashed rgba(0, 170, 255, 0.2);
+            margin: 8px 0;
+        }
+        .rpg-tooltip .reqs .stat strong {
+             color: var(--accent-pink);
+        }
+        .rpg-tooltip .class-list {
+            margin-top: 8px;
+            font-size: 12px;
+        }
+        .rpg-tooltip .class-list strong {
+            color: var(--text-secondary);
+        }
+        .rpg-tooltip .class-list span {
+            color: var(--accent-green);
+        }
+    </style>
 </head>
 <body>
     
-    <!-- Confirmation Modal -->
+    <!-- --- New Tooltip HTML Element --- -->
+    <div id="itemTooltip" class="rpg-tooltip"></div>
+
     <div class="modal" id="confirmModal">
         <div class="modal-content glass-effect" style="max-width: 500px;">
             <div class="modal-header">
@@ -36,16 +325,13 @@
             <h1><i data-lucide="droplets"></i>Monster Drop Editor<i data-lucide="package"></i></h1>
             <p>Manage item drops for each map bag file (<code>EachMonsterMapDrop</code>)</p>
             
-            <!-- START: UPDATED HEADER CONTROLS -->
-            <div class="header-right-controls">
-                <a href="index.html" class="btn btn-outline" title="Back to Dashboard">
-                    <i data-lucide="home"></i>Dashboard
+            <div class="header-right-controls" style="position: absolute; top: 25px; right: 30px; display: flex; gap: 10px;">
+                <a href="dashboard.html" class="btn btn-outline" title="Back to Dashboard">
+                    <i data-lucide="layout-dashboard"></i>Dashboard
                 </a>
                 <button class="btn btn-outline" onclick="openGuideModal()"><i data-lucide="help-circle"></i>Guide</button>
             </div>
-            <!-- END: UPDATED HEADER CONTROLS -->
             
-            <!-- NEW: Undo/Redo Controls -->
             <div class="header-controls" id="undoRedoControls">
                 <button class="btn btn-outline" id="undoBtn" disabled title="Undo (Ctrl+Z)" onclick="undoChange()">
                     <i data-lucide="undo-2"></i> Undo
@@ -59,12 +345,12 @@
         <div id="statusBar" class="status-bar"></div>
         
         <div class="main-content" id="mainContent">
-            <div class="sidebar" style="padding: 20px;">
+            <div class="sidebar glass-effect" style="padding: 20px;">
                 <h3><i data-lucide="map"></i>Map Bag Files</h3>
                 <div class="search-bar" style="margin-bottom: 15px;"><input type="text" id="mapSearch" oninput="filterMapFiles()" placeholder="Search map files..."></div>
                 <div class="map-list" id="mapFileList"></div>
             </div>
-            <div class="editor-panel" style="padding: 25px;">
+            <div class="editor-panel glass-effect" style="padding: 25px;">
                 <div id="editorContent">
                     <div class="empty-state">
                         <h3>Loading data...</h3>
@@ -75,7 +361,6 @@
         </div>
     </div>
     
-    <!-- Add/Edit Drop Modal -->
     <div class="modal" id="dropModal">
         <div class="modal-content glass-effect">
             <div class="modal-header">
@@ -85,7 +370,6 @@
             <form id="dropForm">
                 <div class="modal-body">
                     <div class="form-grid">
-                        <!-- Monster -->
                         <div class="form-group full-width monster-search">
                             <label>Monster *</label>
                             <input type="text" id="monsterSearch" autocomplete="off" required>
@@ -93,7 +377,6 @@
                             <div class="suggestions" id="monsterSuggestions"></div>
                         </div>
                         
-                        <!-- Item -->
                         <div class="form-group full-width item-search">
                             <label>Item *</label>
                             <input type="text" id="itemSearch" autocomplete="off" required>
@@ -102,14 +385,12 @@
                             <div class="suggestions" id="itemSuggestions"></div>
                         </div>
                         
-                        <!-- Player Conditions -->
                         <div class="form-group"><label>Monster Element</label><input type="number" id="monsterElement" value="-1"></div>
                         <div class="form-group"><label>Player Min Reset</label><input type="number" id="playerMinReset" value="-1"></div>
                         <div class="form-group"><label>Player Max Reset</label><input type="number" id="playerMaxReset" value="-1"></div>
                         <div class="form-group"><label>Player Min Level</label><input type="number" id="playerMinLevel" value="-1"></div>
                         <div class="form-group"><label>Player Max Level</label><input type="number" id="playerMaxLevel" value="-1"></div>
                         
-                        <!-- Item Properties -->
                         <div class="form-group"><label>Min Level</label><input type="number" id="minLevel" value="0" min="0" max="15"></div>
                         <div class="form-group"><label>Max Level</label><input type="number" id="maxLevel" value="0" min="0" max="15"></div>
                         <div class="form-group"><label>Durability</label><input type="number" id="durability" value="0"></div>
@@ -117,13 +398,11 @@
                         <div class="form-group"><label>Luck</label><input type="number" id="luck" value="-1"></div>
                         <div class="form-group"><label>Option</label><input type="number" id="option" value="0"></div>
                         
-                        <!-- Excellent & Socket -->
                         <div class="form-group"><label>Exc</label><input type="text" id="exc" value="-1"></div>
                         <div class="form-group"><label>Element</label><input type="number" id="element" value="0"></div>
                         <div class="form-group"><label>SocketCount</label><input type="text" id="socketCount" value="0;0"></div>
                         <div class="form-group"><label>Duration</label><input type="number" id="duration" value="0"></div>
 
-                        <!-- Rate -->
                         <div class="form-group"><label>Rate *</label><input type="number" id="rate" value="1000" required></div>
                     </div>
                 </div>
@@ -135,7 +414,6 @@
         </div>
     </div>
 
-    <!-- NEW: Bulk Edit Modal -->
     <div class="modal" id="bulkEditModal">
         <div class="modal-content glass-effect">
             <div class="modal-header">
@@ -145,28 +423,28 @@
             <form id="bulkEditForm">
                 <div class="modal-body">
                     
-                    <div class="form-divider">
-                        <i data-lucide="search"></i>
-                        <h4>FIND</h4>
-                        <hr>
-                    </div>
-                    
-                    <div class="form-grid">
-                        <!-- Monster to Find -->
-                        <div class="form-group full-width monster-search">
-                            <label>Find Monster *</label>
-                            <input type="text" id="bulkFindMonsterSearch" autocomplete="off" required>
-                            <input type="hidden" id="bulkFindMonsterID">
-                            <div class="suggestions" id="bulkFindMonsterSuggestions"></div>
+                    <div id="bulkFindSection">
+                        <div class="form-divider">
+                            <i data-lucide="search"></i>
+                            <h4>FIND (WHEN NO ROWS ARE SELECTED)</h4>
+                            <hr>
                         </div>
                         
-                        <!-- Item to Find (Optional) -->
-                        <div class="form-group full-width item-search">
-                            <label>Find Item (Optional)</label>
-                            <input type="text" id="bulkFindItemSearch" autocomplete="off" placeholder="Leave blank to target all items from this monster">
-                            <input type="hidden" id="bulkFindItemCat">
-                            <input type="hidden" id="bulkFindItemIndex">
-                            <div class="suggestions" id="bulkFindItemSuggestions"></div>
+                        <div class="form-grid">
+                            <div class="form-group full-width monster-search">
+                                <label>Find Monster *</label>
+                                <input type="text" id="bulkFindMonsterSearch" autocomplete="off">
+                                <input type="hidden" id="bulkFindMonsterID">
+                                <div class="suggestions" id="bulkFindMonsterSuggestions"></div>
+                            </div>
+                            
+                            <div class="form-group full-width item-search">
+                                <label>Find Item (Optional)</label>
+                                <input type="text" id="bulkFindItemSearch" autocomplete="off" placeholder="Leave blank to target all items from this monster">
+                                <input type="hidden" id="bulkFindItemCat">
+                                <input type="hidden" id="bulkFindItemIndex">
+                                <div class="suggestions" id="bulkFindItemSuggestions"></div>
+                            </div>
                         </div>
                     </div>
 
@@ -181,7 +459,6 @@
                     </p>
 
                     <div class="form-grid">
-                        <!-- Item to Replace With -->
                         <div class="form-group full-width item-search">
                             <label>New Item</label>
                             <input type="text" id="bulkReplaceItemSearch" autocomplete="off" placeholder="Leave blank to keep current item">
@@ -202,7 +479,6 @@
                     </p>
 
                     <div class="form-grid">
-                        <!-- Optional New Values -->
                         <div class="form-group"><label>Min Level</label><input type="number" id="bulkMinLevel" placeholder="e.g., 0" min="0" max="15"></div>
                         <div class="form-group"><label>Max Level</label><input type="number" id="bulkMaxLevel" placeholder="e.g., 0" min="0" max="15"></div>
                         <div class="form-group"><label>Durability</label><input type="number" id="bulkDurability" placeholder="e.g., 0"></div>
@@ -223,7 +499,6 @@
         </div>
     </div>
     
-    <!-- NEW: Rate Adjust Modal -->
     <div class="modal" id="rateAdjustModal">
         <div class="modal-content glass-effect" style="max-width: 600px;">
             <div class="modal-header">
@@ -232,7 +507,7 @@
             </div>
             <form id="rateAdjustForm">
                 <div class="modal-body">
-                    <p style="color: var(--text-secondary); font-size: 14px; margin-bottom: 20px;">
+                    <p id="rateAdjustInfo" style="color: var(--text-secondary); font-size: 14px; margin-bottom: 20px;">
                         This will multiply all drop rates in the current file (<strong><span id="rateAdjustFileName"></span></strong>) by a percentage.
                     </p>
                     <div class="form-group full-width">
@@ -241,7 +516,6 @@
                     </div>
                     
                     <div id="rateAdjustPreview" style="background: rgba(0,0,0,0.2); padding: 15px; border-radius: 6px; margin-top: 20px;">
-                        <!-- Preview content goes here -->
                         <p style="color: var(--text-secondary);">Enter a percentage to preview changes.</p>
                     </div>
                     
@@ -254,7 +528,6 @@
         </div>
     </div>
     
-    <!-- Guide Modal -->
     <div class="modal" id="guideModal">
         <div class="modal-content glass-effect">
             <div class="modal-header">
@@ -274,9 +547,20 @@
                     <li><strong>Item/Monster Names:</strong> Hover over the Monster ID or Item (Cat/Index) to see their names.</li>
                     <li><strong>Add New Drop:</strong> Click the "Add New Drop" button. You can search for monsters and items by name or ID in the modal.</li>
                     <li><strong>Delete Drop:</strong> Click the red trash can icon at the end of a row to delete a drop. You will be asked to confirm.</li>
+                    <li><strong>Delete Selected:</strong> Click the checkbox on rows to select them, then click the <strong>Delete Selected</strong> button.</li>
                     <li><strong>Duplicate Drop:</strong> Click the blue copy icon to quickly duplicate an existing drop row.</li>
-                    <li><strong>Bulk Edit:</strong> Use the "Bulk Edit" button to find all drops by a specific monster (and optionally a specific item) and mass-replace the item or update properties like **Min/Max Level**, **Luck**, or **Rate**.</li>
-                    <li><strong>Adjust Rates:</strong> Use the "Adjust Rates" button to multiply **ALL** drop rates in the current file by a single percentage (e.g., 50% to half all rates, 150% to increase all rates).</li>
+                    <li><strong>Bulk Edit:</strong> Use the "Bulk Edit" button.
+                        <ul>
+                            <li><strong>If rows are selected:</strong> It will apply changes (New Item / New Values) <strong>only to selected rows</strong>.</li>
+                            <li><strong>If no rows are selected:</strong> It will use the "Find" criteria to apply changes to <strong>all matching rows in the file</strong>.</li>
+                        </ul>
+                    </li>
+                    <li><strong>Adjust Rates:</strong> Use the "Adjust Rates" button.
+                        <ul>
+                            <li><strong>If rows are selected:</strong> It will apply the percentage adjustment <strong>only to selected rows</strong>.</li>
+                            <li><strong>If no rows are selected:</strong> It will apply the adjustment to <strong>all rows in the file</strong>.</li>
+                        </ul>
+                    </li>
                 </ul>
                 
                 <h3>3. Filtering</h3>
@@ -313,30 +597,28 @@
     </div>
 
         <script>
-        const SERVER_URL = 'http://149.202.139.156:3000';
+        const SERVER_URL = '';
         
-        // --- Application State ---
-        let monsterList = {}; // { "ID": "Name" }
-        let itemList = {};    // MODIFIED: { Cat: { Index: "Name" } }
-        let itemCategories = {}; // NEW: { Cat: "Category Name" }
-        let mapDropFiles = []; // { "filename.xml": "<xml content>" } -> NOW an array of filenames
-        let fileContentCache = {}; // NEW: Caches content of loaded files
-        let loadedContextFiles = {}; // NEW: Stores context files (mastery, pentagram, etc.)
+        let monsterList = {}; 
+        let itemList = {};    
+        let itemCategories = {}; 
+        let mapDropFiles = []; 
+        let fileContentCache = {}; 
+        let loadedContextFiles = {}; 
         let currentFile = null;
-        let originalXMLHeaders = {}; // { "filename.xml": "..." }
-        let currentDropData = []; // Array of drop objects for the table
-        let editingDropIndex = null; // Index in currentDropData
+        let originalXMLHeaders = {}; 
+        let currentDropData = []; 
+        let editingDropIndex = null; 
         
-        // --- NEW: Undo/Redo State ---
         const MAX_HISTORY = 20;
         let history = [];
-        let historyIndex = -1; 
+        let historyIndex = -1; 
         
-        // --- NEW: Pagination State ---
         let currentVisibleRows = 100;
         const ROWS_PER_PAGE = 100;
         
-        // --- UPDATED: Map Names Constant (Filled in Event Maps) ---
+        let selectedRows = new Set();
+
         const MAP_NAMES = {
             0: "Lorencia",
             1: "Dungeon",
@@ -347,21 +629,21 @@
             6: "Stadium",
             7: "Atlans",
             8: "Tarkan",
-            9: "Devil Square", // ADDED
+            9: "Devil Square", 
             10: "Icarus",
-            11: "Blood Castle 1", // ADDED
-            12: "Blood Castle 2", // ADDED
-            13: "Blood Castle 3", // ADDED
-            14: "Blood Castle 4", // ADDED
-            15: "Blood Castle 5", // ADDED
-            16: "Blood Castle 6", // ADDED
-            17: "Blood Castle 7", // ADDED
-            18: "Chaos Castle 1", // ADDED
-            19: "Chaos Castle 2", // ADDED
-            20: "Chaos Castle 3", // ADDED
-            21: "Chaos Castle 4", // ADDED
-            22: "Chaos Castle 5", // ADDED
-            23: "Chaos Castle 6", // ADDED
+            11: "Blood Castle 1", 
+            12: "Blood Castle 2", 
+            13: "Blood Castle 3", 
+            14: "Blood Castle 4", 
+            15: "Blood Castle 5", 
+            16: "Blood Castle 6", 
+            17: "Blood Castle 7", 
+            18: "Chaos Castle 1", 
+            19: "Chaos Castle 2", 
+            20: "Chaos Castle 3", 
+            21: "Chaos Castle 4", 
+            22: "Chaos Castle 5", 
+            23: "Chaos Castle 6", 
             24: "Kalima 1",
             25: "Kalima 2",
             26: "Kalima 3",
@@ -370,10 +652,10 @@
             29: "Kalima 6",
             30: "Valley Of Loren",
             31: "Land Of Trials",
-            32: "Devil Square (Event)", // ADDED
+            32: "Devil Square (Event)", 
             33: "Aida",
             34: "Crywolf",
-            35: "Illusion Temple", // ADDED
+            35: "Illusion Temple", 
             36: "Kalima 7",
             37: "Kanturu",
             38: "Kanturu Core",
@@ -382,16 +664,16 @@
             41: "Barracks",
             42: "Refuge",
             51: "Elbeland",
-            52: "Blood Castle 8", // ADDED
-            53: "Chaos Castle 7", // ADDED
+            52: "Blood Castle 8", 
+            53: "Chaos Castle 7", 
             56: "Swamp of Peace",
             57: "Raklion",
             62: "XMas",
             63: "Vulcanus",
-            64: "PK Field (Vulcanus)", // ADDED
-            65: "Doppelganger", // ADDED
-            64: "Doppelganger", // ADDED
-            69: "Acheron", // ADDED
+            64: "PK Field (Vulcanus)", 
+            65: "Doppelganger", 
+            64: "Doppelganger", 
+            69: "Acheron", 
             79: "Loren Market",
             80: "Kalrutan 1",
             81: "Karutan 2",
@@ -435,32 +717,22 @@
             loadData();
         });
 
-        /**
-         * @description Updates the undo/redo history stack with a new state.
-         * @param {object} data - The current state data to be saved to history.
-         */
         function updateHistory(data) {
-            // Trim forward history
             if (historyIndex < history.length - 1) {
                 history = history.slice(0, historyIndex + 1);
             }
             
-            // Add new state (deep copy to avoid mutation)
             const newState = JSON.parse(JSON.stringify(data));
             history.push(newState);
 
-            // Maintain max history size
             if (history.length > MAX_HISTORY) {
-                history.shift(); // Remove oldest state
+                history.shift(); 
             }
             
             historyIndex = history.length - 1;
             updateUndoRedoButtons();
         }
 
-        /**
-         * @description Updates the enabled/disabled state of the Undo and Redo buttons.
-         */
         function updateUndoRedoButtons() {
             const undoBtn = document.getElementById('undoBtn');
             const redoBtn = document.getElementById('redoBtn');
@@ -469,14 +741,11 @@
             if (redoBtn) redoBtn.disabled = historyIndex >= history.length - 1;
         }
 
-        /**
-         * @description Reverts the current data to the previous state in the history.
-         */
         function undoChange() {
             if (historyIndex > 0) {
                 historyIndex--;
-                // Apply the previous state (deep copy)
                 currentDropData = JSON.parse(JSON.stringify(history[historyIndex]));
+                selectedRows.clear(); 
                 renderEditorPanel();
                 updateUndoRedoButtons();
                 showStatus('Undo successful.', false);
@@ -485,14 +754,11 @@
             }
         }
 
-        /**
-         * @description Advances the current data to the next state in the history.
-         */
         function redoChange() {
             if (historyIndex < history.length - 1) {
                 historyIndex++;
-                // Apply the next state (deep copy)
                 currentDropData = JSON.parse(JSON.stringify(history[historyIndex]));
+                selectedRows.clear(); 
                 renderEditorPanel();
                 updateUndoRedoButtons();
                 showStatus('Redo successful.', false);
@@ -501,32 +767,23 @@
             }
         }
         
-        // Listen for global undo/redo keyboard shortcuts
         document.addEventListener('keydown', (e) => {
-            if (!currentFile) return; // Only process if a file is loaded
+            if (!currentFile) return; 
 
-            // Check if focus is on a text input/textarea (to prevent undoing typing)
             const isInputFocused = document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA';
             if (isInputFocused) return;
 
-            if ((e.ctrlKey || e.metaKey) && e.key === 'z') { // Ctrl+Z or Cmd+Z
+            if ((e.ctrlKey || e.metaKey) && e.key === 'z') { 
                 e.preventDefault();
                 undoChange();
             }
-            if (((e.ctrlKey || e.metaKey) && e.key === 'y') || ((e.metaKey && e.shiftKey) && e.key === 'Z')) { // Ctrl+Y or Cmd+Shift+Z
+            if (((e.ctrlKey || e.metaKey) && e.key === 'y') || ((e.metaKey && e.shiftKey) && e.key === 'Z')) { 
                 e.preventDefault();
                 redoChange();
             }
         });
 
 
-        /**
-         * @description Displays a confirmation modal.
-         * @param {string} title - The title for the modal.
-         * @param {string} message - The message to display.
-         * @param {function} onConfirm - The callback to execute on confirmation.
-         * @param {string} [buttonClass='btn-danger'] - The CSS class for the confirm button.
-         */
         function confirmAction(title, message, onConfirm, buttonClass = 'btn-danger') {
             document.getElementById('confirmTitle').textContent = title;
             document.getElementById('confirmMessage').textContent = message;
@@ -540,19 +797,10 @@
             lucide.createIcons();
         }
 
-        /**
-         * @description Closes the confirmation modal.
-         */
         function closeConfirmModal() {
             document.getElementById('confirmModal').classList.remove('show');
         }
 
-        /**
-         * @description Displays a status message bar.
-         * @param {string} message - The message to display.
-         * @param {boolean} [isError=false] - If true, styles the message as an error.
-         * @param {boolean} [isWarning=false] - If true, styles the message as a warning.
-         */
         function showStatus(message, isError = false, isWarning = false) {
             const statusBar = document.getElementById('statusBar');
             statusBar.textContent = message;
@@ -567,15 +815,11 @@
             setTimeout(() => { statusBar.style.display = 'none'; }, 5000);
         }
 
-        /**
-         * @description Loads all initial data from the server.
-         */
         async function loadData() {
             try {
                 const response = await fetch(`${SERVER_URL}/api/map-drop-data`);
                 
                 if (!response.ok) {
-                    // Get error text from server
                     const errorText = await response.text();
                     console.error('Server responded with an error:', errorText);
                     throw new Error(`Server responded with status: ${response.status}. Message: ${errorText.substring(0, 200)}...`);
@@ -590,24 +834,10 @@
 
                 const data = await response.json();
 
-                // 1. Parse Monster List
                 parseMonsterList(data.monsterListXml);
-
-                // 2. Parse Item List
                 parseItemList(data.itemListXml);
-                
-                // 3. Store Map Drop Filenames (now an array)
                 mapDropFiles = data.mapDropFiles;
-
-                // --- NEW DEBUGGING LOGIC ---
-                console.log(`[DEBUG] Server returned ${mapDropFiles.length} map drop files:`, mapDropFiles);
-                const deviasFile = mapDropFiles.find(f => f.includes('(2)_Bag.xml'));
-                if (!deviasFile) {
-                    console.warn(`[DEBUG] File for Devias (Map 2) not found in the list returned by the server. Check filename on server: MonsterMap_(2)_Bag.xml`);
-                }
-                // --- END NEW DEBUGGING LOGIC ---
                 
-                // 4. Store new context files
                 loadedContextFiles.masteryExc = data.masteryExcOptionsXml;
                 loadedContextFiles.pentagram = data.pentagramDropRateXml;
                 loadedContextFiles.socket = data.socketItemDropRatesXml;
@@ -626,10 +856,6 @@
             }
         }
 
-        /**
-         * @description Parses the MonsterList.xml content into the global `monsterList` object.
-         * @param {string} xmlText - The XML content from the server.
-         */
         function parseMonsterList(xmlText) {
             const parser = new DOMParser();
             const xmlDoc = parser.parseFromString(xmlText, 'text/xml');
@@ -639,57 +865,48 @@
             }
         }
 
-        /**
-         * @description Parses the ItemList.xml content into the global `itemList` and `itemCategories` objects.
-         * @param {string} xmlText - The XML content from the server.
-         */
         function parseItemList(xmlText) {
             const parser = new DOMParser();
             const xmlDoc = parser.parseFromString(xmlText, "text/xml");
             itemList = {};
-            itemCategories = {}; // Ensure this is reset
+            itemCategories = {}; 
             for (let category of xmlDoc.getElementsByTagName('Category')) {
-                // Use parseInt to normalize category index (e.g., "07" and "7" both becomes 7)
                 const catIndex = parseInt(category.getAttribute('Index'), 10);
-                if (isNaN(catIndex)) continue; // Skip invalid categories
+                if (isNaN(catIndex)) continue; 
                 
                 itemCategories[catIndex] = category.getAttribute('Name');
                 itemList[catIndex] = {};
                 
                 for (let item of category.getElementsByTagName('Item')) {
-                    // Use parseInt to normalize item index
                     const itemIndex = parseInt(item.getAttribute('Index'), 10);
-                    if (isNaN(itemIndex)) continue; // Skip invalid items
+                    if (isNaN(itemIndex)) continue; 
                     
-                    itemList[catIndex][itemIndex] = item.getAttribute('Name');
+                    // --- MODIFIED ---
+                    // Was: itemList[catIndex][itemIndex] = item.getAttribute('Name');
+                    // Now: Store all attributes for the tooltip
+                    const itemData = {};
+                    for (const attr of item.attributes) {
+                        itemData[attr.name] = attr.value;
+                    }
+                    itemList[catIndex][itemIndex] = itemData;
+                    // --- END MODIFIED ---
                 }
             }
         }
         
-        /**
-         * @description Parses the XML content of a map drop file into an array of drop objects.
-         * @param {string} xmlText - The XML content of the map drop file.
-         * @returns {object[]} An array of drop item objects.
-         */
         function parseMapDropXML(xmlText) {
             const parser = new DOMParser();
             const xmlDoc = parser.parseFromString(xmlText, 'text/xml');
             
-            // Check for parsing errors
             if (xmlDoc.getElementsByTagName('parsererror').length > 0) {
                 console.error("XML Parsing Error for current file:", xmlDoc.getElementsByTagName('parsererror')[0].textContent);
-                // Attempt to retrieve a partial list or return empty
-                // Continue to try reading drops, but log the error
             }
 
             const drops = [];
             const dropNodes = xmlDoc.getElementsByTagName('DropItem');
             
             for (const node of dropNodes) {
-                // Note: Due to the duplicate PlayerMinReset/PlayerMaxReset attributes in the XML,
-                // the DOM parser will only retrieve the LAST instance of that attribute name.
                 
-                // Get attributes, defaulting to -1 or 0 if missing
                 const getAttr = (attr) => node.getAttribute(attr) || '-1';
                 const getNumAttr = (attr) => node.getAttribute(attr) || '0';
                 
@@ -713,24 +930,19 @@
                     SocketCount: getNumAttr('SocketCount'),
                     Duration: getNumAttr('Duration'),
                     Rate: getNumAttr('Rate'),
-                    // Internal state
                     isNew: false,
                     isModified: false,
-                    originalName: node.getAttribute('Name') // Preserve original name comment if present
+                    originalName: node.getAttribute('Name') 
                 });
             }
             
-            console.log(`[DEBUG] Parsed ${drops.length} drops from file.`);
             return drops;
         }
 
-        /**
-         * @description Renders the list of map bag files in the sidebar.
-         */
         function renderMapFileList() {
             const fileListEl = document.getElementById('mapFileList');
             fileListEl.innerHTML = '';
-            const sortedFiles = mapDropFiles.sort((a, b) => { // mapDropFiles is now an array
+            const sortedFiles = mapDropFiles.sort((a, b) => { 
                 const numA = parseInt(a.match(/\((\d+)\)/)?.[1] || -1);
                 const numB = parseInt(b.match(/\((\d+)\)/)?.[1] || -1);
                 return numA - numB;
@@ -739,20 +951,17 @@
             sortedFiles.forEach(filename => {
                 const mapItem = document.createElement('div');
                 const mapNum = parseInt(filename.match(/\((\d+)\)/)?.[1] || -1);
-                const mapName = MAP_NAMES[mapNum] || 'Unknown Map'; // UPDATED: Use MAP_NAMES
+                const mapName = MAP_NAMES[mapNum] || 'Unknown Map'; 
                 
                 mapItem.className = 'map-item';
                 mapItem.id = `map-item-${filename}`;
-                mapItem.textContent = `(${mapNum}) ${mapName}`; // Show number and name
-                mapItem.dataset.filename = filename; // Store filename
+                mapItem.textContent = `(${mapNum}) ${mapName}`; 
+                mapItem.dataset.filename = filename; 
                 mapItem.onclick = () => selectMapFile(filename);
                 fileListEl.appendChild(mapItem);
             });
         }
 
-        /**
-         * @description Filters the map file list based on the search input.
-         */
         function filterMapFiles() {
             const searchTerm = document.getElementById('mapSearch').value.toLowerCase();
             document.querySelectorAll('.map-item').forEach(item => {
@@ -760,22 +969,17 @@
             });
         }
         
-        /**
-         * @description Selects a map file, loads its content, and renders the editor panel.
-         * @param {string} filename - The name of the map file to select.
-         */
-        async function selectMapFile(filename) { // --- Make function async ---
+        async function selectMapFile(filename) { 
             if (currentFile === filename) return;
             
+            selectedRows.clear();
             currentFile = filename;
             
             document.querySelectorAll('.map-item').forEach(item => item.classList.remove('active'));
             document.getElementById(`map-item-${filename}`).classList.add('active');
             
-            // --- NEW: Load-on-demand logic ---
             let xmlText;
             
-            // Show loading state
             document.getElementById('editorContent').innerHTML = `<div class="empty-state"><h3><i data-lucide="loader-2" class="spin"></i> Loading ${filename}...</h3><p>Fetching file content from server.</p></div>`;
             lucide.createIcons();
             document.querySelector('.spin')?.animate([{ transform: 'rotate(0deg)' }, { transform: 'rotate(360deg)' }], { duration: 1000, iterations: Infinity });
@@ -791,25 +995,19 @@
                         throw new Error(`Server responded with status ${response.status}. Message: ${errorText.substring(0, 200)}...`);
                     }
                     xmlText = await response.text();
-                    fileContentCache[filename] = xmlText; // Cache the content
+                    fileContentCache[filename] = xmlText; 
                 }
 
-                // --- NEW DEBUGGING LOG: Show raw content ---
-                console.log(`[DEBUG] Raw XML content for ${filename}:`, xmlText.substring(0, 500) + '...');
-                // --- END DEBUGGING LOG ---
                 
-                // Extract header
                 const headerMatch = xmlText.match(/^[\s\S]*?(?=<MonsterMapItemDrop>)/i);
                 originalXMLHeaders[filename] = headerMatch ? headerMatch[0] : '<?xml version="1.0" encoding="utf-8"?>\n';
                 
-                // Parse and render
                 currentDropData = parseMapDropXML(xmlText);
-                currentVisibleRows = ROWS_PER_PAGE; // Reset pagination
+                currentVisibleRows = ROWS_PER_PAGE; 
                 
-                // Set initial history state only on successful file load
                 history = [];
                 historyIndex = -1;
-                updateHistory(currentDropData); 
+                updateHistory(currentDropData); 
 
                 renderEditorPanel();
                 
@@ -820,10 +1018,8 @@
             }
         }
         
-        /**
-         * @description Renders the main editor panel for the currently selected file.
-         */
         function renderEditorPanel() {
+            selectedRows.clear();
             if (!currentFile) {
                 document.getElementById('editorContent').innerHTML = `<div class="empty-state"><h3>Select a Map Bag File</h3><p>Choose a file from the list on the left to start editing drops.</p></div>`;
                 return;
@@ -835,13 +1031,12 @@
                     <div class="search-bar">
                         <input type="text" id="dropSearch" oninput="filterDropTable()" placeholder="Search drops by Monster ID/Name or Item (Cat, Index) Name...">
                     </div>
-                    <div class="controls" style="display: flex; gap: 10px;">
-                        <!-- NEW: Added Bulk Edit Button -->
+                    <div class="controls" style="display: flex; gap: 10px; flex-wrap: wrap;">
                         <button class="btn btn-outline" onclick="openBulkModal()"><i data-lucide="wand-2"></i> Bulk Edit</button>
-                        <!-- ADDED: Rate Adjust Button -->
                         <button class="btn btn-outline" style="background-color: var(--accent-purple); color: white;" onclick="openRateAdjustModal()">
                             <i data-lucide="percent"></i> Adjust Rates
                         </button>
+                        <button class="btn btn-danger" id="deleteSelectedBtn" onclick="deleteSelectedRows()" disabled><i data-lucide="trash-2"></i> Delete Selected (0)</button>
                         <button class="btn btn-primary" onclick="openAddModal()"><i data-lucide="plus-circle"></i> Add New Drop</button>
                         <button class="btn btn-success" onclick="saveChangesToServer()"><i data-lucide="save"></i> Save Changes</button>
                     </div>
@@ -850,6 +1045,7 @@
                     <table id="dropTable" style="min-width: 1000px;">
                         <thead>
                             <tr>
+                                <th class="checkbox-col"><input type="checkbox" id="selectAllCheckbox" onclick="toggleSelectAll(this.checked)" title="Select/Deselect All Visible"></th>
                                 <th style="min-width: 200px;">Monster ID</th>
                                 <th style="min-width: 200px;">Item (Cat_Index)</th>
                                 <th>Rate</th>
@@ -861,14 +1057,13 @@
                         </thead>
                         <tbody>
                             ${currentDropData.length === 0 
-                                ? `<tr><td colspan="7"><div class="empty-state"><h3>No Drop Items Found</h3><p>The selected file is empty or could not be parsed correctly.</p></div></td></tr>` 
+                                ? `<tr><td colspan="8"><div class="empty-state"><h3>No Drop Items Found</h3><p>The selected file is empty or could not be parsed correctly.</p></div></td></tr>` 
                                 : currentDropData.slice(0, currentVisibleRows).map((drop, index) => getDropRowHtml(drop, index)).join('')
                             }
                         </tbody>
                     </table>
                 </div>
                 
-                <!-- NEW: Load More Button -->
                 <div class="load-more-container" id="loadMoreContainer">
                     ${currentVisibleRows < currentDropData.length ?
                         `<button class="btn btn-outline" onclick="loadMoreRows()">
@@ -881,37 +1076,50 @@
             `;
             
             document.getElementById('editorContent').innerHTML = html;
+            updateDeleteButtonState();
             lucide.createIcons();
-            updateUndoRedoButtons(); // Ensure button state is current
+            updateUndoRedoButtons(); 
         }
 
-        /**
-         * @description Loads and displays the next page of rows in the drop table.
-         */
         function loadMoreRows() {
             currentVisibleRows += ROWS_PER_PAGE;
             renderEditorPanel();
         }
         
-        /**
-         * @description Generates the HTML for a single row in the drop table.
-         * @param {object} drop - The drop item data object.
-         * @param {number} index - The index of the drop in the `currentDropData` array.
-         * @returns {string} The HTML string for the table row.
-         */
         function getDropRowHtml(drop, index) {
             const monsterName = monsterList[drop.MonsterID] || 'Unknown Monster';
-            // MODIFIED: Look up item name from nested structure
             const catNum = parseInt(drop.Cat, 10);
             const indexNum = parseInt(drop.Index, 10);
-            const itemName = (itemList[catNum] && itemList[catNum][indexNum]) || drop.originalName || 'Unknown Item';
+            
+            // --- MODIFIED ---
+            // We now get the item object, which contains the name and all stats
+            const item = (itemList[catNum] && itemList[catNum][indexNum]);
+            const itemName = item ? item.Name : (drop.originalName || 'Unknown Item');
+            // --- END MODIFIED ---
             
             let rowClass = drop.isNew ? 'spawn-row-new' : (drop.isModified ? 'spawn-row-modified' : '');
+            if (selectedRows.has(index)) {
+                rowClass += ' selected'; 
+            }
             
             return `
                 <tr data-index="${index}" class="${rowClass}">
+                    <td class="checkbox-col">
+                        <input type="checkbox" onclick="toggleRowSelection(${index}, this.checked)" ${selectedRows.has(index) ? 'checked' : ''} title="Select row ${index}">
+                    </td>
                     <td class="monster-name-col"><span class="monster-name" title="[${drop.MonsterID}] ${monsterName}">[${drop.MonsterID}] ${monsterName}</span></td>
-                    <td class="item-name-col"><span class="item-name" title="[${drop.Cat}_${drop.Index}] ${itemName}">[${drop.Cat}_${drop.Index}] ${itemName}</span></td>
+                    
+                    <!-- --- MODIFIED --- -->
+                    <!-- Removed title attribute, added onmouseover and onmouseout -->
+                    <td class="item-name-col">
+                        <span class="item-name" 
+                              onmouseover="showTooltip(event, ${catNum}, ${indexNum})" 
+                              onmouseout="hideTooltip()">
+                              [${drop.Cat}_${drop.Index}] ${itemName}
+                        </span>
+                    </td>
+                    <!-- --- END MODIFIED --- -->
+                    
                     <td><input type="number" class="inline-input" value="${drop.Rate}" onchange="updateDropValue(${index}, 'Rate', this.value)"></td>
                     <td><input type="text" class="inline-input" value="${drop.MinLevel};${drop.MaxLevel}" onchange="updateMinMax(${index}, 'Level', this.value)"></td>
                     <td><input type="text" class="inline-input" value="${drop.Exc}" onchange="updateDropValue(${index}, 'Exc', this.value)"></td>
@@ -925,36 +1133,20 @@
             `;
         }
         
-        /**
-         * @description Updates a single field for a drop item directly from an inline input.
-         * @param {number} index - The index of the drop to update.
-         * @param {string} field - The property name of the drop to update.
-         * @param {string} value - The new value.
-         */
         function updateDropValue(index, field, value) {
-            // Store current state for potential undo BEFORE modification
-            updateHistory(currentDropData); 
+            updateHistory(currentDropData); 
             
             const drop = currentDropData[index];
             drop[field] = value;
             if (!drop.isNew) {
                 drop.isModified = true;
-                // Re-render row to update modified status color
                 document.querySelector(`tr[data-index="${index}"]`).classList.add('spawn-row-modified');
             }
-            // Update history again to reflect final modified state of this inline edit
             updateHistory(currentDropData);
         }
         
-        /**
-         * @description Updates min/max pair values (e.g., Level, Reset) from a single semicolon-separated input.
-         * @param {number} index - The index of the drop to update.
-         * @param {string} type - The type of min/max pair ('Level', 'Reset', 'PLevel').
-         * @param {string} value - The new semicolon-separated value (e.g., "0;15").
-         */
         function updateMinMax(index, type, value) {
-            // Store current state for potential undo BEFORE modification
-            updateHistory(currentDropData); 
+            updateHistory(currentDropData); 
             
             const parts = value.split(';').map(v => v.trim());
             const min = parts[0] || '0';
@@ -976,13 +1168,9 @@
                 drop.isModified = true;
                 document.querySelector(`tr[data-index="${index}"]`).classList.add('spawn-row-modified');
             }
-            // Update history again to reflect final modified state
             updateHistory(currentDropData);
         }
 
-        /**
-         * @description Filters the drop table based on the search input, checking against monster and item names/IDs.
-         */
         function filterDropTable() {
             const searchTerm = document.getElementById('dropSearch').value.toLowerCase();
             const table = document.getElementById('dropTable');
@@ -996,29 +1184,33 @@
                 
                 const monsterName = (monsterList[drop.MonsterID] || '').toLowerCase();
                 
-                // NEW: Get item name from nested structure
                 const catNum = parseInt(drop.Cat, 10);
                 const indexNum = parseInt(drop.Index, 10);
-                const itemName = (itemList[catNum] && itemList[catNum][indexNum]) || drop.originalName || '';
                 
-                // Build search strings
-                const itemKey = `${drop.Cat}_${drop.Index}`; // "14_13"
-                const fullItemName = `(${drop.Cat}, ${drop.Index}) ${itemName}`; // "(14, 13) Jewel of Bless"
+                // --- MODIFIED ---
+                const item = (itemList[catNum] && itemList[catNum][indexNum]);
+                const itemName = item ? item.Name.toLowerCase() : (drop.originalName || '').toLowerCase();
+                // --- END MODIFIED ---
+                
+                const itemKey = `${drop.Cat}_${drop.Index}`; 
+                const fullItemName = `(${drop.Cat}, ${drop.Index}) ${itemName}`; 
 
-                const isVisible = 
+                const isVisible = 
                     drop.MonsterID.toLowerCase().includes(searchTerm) ||
                     monsterName.includes(searchTerm) ||
-                    itemKey.includes(searchTerm) || // Matches "14_13"
-                    itemName.toLowerCase().includes(searchTerm) || // Matches "jewel"
-                    fullItemName.toLowerCase().includes(searchTerm); // Matches "(14, 13)"
+                    itemKey.includes(searchTerm) || 
+                    itemName.includes(searchTerm) || 
+                    fullItemName.toLowerCase().includes(searchTerm); 
                     
                 row.style.display = isVisible ? '' : 'none';
             });
+
+            selectedRows.clear();
+            updateDeleteButtonState();
+            const selectAllCheckbox = document.getElementById('selectAllCheckbox');
+            if (selectAllCheckbox) selectAllCheckbox.checked = false;
         }
         
-        /**
-         * @description Opens the modal for adding a new drop item.
-         */
         function openAddModal() {
             editingDropIndex = null;
             document.getElementById('modalTitle').textContent = 'Add New Drop Item';
@@ -1027,7 +1219,6 @@
             document.getElementById('itemCat').value = '';
             document.getElementById('itemIndex').value = '';
             
-            // Set defaults from text file
             document.getElementById('monsterElement').value = '-1';
             document.getElementById('playerMinReset').value = '-1';
             document.getElementById('playerMaxReset').value = '-1';
@@ -1049,10 +1240,6 @@
             lucide.createIcons();
         }
         
-        /**
-         * @description Opens the modal for viewing and editing an existing drop item.
-         * @param {number} index - The index of the drop to view/edit.
-         */
         function openViewModal(index) {
             editingDropIndex = index;
             const drop = currentDropData[index];
@@ -1060,21 +1247,22 @@
 
             document.getElementById('modalTitle').textContent = 'View / Edit Drop Item';
             
-            // Populate Monster Search
             const monsterName = monsterList[drop.MonsterID] || 'Unknown';
             document.getElementById('monsterSearch').value = `[${drop.MonsterID}] ${monsterName}`;
             document.getElementById('monsterID').value = drop.MonsterID;
             
-            // Populate Item Search
-            // MODIFIED: Use new itemList structure
             const catNum = parseInt(drop.Cat, 10);
             const indexNum = parseInt(drop.Index, 10);
-            const itemName = (itemList[catNum] && itemList[catNum][indexNum]) || drop.originalName || 'Unknown';
+            
+            // --- MODIFIED ---
+            const item = (itemList[catNum] && itemList[catNum][indexNum]);
+            const itemName = item ? item.Name : (drop.originalName || 'Unknown');
+            // --- END MODIFIED ---
+            
             document.getElementById('itemSearch').value = `[${drop.Cat}_${drop.Index}] ${itemName}`;
             document.getElementById('itemCat').value = drop.Cat;
             document.getElementById('itemIndex').value = drop.Index;
 
-            // Populate other fields
             document.getElementById('monsterElement').value = drop.MonsterElement;
             document.getElementById('playerMinReset').value = drop.PlayerMinReset;
             document.getElementById('playerMaxReset').value = drop.PlayerMaxReset;
@@ -1096,16 +1284,10 @@
             lucide.createIcons();
         }
         
-        /**
-         * @description Closes the main add/edit drop modal.
-         */
         function closeModal() {
             document.getElementById('dropModal').classList.remove('show');
         }
         
-        /**
-         * @description Opens the bulk edit modal.
-         */
         function openBulkModal() {
             if (!currentFile) {
                 showStatus('Please select a map file first.', true);
@@ -1117,85 +1299,104 @@
             document.getElementById('bulkFindItemIndex').value = '';
             document.getElementById('bulkReplaceItemCat').value = '';
             document.getElementById('bulkReplaceItemIndex').value = '';
+            
+            const findSection = document.getElementById('bulkFindSection');
+            const title = document.getElementById('bulkModalTitle');
+            const findMonsterInput = document.getElementById('bulkFindMonsterSearch');
+            
+            if (selectedRows.size > 0) {
+                title.textContent = `Bulk Edit ${selectedRows.size} Selected Drops`;
+                findSection.style.display = 'none';
+                findMonsterInput.required = false;
+            } else {
+                title.textContent = 'Bulk Edit All Drops';
+                findSection.style.display = 'block';
+                findMonsterInput.required = true;
+            }
 
             document.getElementById('bulkEditModal').classList.add('show');
             lucide.createIcons();
         }
         
-        /**
-         * @description Closes the bulk edit modal.
-         */
         function closeBulkModal() {
             document.getElementById('bulkEditModal').classList.remove('show');
         }
 
-        /**
-         * @description Opens the rate adjustment modal.
-         */
+        
         function openRateAdjustModal() {
             if (!currentFile) {
                 showStatus('Please select a map file first.', true);
                 return;
             }
             document.getElementById('rateAdjustForm').reset();
-            document.getElementById('rateAdjustFileName').textContent = currentFile;
-            calculateRateChange(); // Calculate initial state
+            // document.getElementById('rateAdjustFileName').textContent = currentFile; // <-- This line is redundant and causes the error
+            
+            const title = document.getElementById('rateAdjustModalTitle');
+            const info = document.getElementById('rateAdjustInfo');
+            const count = selectedRows.size;
+
+            if (count > 0) {
+                title.textContent = `Adjust Rates for ${count} Selected Drops`;
+                info.innerHTML = `This will multiply the rates for the <strong>${count} selected items</strong> by a percentage.`;
+            } else {
+                title.textContent = 'Adjust All Drop Rates';
+                info.innerHTML = `This will multiply all drop rates in the current file (<strong><span id="rateAdjustFileName">${currentFile}</span></strong>) by a percentage.`;
+            }
+            
+            calculateRateChange(); 
             document.getElementById('rateAdjustModal').classList.add('show');
             lucide.createIcons();
         }
         
-        /**
-         * @description Closes the rate adjustment modal.
-         */
         function closeRateAdjustModal() {
             document.getElementById('rateAdjustModal').classList.remove('show');
         }
 
-        /**
-         * @description Calculates and displays a preview of the rate changes in the rate adjustment modal.
-         */
         function calculateRateChange() {
             const percentInput = document.getElementById('rateAdjustPercent');
             const previewEl = document.getElementById('rateAdjustPreview');
             const percent = parseFloat(percentInput.value);
+            
+            const operatingOnSelected = selectedRows.size > 0;
+            const dataToScan = operatingOnSelected ? Array.from(selectedRows).map(i => currentDropData[i]) : currentDropData;
 
             let currentTotal = 0;
-            currentDropData.forEach(drop => {
-                currentTotal += parseInt(drop.Rate, 10) || 0;
+            dataToScan.forEach(drop => {
+                if (drop) currentTotal += parseInt(drop.Rate, 10) || 0;
             });
 
             if (isNaN(percent) || percent <= 0) {
                 previewEl.innerHTML = `
-                    <p style="font-weight: 600; color: var(--text-primary);">Current Total Rate: <span style="font-family: var(--font-data);">${currentTotal.toLocaleString()}</span></p>
+                    <p style="font-weight: 600; color: var(--text-primary);">Current Total Rate (for ${operatingOnSelected ? 'selected' : 'all'} items): <span style="font-family: var(--font-data);">${currentTotal.toLocaleString()}</span></p>
                     <p style="color: var(--text-secondary);">Enter a valid percentage (e.g., '50' or '150') to see the new total.</p>
                 `;
                 return;
             }
 
             const multiplier = percent / 100;
-            // Calculate rounded new total
             let newTotal = 0;
-            const GLOBAL_MAX_TOTAL = 100000000; // New limit: 100,000,000
+            const GLOBAL_MAX_TOTAL = 100000000; 
             
-            currentDropData.forEach(drop => {
+            dataToScan.forEach(drop => {
+                if (!drop) return;
                 const oldRate = parseInt(drop.Rate, 10) || 0;
                 if (oldRate > 0) {
                     let newRate = Math.round(oldRate * multiplier);
-                    if (newRate === 0) newRate = 1; // Minimum rate of 1 if it was > 0
-                    if (newRate > 1000000) newRate = 1000000; // Cap at 1M (Individual Item Cap)
+                    if (newRate === 0) newRate = 1; 
+                    if (newRate > 1000000) newRate = 1000000; 
                     newTotal += newRate;
                 } else {
-                    newTotal += oldRate; // Include 0 rates in total for accurate calculation if they are not adjusted
+                    newTotal += oldRate; 
                 }
             });
 
             let warningHtml = '';
-            if (newTotal > GLOBAL_MAX_TOTAL) {
+            if (!operatingOnSelected && newTotal > GLOBAL_MAX_TOTAL) {
                 warningHtml = `<p style="font-weight: 600; color: var(--accent-pink); margin-top: 10px;"><i data-lucide="alert-triangle" style="width: 14px; height: 14px; vertical-align: -2px;"></i> WARNING: New total exceeds the ${GLOBAL_MAX_TOTAL.toLocaleString()} limit!</p>`;
             }
 
             previewEl.innerHTML = `
-                <p style="font-weight: 600; color: var(--text-primary);">Current Total Rate: <span style="font-family: var(--font-data);">${currentTotal.toLocaleString()}</span></p>
+                <p style="font-weight: 600; color: var(--text-primary);">Current Total Rate (for ${operatingOnSelected ? selectedRows.size : 'all'} items): <span style="font-family: var(--font-data);">${currentTotal.toLocaleString()}</span></p>
                 <p style="font-weight: 600; color: var(--accent-blue);">New Estimated Total Rate: <span style="font-family: var(--font-data);">${newTotal.toLocaleString()}</span></p>
                 ${warningHtml}
             `;
@@ -1205,8 +1406,7 @@
         document.getElementById('rateAdjustForm').addEventListener('submit', function(e) {
             e.preventDefault();
             
-            // Store current state for potential undo
-            updateHistory(currentDropData); 
+            updateHistory(currentDropData); 
 
             const percentInput = document.getElementById('rateAdjustPercent');
             const percent = parseFloat(percentInput.value);
@@ -1219,14 +1419,20 @@
             const multiplier = percent / 100;
             let newTotal = 0;
             let itemsChanged = 0;
-            const GLOBAL_MAX_TOTAL = 100000000; // New limit: 100,000,000
+            const GLOBAL_MAX_TOTAL = 100000000;
+            
+            const operatingOnSelected = selectedRows.size > 0;
+            const indicesToUpdate = operatingOnSelected ? Array.from(selectedRows) : currentDropData.map((_, i) => i);
 
-            currentDropData.forEach(drop => {
+            indicesToUpdate.forEach(index => {
+                const drop = currentDropData[index];
+                if (!drop) return;
+                
                 const oldRate = parseInt(drop.Rate, 10) || 0;
                 if (oldRate > 0) {
                     let newRate = Math.round(oldRate * multiplier);
-                    if (newRate === 0) newRate = 1; // Don't allow rate to become 0 if it was positive
-                    if (newRate > 1000000) newRate = 1000000; // Cap at 1,000,000 (Individual Item Cap)
+                    if (newRate === 0) newRate = 1; 
+                    if (newRate > 1000000) newRate = 1000000; 
                     
                     if (oldRate !== newRate) {
                         drop.Rate = newRate;
@@ -1237,57 +1443,112 @@
                     }
                     newTotal += newRate;
                 } else {
-                    newTotal += oldRate; // Add 0 rates to total
+                    newTotal += oldRate; 
                 }
             });
-
-            if (newTotal > GLOBAL_MAX_TOTAL) {
+            
+            if (!operatingOnSelected && newTotal > GLOBAL_MAX_TOTAL) {
                 showStatus(`Warning: Rates adjusted by ${percent}%. New total ${newTotal.toLocaleString()} exceeds ${GLOBAL_MAX_TOTAL.toLocaleString()}.`, false, true);
             } else {
-                showStatus(`✓ Rates for ${itemsChanged} items adjusted by ${percent}%. New total: ${newTotal.toLocaleString()}.`, false);
+                showStatus(`✓ Rates for ${itemsChanged} item(s) adjusted by ${percent}%.`, false);
             }
             
             closeRateAdjustModal();
-            renderEditorPanel(); // Re-render table to show new values and modified status
-            updateHistory(currentDropData); // Final history state after bulk operation
+            renderEditorPanel(); 
+            updateHistory(currentDropData); 
         });
 
-        /**
-         * @description Deletes a drop item from the current table after confirmation.
-         * @param {number} index - The index of the drop to delete.
-         */
         function deleteDrop(index) {
             confirmAction(
                 'Delete Drop?',
                 'Are you sure you want to delete this drop item?',
                 () => {
-                    // Store current state for potential undo
-                    updateHistory(currentDropData); 
+                    updateHistory(currentDropData); 
+                    selectedRows.delete(index);
                     currentDropData.splice(index, 1);
-                    renderEditorPanel(); // Re-render to update indices
-                    updateHistory(currentDropData); // Final history state
+                    renderEditorPanel(); 
+                    updateHistory(currentDropData); 
                 }
             );
         }
         
-        /**
-         * @description Duplicates a drop item and inserts it below the original in the table.
-         * @param {number} index - The index of the drop to duplicate.
-         */
         function duplicateDrop(index) {
-            // Store current state for potential undo
-            updateHistory(currentDropData); 
+            updateHistory(currentDropData); 
 
             const originalDrop = currentDropData[index];
             const newDrop = JSON.parse(JSON.stringify(originalDrop));
             newDrop.isNew = true;
             delete newDrop.isModified;
             currentDropData.splice(index + 1, 0, newDrop);
-            renderEditorPanel(); // Re-render to show new row
-            updateHistory(currentDropData); // Final history state
+            renderEditorPanel(); 
+            updateHistory(currentDropData); 
         }
 
-        // --- Search Suggestions ---
+        function updateDeleteButtonState() {
+            const btn = document.getElementById('deleteSelectedBtn');
+            if (btn) {
+                const count = selectedRows.size;
+                btn.disabled = count === 0;
+                btn.innerHTML = `<i data-lucide="trash-2"></i> Delete Selected (${count})`;
+                lucide.createIcons();
+            }
+        }
+
+        function toggleRowSelection(index, isChecked) {
+            const row = document.querySelector(`tr[data-index="${index}"]`);
+            if (isChecked) {
+                selectedRows.add(index);
+                row?.classList.add('selected');
+            } else {
+                selectedRows.delete(index);
+                row?.classList.remove('selected');
+            }
+            updateDeleteButtonState();
+        }
+
+        function toggleSelectAll(isChecked) {
+            const table = document.getElementById('dropTable');
+            table.querySelectorAll('tbody tr').forEach(row => {
+                if (row.style.display !== 'none') {
+                    const index = parseInt(row.dataset.index, 10);
+                    const checkbox = row.querySelector('input[type="checkbox"]');
+                    if (isChecked) {
+                        selectedRows.add(index);
+                        row.classList.add('selected');
+                        if (checkbox) checkbox.checked = true;
+                    } else {
+                        selectedRows.delete(index);
+                        row.classList.remove('selected');
+                        if (checkbox) checkbox.checked = false;
+                    }
+                }
+            });
+            updateDeleteButtonState();
+        }
+
+        function deleteSelectedRows() {
+            const count = selectedRows.size;
+            if (count === 0) return;
+
+            confirmAction(
+                'Delete Selected Drops?',
+                `Are you sure you want to delete ${count} selected drop item(s)?`,
+                () => {
+                    updateHistory(currentDropData);
+                    
+                    currentDropData = currentDropData.filter((drop, index) => !selectedRows.has(index));
+                    
+                    selectedRows.clear();
+                    
+                    renderEditorPanel(); 
+                    
+                    updateHistory(currentDropData);
+                    
+                    showStatus(`✓ ${count} drop(s) deleted.`, false);
+                }
+            );
+        }
+
         document.getElementById('monsterSearch').addEventListener('input', function(e) {
             const searchTerm = e.target.value.toLowerCase();
             const suggestionsDiv = document.getElementById('monsterSuggestions');
@@ -1306,23 +1567,12 @@
             suggestionsDiv.classList.toggle('show', !!html);
         });
 
-        /**
-         * @description Callback function to select a monster from a suggestion list.
-         * @param {string} id - The ID of the selected monster.
-         * @param {string} name - The name of the selected monster.
-         */
         function selectMonster(id, name) {
             document.getElementById('monsterSearch').value = `[${id}] ${name}`;
             document.getElementById('monsterID').value = id;
             document.getElementById('monsterSuggestions').classList.remove('show');
         }
         
-        /**
-         * @description Callback function to select an item from a suggestion list in the main modal.
-         * @param {string} cat - The category of the selected item.
-         * @param {string} index - The index of the selected item.
-         * @param {string} name - The name of the selected item.
-         */
         document.getElementById('itemSearch').addEventListener('input', function(e) {
             let html = '';
             let count = 0;
@@ -1338,13 +1588,19 @@
                 if (count >= 50) break;
                 for (const [itemIndex, itemName] of Object.entries(items)) {
                     if (count >= 50) break;
-                    const fullItemName = `(${catIndex}, ${itemIndex}) ${itemName}`;
+                    
+                    // --- MODIFIED ---
+                    // itemName is now an object, so we get itemName.Name
+                    const itemObj = itemName; // Keep the name 'itemName' from the loop, but clarify it's an object
+                    const fullItemName = `(${catIndex}, ${itemIndex}) ${itemObj.Name}`;
                     if (fullItemName.toLowerCase().includes(searchTerm)) {
-                        const escapedName = itemName.replace(/'/g, "\\'").replace(/"/g, "&quot;");
+                        const escapedName = itemObj.Name.replace(/'/g, "\\'").replace(/"/g, "&quot;");
+                        // --- END MODIFIED ---
+                        
                         const catName = itemCategories[catIndex] || 'Cat ' + catIndex;
                         html += `<div class="suggestion-item" onclick="selectItem('${catIndex}', '${itemIndex}', '${escapedName}')">
-                                    <span class="suggestion-item-cat">${catName}</span> 
-                                    <span class="suggestion-item-id">(${catIndex}, ${itemIndex})</span> ${itemName}
+                                    <span class="suggestion-item-cat">${catName}</span> 
+                                    <span class="suggestion-item-id">(${catIndex}, ${itemIndex})</span> ${itemObj.Name}
                                    </div>`;
                         count++;
                     }
@@ -1361,8 +1617,6 @@
             document.getElementById('itemSuggestions').classList.remove('show');
         }
         
-        // --- NEW: Search Suggestions for Bulk Edit Modal ---
-        // Find Monster
         document.getElementById('bulkFindMonsterSearch').addEventListener('input', function(e) {
             const searchTerm = e.target.value.toLowerCase();
             const suggestionsDiv = document.getElementById('bulkFindMonsterSuggestions');
@@ -1381,7 +1635,6 @@
             suggestionsDiv.classList.toggle('show', !!html);
         });
 
-        // --- MODIFIED: Find Item (Bulk) ---
         document.getElementById('bulkFindItemSearch').addEventListener('input', function(e) {
             let html = '';
             let count = 0;
@@ -1397,13 +1650,18 @@
                 if (count >= 10) break;
                 for (const [itemIndex, itemName] of Object.entries(items)) {
                     if (count >= 10) break;
-                    const fullItemName = `(${catIndex}, ${itemIndex}) ${itemName}`;
+                    
+                    // --- MODIFIED ---
+                    const itemObj = itemName; 
+                    const fullItemName = `(${catIndex}, ${itemIndex}) ${itemObj.Name}`;
                     if (fullItemName.toLowerCase().includes(searchTerm)) {
-                        const escapedName = itemName.replace(/'/g, "\\'").replace(/"/g, "&quot;");
+                        const escapedName = itemObj.Name.replace(/'/g, "\\'").replace(/"/g, "&quot;");
+                        // --- END MODIFIED ---
+                        
                         const catName = itemCategories[catIndex] || 'Cat ' + catIndex;
                         html += `<div class="suggestion-item" onclick="selectBulkItem('Find', '${catIndex}', '${itemIndex}', '${escapedName}')">
-                                    <span class="suggestion-item-cat">${catName}</span> 
-                                    <span class="suggestion-item-id">(${catIndex}, ${itemIndex})</span> ${itemName}
+                                    <span class="suggestion-item-cat">${catName}</span> 
+                                    <span class="suggestion-item-id">(${catIndex}, ${itemIndex})</span> ${itemObj.Name}
                                    </div>`;
                         count++;
                     }
@@ -1413,7 +1671,6 @@
             suggestions.classList.toggle('show', !!html);
         });
 
-        // --- MODIFIED: Replace Item (Bulk) ---
         document.getElementById('bulkReplaceItemSearch').addEventListener('input', function(e) {
             let html = '';
             let count = 0;
@@ -1429,13 +1686,18 @@
                 if (count >= 10) break;
                 for (const [itemIndex, itemName] of Object.entries(items)) {
                     if (count >= 10) break;
-                    const fullItemName = `(${catIndex}, ${itemIndex}) ${itemName}`;
+                    
+                    // --- MODIFIED ---
+                    const itemObj = itemName; 
+                    const fullItemName = `(${catIndex}, ${itemIndex}) ${itemObj.Name}`;
                     if (fullItemName.toLowerCase().includes(searchTerm)) {
-                        const escapedName = itemName.replace(/'/g, "\\'").replace(/"/g, "&quot;");
+                        const escapedName = itemObj.Name.replace(/'/g, "\\'").replace(/"/g, "&quot;");
+                        // --- END MODIFIED ---
+                        
                         const catName = itemCategories[catIndex] || 'Cat ' + catIndex;
                         html += `<div class="suggestion-item" onclick="selectBulkItem('Replace', '${catIndex}', '${itemIndex}', '${escapedName}')">
-                                    <span class="suggestion-item-cat">${catName}</span> 
-                                    <span class="suggestion-item-id">(${catIndex}, ${itemIndex})</span> ${itemName}
+                                    <span class="suggestion-item-cat">${catName}</span> 
+                                    <span class="suggestion-item-id">(${catIndex}, ${itemIndex})</span> ${itemObj.Name}
                                    </div>`;
                         count++;
                     }
@@ -1445,40 +1707,24 @@
             suggestions.classList.toggle('show', !!html);
         });
 
-        /**
-         * @description Callback function to select a monster from a suggestion list in the bulk edit modal.
-         * @param {string} type - The type of selection ('Find' or 'Replace').
-         * @param {string} id - The ID of the selected monster.
-         * @param {string} name - The name of the selected monster.
-         */
         function selectBulkMonster(type, id, name) {
             document.getElementById(`bulk${type}MonsterSearch`).value = `[${id}] ${name}`;
             document.getElementById(`bulk${type}MonsterID`).value = id;
             document.getElementById(`bulk${type}MonsterSuggestions`).classList.remove('show');
         }
 
-        /**
-         * @description Callback function to select an item from a suggestion list in the bulk edit modal.
-         * @param {string} type - The type of selection ('Find' or 'Replace').
-         * @param {string} cat - The category of the selected item.
-         * @param {string} index - The index of the selected item.
-         * @param {string} name - The name of the selected item.
-         */
         function selectBulkItem(type, cat, index, name) {
             document.getElementById(`bulk${type}ItemSearch`).value = `[${cat}_${index}] ${name}`;
             document.getElementById(`bulk${type}ItemCat`).value = cat;
             document.getElementById(`bulk${type}ItemIndex`).value = index;
             document.getElementById(`bulk${type}ItemSuggestions`).classList.remove('show');
         }
-        // --- End Bulk Edit Search Suggestions ---
 
 
-        // --- Form Submission ---
         document.getElementById('dropForm').addEventListener('submit', function(e) {
             e.preventDefault();
             
-            // Store current state for potential undo
-            updateHistory(currentDropData); 
+            updateHistory(currentDropData); 
 
             const monsterID = document.getElementById('monsterID').value;
             let itemCat = document.getElementById('itemCat').value;
@@ -1489,9 +1735,8 @@
                 return;
             }
             if (itemCat === '' || itemIndex === '') {
-                // Fallback for manual item entry if search not selected
                 const itemSearchText = document.getElementById('itemSearch').value;
-                const match = itemSearchText.match(/\[(\d+)_(\d+)\]/); // Try to parse [14_13]
+                const match = itemSearchText.match(/\[(\d+)_(\d+)\]/); 
                 if (match) {
                     itemCat = match[1];
                     itemIndex = match[2];
@@ -1524,47 +1769,41 @@
             };
 
             if (editingDropIndex !== null) {
-                // This is an EDIT
                 const originalDrop = currentDropData[editingDropIndex];
                 currentDropData[editingDropIndex] = {
-                    ...originalDrop, // Preserve originalName
-                    ...dropData,     // Overwrite with new data
-                    isModified: !originalDrop.isNew, // Mark as modified if it wasn't new
-                    isNew: originalDrop.isNew // Preserve isNew status
+                    ...originalDrop, 
+                    ...dropData,    
+                    isModified: !originalDrop.isNew, 
+                    isNew: originalDrop.isNew 
                 };
             } else {
-                // This is a NEW drop
                 currentDropData.unshift({
                     ...dropData,
                     isNew: true,
                     isModified: false
-                }); 
+                }); 
             }
             
             renderEditorPanel();
             closeModal();
-            updateHistory(currentDropData); // Final history state
+            updateHistory(currentDropData); 
         });
 
-        // --- NEW: Bulk Edit Form Submission ---
         document.getElementById('bulkEditForm').addEventListener('submit', function(e) {
             e.preventDefault();
 
-            // Store current state for potential undo
-            updateHistory(currentDropData); 
+            updateHistory(currentDropData); 
 
-            // 1. Get Find criteria
+            const operatingOnSelected = selectedRows.size > 0;
+
             const findMonsterID = document.getElementById('bulkFindMonsterID').value;
             const findItemCat = document.getElementById('bulkFindItemCat').value;
             const findItemIndex = document.getElementById('bulkFindItemIndex').value;
-            const findItemKey = (findItemCat && findItemIndex) ? `${findItemCat}_${findItemIndex}` : null;
-
-            // 2. Get Replace criteria (These are now OPTIONAL)
+            
             const replaceItemCat = document.getElementById('bulkReplaceItemCat').value;
             const replaceItemIndex = document.getElementById('bulkReplaceItemIndex').value;
             const replaceItemSet = (replaceItemCat !== "" && replaceItemIndex !== "");
             
-            // 3. Get Optional new values
             const newValues = {
                 MinLevel: document.getElementById('bulkMinLevel').value,
                 MaxLevel: document.getElementById('bulkMaxLevel').value,
@@ -1578,12 +1817,10 @@
                 Rate: document.getElementById('bulkRate').value
             };
             
-            // Check if any modification at all is being attempted (either item replacement OR value change)
             const isValueChange = Object.values(newValues).some(v => v !== null && v !== "");
             
-            // 4. Validate required fields
-            if (!findMonsterID) {
-                showStatus('You must select a Monster to find.', true);
+            if (!operatingOnSelected && !findMonsterID) {
+                showStatus('You must select a Monster to find (or select rows first).', true);
                 return;
             }
             if (!replaceItemSet && !isValueChange) {
@@ -1592,136 +1829,266 @@
             }
 
             let updatedCount = 0;
-
-            // 5. Loop through data and apply changes
-            currentDropData.forEach(drop => {
-                let monsterMatch = (drop.MonsterID === findMonsterID);
-                let itemMatch = true; // Assume match if no item is specified
-
-                if (findItemKey) {
-                    itemMatch = (drop.Cat === findItemCat && drop.Index === findItemIndex);
-                }
-
-                // If this is a row we want to edit...
-                if (monsterMatch && itemMatch) {
+            
+            if (operatingOnSelected) {
+                for (const index of selectedRows) {
+                    const drop = currentDropData[index];
+                    if (!drop) continue;
+                    
                     updatedCount++;
 
-                    // A. Replace the item (ONLY if new item is set)
                     if (replaceItemSet) {
                         drop.Cat = replaceItemCat;
                         drop.Index = replaceItemIndex;
                     }
 
-                    // B. Apply optional new values
                     for (const [key, value] of Object.entries(newValues)) {
-                        if (value !== null && value !== "") { // Check if user entered anything
+                        if (value !== null && value !== "") { 
                             drop[key] = value;
                         }
                     }
 
-                    // C. Mark as modified
                     if (!drop.isNew) {
                         drop.isModified = true;
                     }
                 }
-            });
+            } else {
+                const findItemKey = (findItemCat && findItemIndex) ? `${findItemCat}_${findItemIndex}` : null;
+                
+                currentDropData.forEach(drop => {
+                    let monsterMatch = (drop.MonsterID === findMonsterID);
+                    let itemMatch = true; 
+
+                    if (findItemKey) {
+                        itemMatch = (drop.Cat === findItemCat && drop.Index === findItemIndex);
+                    }
+
+                    if (monsterMatch && itemMatch) {
+                        updatedCount++;
+
+                        if (replaceItemSet) {
+                            drop.Cat = replaceItemCat;
+                            drop.Index = replaceItemIndex;
+                        }
+
+                        for (const [key, value] of Object.entries(newValues)) {
+                            if (value !== null && value !== "") { 
+                                drop[key] = value;
+                            }
+                        }
+
+                        if (!drop.isNew) {
+                            drop.isModified = true;
+                        }
+                    }
+                });
+            }
+
 
             if (updatedCount > 0) {
                 showStatus(`✓ Bulk edit complete. Updated ${updatedCount} drop(s).`, false);
-                renderEditorPanel(); // Re-render the table to show changes
+                renderEditorPanel(); 
             } else {
-                showStatus('No matching drops found for that criteria.', false, true); // Warning
+                showStatus('No matching drops found for that criteria.', false, true); 
             }
 
             closeBulkModal();
-            updateHistory(currentDropData); // Final history state
+            updateHistory(currentDropData); 
         });
 
 
-        /** @description Opens the guide modal. */
         function openGuideModal() { document.getElementById('guideModal').classList.add('show'); lucide.createIcons(); }
-        /** @description Closes the guide modal. */
         function closeGuideModal() { document.getElementById('guideModal').classList.remove('show'); }
         
-        // Close modals on outside click
-        document.getElementById('dropModal').addEventListener('click', function (e) { if (e.target === this) closeModal(); }); 
-        document.getElementById('guideModal').addEventListener('click', function (e) { if (e.target === this) closeGuideModal(); }); 
-        document.getElementById('confirmModal').addEventListener('click', function (e) { if (e.target === this) closeConfirmModal(); }); 
-        document.getElementById('bulkEditModal').addEventListener('click', function (e) { if (e.target === this) closeBulkModal(); }); // NEW
-        document.getElementById('rateAdjustModal').addEventListener('click', function (e) { if (e.target === this) closeRateAdjustModal(); }); // NEW ADJUST RATES LISTENER
+        document.getElementById('dropModal').addEventListener('click', function (e) { if (e.target === this) closeModal(); }); 
+        document.getElementById('guideModal').addEventListener('click', function (e) { if (e.target === this) closeGuideModal(); }); 
+        document.getElementById('confirmModal').addEventListener('click', function (e) { if (e.target === this) closeConfirmModal(); }); 
+        document.getElementById('bulkEditModal').addEventListener('click', function (e) { if (e.target === this) closeBulkModal(); }); 
+        document.getElementById('rateAdjustModal').addEventListener('click', function (e) { if (e.target === this) closeRateAdjustModal(); }); 
 
         
-        // --- Dummy implementation of updateRowValue (Needed for jewel/lucky tabs, but not used in this iteration) ---
-        document.addEventListener('click', function (e) { 
+        document.addEventListener('click', function (e) { 
             if (!e.target.closest('.monster-search')) {
                 document.getElementById('monsterSuggestions').classList.remove('show');
                 if (document.getElementById('bulkFindMonsterSuggestions')) {
-                    document.getElementById('bulkFindMonsterSuggestions').classList.remove('show'); // NEW
+                    document.getElementById('bulkFindMonsterSuggestions').classList.remove('show'); 
                 }
             }
             if (!e.target.closest('.item-search')) {
                 document.getElementById('itemSuggestions').classList.remove('show');
                 if (document.getElementById('bulkFindItemSuggestions')) {
-                    document.getElementById('bulkFindItemSuggestions').classList.remove('show'); // NEW
+                    document.getElementById('bulkFindItemSuggestions').classList.remove('show'); 
                 }
                 if (document.getElementById('bulkReplaceItemSuggestions')) {
-                    document.getElementById('bulkReplaceItemSuggestions').classList.remove('show'); // NEW
+                    document.getElementById('bulkReplaceItemSuggestions').classList.remove('show'); 
                 }
             }
         });
         
-        /**
-         * @description Builds the XML content for the current map drop file from the `currentDropData` array.
-         * @returns {string} The complete XML string.
-         */
         function buildXmlFromData() {
             let xml = originalXMLHeaders[currentFile] || '<?xml version="1.0" encoding="utf-8"?>\n';
             xml += '<MonsterMapItemDrop>\n';
             
             for (const drop of currentDropData) {
-                // MODIFIED: Use new itemList structure
                 const catNum = parseInt(drop.Cat, 10);
                 const indexNum = parseInt(drop.Index, 10);
                 const itemName = (itemList[catNum] && itemList[catNum][indexNum]) || drop.originalName || 'Unknown Item';
-                // Add a comment with the item name for readability, like in the original file
-                xml += `  <!-- ${itemName} -->\n`;
-                // NOTE: We MUST write out the attributes EXACTLY as they are expected by the server file format, 
-                // including the potentially redundant PlayerMinReset/PlayerMaxReset pair, if the server expects it.
-                // Since the client side doesn't know which is correct, we will write the structure that matches the sample,
-                // ensuring the core attributes are correct.
-                xml += `  <DropItem MonsterID="${drop.MonsterID}" MonsterElement="${drop.MonsterElement}" PlayerMinReset="${drop.PlayerMinReset}" PlayerMaxReset="${drop.PlayerMaxReset}" PlayerMinLevel="${drop.PlayerMinLevel}" PlayerMaxLevel="${drop.PlayerMaxLevel}" Cat="${drop.Cat}" Index="${drop.Index}" MinLevel="${drop.MinLevel}" MaxLevel="${drop.MaxLevel}" Durability="${drop.Durability}" Skill="${drop.Skill}" Luck="${drop.Luck}" Option="${drop.Option}" Exc="${drop.Exc}" Element="${drop.Element}" SocketCount="${drop.SocketCount}" Duration="${drop.Duration}" Rate="${drop.Rate}" />\n`;
+                xml += `  <!-- ${itemName} -->\n`;
+                xml += `  <DropItem MonsterID="${drop.MonsterID}" MonsterElement="${drop.MonsterElement}" PlayerMinReset="${drop.PlayerMinReset}" PlayerMaxReset="${drop.PlayerMaxReset}" PlayerMinLevel="${drop.PlayerMinLevel}" PlayerMaxLevel="${drop.PlayerMaxLevel}" Cat="${drop.Cat}" Index="${drop.Index}" MinLevel="${drop.MinLevel}" MaxLevel="${drop.MaxLevel}" Durability="${drop.Durability}" Skill="${drop.Skill}" Luck="${drop.Luck}" Option="${drop.Option}" Exc="${drop.Exc}" Element="${drop.Element}" SocketCount="${drop.SocketCount}" Duration="${drop.Duration}" Rate="${drop.Rate}" />\n`;
             }
             
             xml += '</MonsterMapItemDrop>';
             return xml;
         }
         
-        /**
-         * @description Saves the changes for the current file to the server.
-         */
-        async function saveChangesToServer() { 
+        // --- NEW Tooltip Functions ---
+
+        const tooltipEl = document.getElementById('itemTooltip');
+
+        function showTooltip(event, cat, index) {
+            const item = (itemList[cat] && itemList[cat][index]);
+            if (!item || !tooltipEl) return;
+
+            tooltipEl.innerHTML = buildTooltipHtml(item);
+            tooltipEl.style.display = 'block';
+
+            // Position the tooltip
+            let x = event.pageX + 15;
+            let y = event.pageY + 15;
+
+            // Prevent tooltip from going off-screen
+            if (x + tooltipEl.offsetWidth > window.innerWidth) {
+                x = event.pageX - tooltipEl.offsetWidth - 15;
+            }
+            if (y + tooltipEl.offsetHeight > window.innerHeight) {
+                y = event.pageY - tooltipEl.offsetHeight - 15;
+            }
+
+            tooltipEl.style.left = `${x}px`;
+            tooltipEl.style.top = `${y}px`;
+        }
+
+        function hideTooltip() {
+            if (tooltipEl) {
+                tooltipEl.style.display = 'none';
+            }
+        }
+
+        function buildTooltipHtml(item) {
+            let html = `<h3>${item.Name}</h3>`;
+
+            const addStat = (label, value) => {
+                const numValue = parseInt(value, 10);
+                if (value !== undefined && value !== "0" && value !== "-1" && numValue > 0) {
+                    return `<div class="stat"><strong>${label}:</strong> <span>${value}</span></div>`;
+                }
+                return '';
+            };
+
+            // --- Primary Stats (Weapons/Armor) ---
+            let primaryStats = '';
+            primaryStats += addStat("Min Dmg", item.MinDamage);
+            primaryStats += addStat("Max Dmg", item.MaxDamage);
+            primaryStats += addStat("Atk Speed", item.AttackSpeed);
+            primaryStats += addStat("Defense", item.Defense);
+            primaryStats += addStat("Magic Def", item.MagicDefense);
+            primaryStats += addStat("Durability", item.Durability);
+
+            if (primaryStats) {
+                html += `<div class="stats-grid">${primaryStats}</div>`;
+            }
+
+            // --- Requirements ---
+            let reqStats = '';
+            reqStats += addStat("Req Level", item.ReqLevel);
+            reqStats += addStat("Req Str", item.ReqStrength);
+            reqStats += addStat("Req Agi", item.ReqAgility);
+            reqStats += addStat("Req Ene", item.ReqEnergy);
+            reqStats += addStat("Req Vit", item.ReqVitality);
+            reqStats += addStat("Req Cmd", item.ReqCommand);
+
+            if (reqStats) {
+                html += '<hr class="stat-divider">';
+                html += `<div class="stats-grid reqs">${reqStats}</div>`;
+            }
+
+            // --- Class List ---
+            const classes = [
+                { key: 'DarkWizard', name: 'DW/SM/GM' },
+                { key: 'DarkKnight', name: 'DK/BK/BM' },
+                { key: 'FairyElf', name: 'Elf/ME/HE' },
+                { key: 'MagicGladiator', name: 'MG/DM' },
+                { key: 'DarkLord', name: 'DL/LE' },
+                { key: 'Summoner', name: 'Sum/BS/DiM' },
+                { key: 'RageFighter', name: 'RF/FM' },
+                { key: 'GrowLancer', name: 'GL/ML' },
+                { key: 'RuneWizard', name: 'RW/RM' },
+                { key: 'Slayer', name: 'Slayer/RS' },
+                { key: 'GunCrusher', name: 'GC/MaG' },
+                { key: 'LightWizard', name: 'LW/LM' },
+                { key: 'LemuriaMage', name: 'Lemuria' },
+                { key: 'IllusionKnight', name: 'IK' },
+                { key: 'Alchemist', name: 'Alchemist' }
+            ];
+
+            const usableClasses = classes
+                .filter(c => item[c.key] === "1")
+                .map(c => c.name);
+
+            if (usableClasses.length > 0 && usableClasses.length < classes.length) { // Only show if not all classes
+                html += '<hr class="stat-divider">';
+                html += `<div class="class-list"><strong>Classes:</strong> <span>${usableClasses.join(', ')}</span></div>`;
+            }
+
+            return html;
+        }
+        
+        // --- End NEW Tooltip Functions ---
+        
+        function buildXmlFromData() {
+            let xml = originalXMLHeaders[currentFile] || '<?xml version="1.0" encoding="utf-8"?>\n';
+            xml += '<MonsterMapItemDrop>\n';
+            
+            for (const drop of currentDropData) {
+                const catNum = parseInt(drop.Cat, 10);
+                const indexNum = parseInt(drop.Index, 10);
+                
+                // --- MODIFIED ---
+                const item = (itemList[catNum] && itemList[catNum][indexNum]);
+                const itemName = item ? item.Name : (drop.originalName || 'Unknown Item');
+                // --- END MODIFIED ---
+                
+                xml += `  <!-- ${itemName} -->\n`;
+                xml += `  <DropItem MonsterID="${drop.MonsterID}" MonsterElement="${drop.MonsterElement}" PlayerMinReset="${drop.PlayerMinReset}" PlayerMaxReset="${drop.PlayerMaxReset}" PlayerMinLevel="${drop.PlayerMinLevel}" PlayerMaxLevel="${drop.PlayerMaxLevel}" Cat="${drop.Cat}" Index="${drop.Index}" MinLevel="${drop.MinLevel}" MaxLevel="${drop.MaxLevel}" Durability="${drop.Durability}" Skill="${drop.Skill}" Luck="${drop.Luck}" Option="${drop.Option}" Exc="${drop.Exc}" Element="${drop.Element}" SocketCount="${drop.SocketCount}" Duration="${drop.Duration}" Rate="${drop.Rate}" />\n`;
+            }
+            
+            xml += '</MonsterMapItemDrop>';
+            return xml;
+        }
+        
+        async function saveChangesToServer() { 
             if (!currentFile) {
                 showStatus('No file selected to save.', true);
                 return;
             }
             
-            const saveButton = document.querySelector('.btn-success'); 
-            saveButton.disabled = true; 
-            saveButton.innerHTML = `<i data-lucide="loader-2" class="spin"></i> Saving...`; 
-            lucide.createIcons(); 
+            const saveButton = document.querySelector('.btn-success'); 
+            saveButton.disabled = true; 
+            saveButton.innerHTML = `<i data-lucide="loader-2" class="spin"></i> Saving...`; 
+            lucide.createIcons(); 
             document.querySelectorAll('.spin').forEach(el => el.animate([{ transform: 'rotate(0deg)' }, { transform: 'rotate(360deg)' }], { duration: 1000, iterations: Infinity }));
             
             const newXmlContent = buildXmlFromData();
             
-            try { 
-                const response = await fetch(`${SERVER_URL}/api/save-map-drop-file`, { 
-                    method: 'POST', 
-                    headers: { 'Content-Type': 'application/json' }, 
-                    body: JSON.stringify({ 
+            try { 
+                const response = await fetch(`${SERVER_URL}/api/save-map-drop-file`, { 
+                    method: 'POST', 
+                    headers: { 'Content-Type': 'application/json' }, 
+                    body: JSON.stringify({ 
                         filename: currentFile,
-                        newXmlContent: newXmlContent 
-                    }), 
-                }); 
+                        newXmlContent: newXmlContent 
+                    }), 
+                }); 
                 if (!response.ok) {
                     const errorText = await response.text();
                     console.error('Server error on save:', errorText);
@@ -1730,28 +2097,24 @@
                 
                 showStatus(`✓ ${currentFile} saved successfully to the server!`, false);
                 
-                // Reload data for this file to clear 'new'/'modified' status
-                
-                // --- Update cache and re-parse ---
                 fileContentCache[currentFile] = newXmlContent;
-                currentDropData = parseMapDropXML(newXmlContent); // Re-parse
-                currentVisibleRows = ROWS_PER_PAGE; // Reset pagination
+                currentDropData = parseMapDropXML(newXmlContent); 
+                currentVisibleRows = ROWS_PER_PAGE; 
                 
-                // After successful save, reset history since the file is now in its saved state
                 history = [];
                 historyIndex = -1;
                 updateHistory(currentDropData);
 
-                renderEditorPanel(); // Re-render
+                renderEditorPanel(); 
                 
-            } catch (error) { 
-                console.error('Failed to save changes:', error); 
-                showStatus(`✗ Error: Could not save ${currentFile}. ${error.message}`, true); 
-            } finally { 
-                saveButton.disabled = false; 
-                saveButton.innerHTML = `<i data-lucide="save"></i> Save Changes`; 
-                lucide.createIcons(); 
-            } 
+            } catch (error) { 
+                console.error('Failed to save changes:', error); 
+                showStatus(`✗ Error: Could not save ${currentFile}. ${error.message}`, true); 
+            } finally { 
+                saveButton.disabled = false; 
+                saveButton.innerHTML = `<i data-lucide="save"></i> Save Changes`; 
+                lucide.createIcons(); 
+            } 
         }
     </script>
 </body>

@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard</title>
+
+    <!-- Fonts and Icons (from existing editor) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@500&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+
+    <div class="container glass-effect">
+        <!-- Main Dashboard Header -->
+        <header class="header">
+            <h1><i data-lucide="server"></i>Game Administrator Dashboard<i data-lucide="shield-check"></i></h1>
+            <p>Select a module to begin managing server data</p>
+            <div style="position: absolute; top: 20px; right: 20px;">
+                <a href="index.html" class="btn btn-outline">
+                    <i data-lucide="arrow-left"></i> Back to Server Control
+                </a>
+            </div>
+        </header>
+
+        <!-- Grid of Tool Modules -->
+        <main class="module-grid">
+
+            <!-- 1. Monster Spawn Editor -->
+            <a href="monsterspawneditor.html" class="module-card glass-effect">
+                <div class="module-card-icon">
+                    <i data-lucide="siren"></i>
+                </div>
+                <h2>Monster Spawn Editor</h2>
+                <p>Data-centric interface for managing all monster spawn points across every map. Supports inline editing, undo, and multi-user merging.</p>
+                <div class="module-card-footer">
+                    <span>Launch Editor <i data-lucide="arrow-right"></i></span>
+                </div>
+            </a>
+            
+            <!-- 2. Shop Manager -->
+            <a href="shopeditor.html" class="module-card glass-effect">
+                <div class="module-card-icon">
+                    <i data-lucide="store"></i>
+                </div>
+                <h2>Shop Manager</h2>
+                <p>Configure NPC shop inventories, item prices, and stock levels. Visually add/remove items from shop tabs.</p>
+                <div class="module-card-footer">
+                    <span>Launch Editor <i data-lucide="arrow-right"></i></span>
+                </div>
+            </a>
+            
+            <!-- 3. Monster Drop Editor -->
+            <a href="monsterdropeditor.html" class="module-card glass-effect">
+                <div class="module-card-icon">
+                    <i data-lucide="package"></i>
+                </div>
+                <h2>Monster Drop Editor</h2>
+                <p>Manage item drops from <code>EachMonsterMapDrop</code> files. Edit drops for each map bag individually.</p>
+                <div class="module-card-footer">
+                    <span>Launch Editor <i data-lucide="arrow-right"></i></span>
+                </div>
+            </a>
+
+            <!-- WARNING SECTION -->
+            <div style="grid-column: 1 / -1; margin: 30px 0 10px 0; padding: 15px; background: rgba(255, 193, 7, 0.1); border: 1px solid var(--accent-amber); border-radius: 8px; text-align: center;">
+                <h3 style="color: var(--accent-amber); display: flex; align-items: center; justify-content: center; gap: 10px;">
+                    <i data-lucide="alert-triangle"></i> Experimental Modules <i data-lucide="alert-triangle"></i>
+                </h3>
+                <p style="color: var(--text-secondary); margin-top: 5px;">
+                    Warning: The modules below are currently in development. Use at your own risk as they have not been fully tested.
+                </p>
+            </div>
+
+            <!-- Zen & Drop Editor (Experimental) -->
+            <a href="zendropeditor.html" class="module-card glass-effect" style="opacity: 0.8; border-color: rgba(255, 193, 7, 0.3);">
+                <div class="module-card-icon">
+                    <i data-lucide="droplets"></i>
+                </div>
+                <h2>Drop Rate Editor</h2>
+                <p>Manage server-wide Zen drop rates per map and configure Excellent Option drop rates for items and wings.</p>
+                <div class="module-card-footer">
+                    <span>Launch Editor <i data-lucide="arrow-right"></i></span>
+                </div>
+            </a>
+            
+            <!-- Chaos Mix Editor (Experimental) -->
+            <a href="mixeditor.html" class="module-card glass-effect" style="opacity: 0.8; border-color: rgba(255, 193, 7, 0.3);">
+                <div class="module-card-icon">
+                    <i data-lucide="flask-conical"></i>
+                </div>
+                <h2>Chaos Mix Editor</h2>
+                <p>Manage all Chaos Machine recipes, from item upgrades and jewel packing to mastery items and lucky tickets.</p>
+                <div class="module-card-footer">
+                    <span>Launch Editor <i data-lucide="arrow-right"></i></span>
+                </div>
+            </a>
+
+            <!-- Event Scheduler (Experimental) -->
+            <a href="eventscheduler.html" class="module-card glass-effect" style="opacity: 0.8; border-color: rgba(255, 193, 7, 0.3);">
+                <div class="module-card-icon">
+                    <i data-lucide="calendar-clock"></i>
+                </div>
+                <h2>Event Scheduler</h2>
+                <p>Visually schedule invasions, blood castle, devil square, and other server events. Set times and monster configurations.</p>
+                <div class="module-card-footer">
+                    <span>Launch Editor <i data-lucide="arrow-right"></i></span>
+                </div>
+            </a>
+
+
+
+        </main>
+    </div>
+
+    <!-- Log Viewer Modal -->
+    <div class="modal" id="logModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 2000; align-items: center; justify-content: center;">
+        <div class="glass-effect" style="width: 80%; max-width: 1000px; height: 80vh; display: flex; flex-direction: column; padding: 20px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                <h2 style="color: #fff;"><i data-lucide="terminal"></i> Server Logs</h2>
+                <button class="btn btn-outline" onclick="closeLogs()"><i data-lucide="x"></i></button>
+            </div>
+            <pre id="logContent" style="flex-grow: 1; background: #000; color: #0f0; padding: 15px; overflow-y: auto; font-family: 'Fira Code', monospace; font-size: 13px; border-radius: 6px;"></pre>
+            <div style="margin-top: 15px; text-align: right;">
+                <button class="btn btn-primary" onclick="fetchLogs()"><i data-lucide="refresh-cw"></i> Refresh</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        /**
+         * @file Renders all Lucide icons on the page after the DOM is fully loaded.
+         */
+        document.addEventListener('DOMContentLoaded', () => {
+            lucide.createIcons();
+        });
+
+        // --- System Controls ---
+        async function shutdownServer() {
+            if (!confirm('Are you sure you want to shut down the server? The editor will stop working until you manually start it again.')) return;
+            
+            const btn = document.querySelector('button[onclick="shutdownServer()"]');
+            btn.disabled = true;
+            btn.textContent = 'Stopping...';
+            
+            try {
+                await fetch('/api/shutdown', { method: 'POST' });
+                alert('Server is shutting down. You can close this tab.');
+                document.body.innerHTML = '<div style="color:white;text-align:center;padding:50px;"><h1>Server Stopped</h1><p>Please check the server console window to start it again.</p></div>';
+            } catch (err) {
+                alert('Error shutting down: ' + err);
+                btn.disabled = false;
+                btn.textContent = 'Shutdown';
+            }
+        }
+
+        async function restartServer() {
+            if (!confirm('Are you sure you want to restart the server? All unsaved work in editors might be lost if not saved locally.')) return;
+            
+            try {
+                // Change button state
+                const btn = event.target.closest('button');
+                const originalText = btn.innerHTML;
+                btn.disabled = true;
+                btn.innerHTML = '<i data-lucide="loader"></i> Restarting...';
+                lucide.createIcons();
+
+                await fetch('/api/restart', { method: 'POST' });
+                
+                // Wait for restart
+                setTimeout(() => {
+                    location.reload();
+                }, 5000);
+            } catch (e) {
+                alert('Error restarting: ' + e.message);
+            }
+        }
+
+        function showLogs() {
+            document.getElementById('logModal').style.display = 'flex';
+            fetchLogs();
+        }
+
+        function closeLogs() {
+            document.getElementById('logModal').style.display = 'none';
+        }
+
+        async function fetchLogs() {
+            const container = document.getElementById('logContent');
+            container.textContent = 'Loading logs...';
+            try {
+                const res = await fetch('/api/logs');
+                const text = await res.text();
+                container.textContent = text || 'No logs found.';
+                // Scroll to bottom
+                container.scrollTop = container.scrollHeight;
+            } catch (e) {
+                container.textContent = 'Failed to load logs: ' + e.message;
+            }
+        }
+    </script>
+</body>
+</html>

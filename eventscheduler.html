@@ -3,44 +3,1902 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Event Scheduler</title>
+    <title>Server Event Manager</title>
 
-    <!-- Fonts and Icons -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@500&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
-    <script src="https://unpkg.com/lucide@latest"></script>
-    <link rel="stylesheet" href="css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@500;700&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
 
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <style>
+        :root {
+            --bg-dark: #0a0f1e;
+            --bg-glass: rgba(26, 34, 63, 0.6);
+            --text-primary: #e0e0e0;
+            --text-secondary: #a0a0c0;
+            --text-bright: #ffffff;
+            --font-ui: 'Inter', sans-serif;
+            --font-data: 'Fira Code', monospace;
+            
+            --accent-blue: #00aaff;
+            --accent-green: #00ff9b;
+            --accent-amber: #ffc107;
+            --accent-pink: #ff0055;
+            --accent-purple: #6f42c1;
+            --border-color: rgba(0, 170, 255, 0.15);
+            --darker-bg: rgba(0, 0, 0, 0.3);
+            --input-bg: #1c233c;
+        }
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: var(--font-ui);
+            background: linear-gradient(135deg, #1a223f 0%, var(--bg-dark) 100%);
+            color: var(--text-primary);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 98%; 
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            height: 95vh;
+        }
+
+        .glass-effect {
+            background: var(--bg-glass);
+            -webkit-backdrop-filter: blur(10px);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(0, 170, 255, 0.2);
+            border-radius: 12px;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+        }
+        
+        .header { padding: 20px; text-align: center; position: relative; flex-shrink: 0; }
+        .header h1 { font-size: 24px; color: var(--text-bright); display: flex; align-items: center; justify-content: center; gap: 10px; }
+        .header-controls { 
+            position: absolute; top: 20px; right: 20px; 
+            display: flex; gap: 10px; 
+            background: rgba(0,0,0,0.1);
+            padding: 5px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+        
+        .main-content { display: grid; grid-template-columns: 280px 1fr; gap: 20px; flex-grow: 1; overflow: hidden; }
+        
+        .sidebar { padding: 20px; display: flex; flex-direction: column; gap: 5px; overflow-y: auto; }
+        .sidebar h3 { color: var(--text-secondary); font-size: 12px; text-transform: uppercase; letter-spacing: 1px; margin: 10px 0; border-bottom: 1px solid rgba(255, 255, 255, 0.05); padding-bottom: 5px; }
+        .file-btn {
+            background: transparent; border: none; color: var(--text-secondary);
+            padding: 12px; text-align: left; cursor: pointer; border-radius: 6px;
+            transition: all 0.2s; font-family: var(--font-ui); font-weight: 600;
+            display: flex; align-items: center; gap: 10px;
+            line-height: 1.2;
+            height: auto; 
+        }
+        .file-btn p { font-size: 12px; color: var(--text-secondary); font-weight: 400; margin-top: 2px; }
+        .file-btn:hover { background: rgba(0, 170, 255, 0.1); color: var(--text-bright); }
+        .file-btn.active { background: var(--accent-blue); color: var(--bg-dark); }
+        .file-btn.active p { color: var(--bg-dark); }
+        .file-btn.active i { color: var(--bg-dark); }
+
+        .editor-panel { padding: 25px; overflow-y: auto; display: flex; flex-direction: column; gap: 20px; }
+        .panel-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-shrink: 0; }
+        .panel-title { font-size: 20px; color: var(--text-bright); font-family: var(--font-data); }
+        
+        table { 
+            width: 100%; 
+            border-collapse: separate;
+            border-spacing: 0 5px;
+            min-width: 800px; 
+            margin-top: 10px; 
+        }
+        th { 
+            background: rgba(0, 170, 255, 0.1); 
+            color: var(--text-bright); 
+            padding: 12px; 
+            text-align: left; 
+            font-weight: 600; 
+            position: sticky; top: 0; z-index: 10; 
+            border-radius: 4px 4px 0 0;
+            font-size: 14px;
+        }
+        td { 
+            padding: 8px 12px; 
+            border: 1px solid var(--border-color); 
+            background: rgba(0,0,0,0.15);
+            vertical-align: middle; 
+            font-size: 14px;
+            border-radius: 4px;
+        }
+        tr:hover td { background: rgba(0, 170, 255, 0.05); }
+        
+        .inline-input { 
+            width: 100%; padding: 7px;
+            background: var(--input-bg);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary); border-radius: 4px; 
+            font-family: var(--font-data); 
+            height: 32px;
+            min-width: 0; 
+            font-size: 14px;
+        }
+        .inline-input:focus { border-color: var(--accent-blue); outline: none; background: var(--bg-dark); }
+        
+        .coord-group-cell {
+            padding-top: 5px; 
+            padding-bottom: 5px;
+        }
+        .coord-group-cell .coord-inputs {
+            display: flex;
+            gap: 3px;
+            align-items: center;
+            height: 100%; 
+        }
+
+        .search-select-container {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            padding: 2px 0;
+        }
+        .search-input {
+            width: 100%;
+            height: 32px;
+            padding: 7px;
+            font-family: var(--font-ui);
+            background: var(--input-bg);
+            border: 1px solid var(--border-color); 
+            color: var(--text-primary); 
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        .search-input:focus { border-color: var(--accent-blue); outline: none; background: var(--bg-dark); }
+        .id-hint {
+            font-size: 11px;
+            color: var(--accent-amber);
+            text-align: right;
+            line-height: 1;
+        }
+
+        .master-selector-container {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-bottom: 15px;
+            padding: 15px;
+            border-radius: 8px;
+            background: rgba(0,0,0,0.3);
+        }
+        
+        .master-selector-controls {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        
+        .master-selector-controls label { 
+            font-size: 15px;
+            color: var(--text-bright); 
+            white-space: nowrap;
+        }
+        
+        .master-selector-controls select { 
+            background: var(--bg-dark); 
+            color: var(--text-bright); 
+            border: 1px solid var(--accent-blue); 
+            padding: 8px; 
+            border-radius: 4px; 
+            min-width: 200px; 
+            font-family: var(--font-data); 
+            height: 36px;
+        }
+        
+        .filter-input { 
+            flex-grow: 1; 
+            min-width: 250px;
+            height: 36px;
+            padding: 8px;
+            background: var(--bg-dark);
+            border: 1px solid rgba(0,170,255,0.3);
+            color: var(--text-bright);
+            border-radius: 4px;
+            font-family: var(--font-ui);
+        }
+        .filter-input:focus { border-color: var(--accent-green); outline: none; }
+        
+        /* INI Specific Styles */
+        .ini-section { 
+            margin-bottom: 30px; 
+            border: 1px solid rgba(0, 170, 255, 0.2); 
+            border-radius: 8px; 
+            background: rgba(26, 34, 63, 0.3); 
+        }
+        .ini-header { 
+            color: var(--text-bright); 
+            background: var(--darker-bg);
+            font-family: var(--font-data); 
+            font-weight: bold; 
+            margin-bottom: 0;
+            border-bottom: 1px solid rgba(255,255,255,0.1); 
+            padding: 10px 15px;
+            border-radius: 8px 8px 0 0;
+            font-size: 16px;
+        }
+        .ini-grid { 
+            padding: 15px;
+            display: grid; 
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); 
+            gap: 15px; 
+        }
+        .ini-group { 
+            display: flex; flex-direction: column; gap: 5px; 
+            padding: 10px;
+            border: 1px solid var(--border-color);
+            background: rgba(0,0,0,0.15);
+            border-radius: 6px;
+        }
+        .ini-label { 
+            font-size: 14px;
+            color: var(--accent-blue);
+        }
+        
+        .btn { padding: 8px 16px; border-radius: 6px; border: none; cursor: pointer; font-weight: 600; display: inline-flex; align-items: center; gap: 8px; transition: 0.2s; height: 36px; }
+        .btn-sm { padding: 4px 12px; height: 30px; }
+        .btn-primary { background: var(--accent-blue); color: var(--bg-dark); }
+        .btn-primary:hover { background: #fff; }
+        .btn-success { background: var(--accent-green); color: var(--bg-dark); }
+        .btn-success:hover { background: #fff; }
+        .btn-danger { background: var(--accent-pink); color: #fff; }
+        .btn-danger:hover { background: var(--accent-pink); filter: brightness(1.2); }
+        .btn-outline { 
+            background: transparent; 
+            border: 1px solid rgba(0,170,255,0.5); 
+            color: var(--accent-blue);
+            box-shadow: none;
+        }
+        .btn-outline:hover { background: rgba(0,170,255,0.1); }
+        .btn-outline:disabled { opacity: 0.5; cursor: not-allowed; border-color: rgba(255,255,255,0.1); color: var(--text-secondary); }
+        .btn-icon { padding: 6px; margin-left: 5px; }
+
+        .group-container {
+            border: 1px solid rgba(255, 193, 7, 0.3);
+            border-radius: 8px;
+            padding: 15px;
+            background: rgba(255, 193, 7, 0.05);
+            margin-bottom: 15px;
+        }
+        .group-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            padding-bottom: 5px;
+            border-bottom: 1px dashed rgba(255, 193, 7, 0.3);
+        }
+        .group-title {
+            color: var(--accent-amber);
+            font-size: 16px;
+            font-weight: 600;
+        }
+        .group-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 10px;
+        }
+        .group-coord-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 5px;
+        }
+
+        .invasion-tabs {
+            display: flex;
+            border-bottom: 1px solid rgba(0, 170, 255, 0.2);
+            margin-bottom: 20px;
+            flex-shrink: 0;
+        }
+        .invasion-tab-btn {
+            background: transparent;
+            border: none;
+            padding: 10px 15px;
+            cursor: pointer;
+            color: var(--text-secondary);
+            font-weight: 600;
+            border-radius: 4px 4px 0 0;
+            transition: color 0.2s;
+        }
+        .invasion-tab-btn.active {
+            color: var(--accent-green);
+            border-bottom: 2px solid var(--accent-green);
+        }
+        
+        .quick-edit-grid {
+            display: grid;
+            grid-template-columns: 1fr 1.5fr;
+            gap: 20px;
+        }
+        @media (max-width: 1200px) {
+            .quick-edit-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .status-bar { position: fixed; bottom: 20px; right: 20px; padding: 15px 25px; border-radius: 8px; display: none; z-index: 1000; animation: slideIn 0.3s ease; }
+        .status-success { background: rgba(0, 255, 155, 0.2); border: 1px solid var(--accent-green); color: var(--accent-green); }
+        .status-error { background: rgba(255, 0, 85, 0.2); border: 1px solid var(--accent-pink); color: var(--accent-pink); }
+        .status-warning { background: rgba(255, 193, 7, 0.2); border: 1px solid var(--accent-amber); color: var(--accent-amber); } 
+
+        @keyframes slideIn { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+        .spin { animation: spin 2s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        
+        .modal {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background-color: rgba(0, 0, 0, 0.8); display: none; justify-content: center; align-items: center; z-index: 10000;
+        }
+        .modal-content {
+            background: var(--bg-dark); border: 1px solid var(--accent-blue); padding: 30px; 
+            border-radius: 12px; width: 90%; max-width: 700px; max-height: 80vh; overflow-y: auto;
+            position: relative;
+        }
+        .modal-close {
+            position: absolute; top: 10px; right: 10px; background: none; border: none; 
+            color: var(--text-secondary); font-size: 24px; cursor: pointer; transition: 0.2s;
+        }
+        .modal-close:hover { color: var(--accent-pink); }
+        .modal h2 { color: var(--accent-green); margin-bottom: 20px; border-bottom: 1px solid rgba(0, 255, 155, 0.2); padding-bottom: 10px; }
+        .modal h4 { color: var(--accent-blue); margin-top: 15px; margin-bottom: 5px; }
+        .modal p, .modal li { line-height: 1.6; color: var(--text-primary); font-size: 14px; }
+        .modal code { background: rgba(0,0,0,0.5); padding: 2px 4px; border-radius: 3px; font-family: var(--font-data); color: var(--accent-amber); }
+
+    </style>
 </head>
 <body>
 
     <div class="container glass-effect">
-        <!-- Main Dashboard Header -->
-        <header class="header">
-            <h1><i data-lucide="calendar-clock"></i>Event Scheduler Manager</h1>
-            <p>Visually schedule invasions, blood castle, devil square, and other server events.</p>
-        </header>
+        <div class="header">
+            <h1><i data-lucide="calendar-clock"></i> Server Event Manager</h1>
+            <div class="header-controls">
+                <button class="btn btn-outline" onclick="undo()" id="undoButton" disabled title="Undo Last Change"><i data-lucide="undo-2"></i> Undo</button>
+                <button class="btn btn-outline" onclick="redo()" id="redoButton" disabled title="Redo Last Change"><i data-lucide="redo-2"></i> Redo</button>
+                
+                <div style="border-left: 1px solid rgba(255,255,255,0.1); margin: 0 5px;"></div>
+                
+                <button class="btn btn-outline" onclick="openGuideModal()"><i data-lucide="book-open"></i> Guide</button>
+                <a href="dashboard.html" class="btn btn-outline"><i data-lucide="layout-dashboard"></i> Dashboard</a>
+                <button class="btn btn-success" onclick="saveCurrentFile()" id="saveButton"><i data-lucide="save"></i> Save Changes</button>
+            </div>
+        </div>
 
-        <!-- Event Scheduler UI -->
         <div class="main-content">
-            <div class="glass-effect" style="padding: 20px;">
-                <h2>Event Configuration</h2>
-                <p>Use this section to configure the server events.</p>
-                <div id="event-list"></div>
-                <button id="save-events" class="btn btn-success" style="margin-top: 20px;">
-                    <i data-lucide="save"></i> Save Changes
+            <div class="sidebar glass-effect">
+                <h3>Core Event Files</h3>
+                <button class="file-btn active" onclick="switchFile('Event.ini')">
+                    <div style="text-align: left; display: flex; align-items: center; gap: 10px;">
+                        <i data-lucide="settings" style="width:18px;"></i>
+                        <div>
+                            Common Events (INI)
+                            <p>Toggle main events: Battle Soccer, Happy Hour, Castle Siege, etc.</p>
+                        </div>
+                    </div>
                 </button>
+                <button class="file-btn" onclick="switchFile('EventSeasonManager.xml')">
+                    <div style="text-align: left; display: flex; align-items: center; gap: 10px;">
+                        <i data-lucide="snowflake" style="width:18px;"></i> 
+                        <div>
+                            Seasons Manager
+                            <p>Configure seasonal events (Christmas, Halloween) start/end dates.</p>
+                        </div>
+                    </div>
+                </button>
+                <button class="file-btn" onclick="switchFile('InvasionManager')">
+                    <div style="text-align: left; display: flex; align-items: center; gap: 10px;">
+                        <i data-lucide="swords" style="width:18px;"></i> 
+                        <div>
+                            Invasion Management
+                            <p>Schedule times, set map regions, and define monster spawns.</p>
+                        </div>
+                    </div>
+                </button>
+
+                <h3 id="modularEventsHeader" style="display:none; margin-top: 15px;">Other Events</h3>
+                <div id="modularEventsList">
+                    <!-- Modular Events will be injected here -->
+                </div>
+            </div>
+
+            <div class="editor-panel glass-effect" id="editorContainer">
+                <div id="initialLoader" style="text-align:center; padding: 50px; color: var(--text-secondary);">
+                    <i data-lucide="loader-2" class="spin" style="width: 40px; height: 40px;"></i>
+                    <p>Loading configuration data...</p>
+                </div>
             </div>
         </div>
     </div>
 
-    <script src="js/eventscheduler.js"></script>
+    <div id="statusBar" class="status-bar"></div>
+
+    <div id="guideModal" class="modal" onclick="if(event.target.id === 'guideModal') closeGuideModal()">
+        <div class="modal-content">
+            <button class="modal-close" onclick="closeGuideModal()"><i data-lucide="x"></i></button>
+            <h2>Event Manager Guide & File Reference</h2>
+            
+            <p>This editor allows you to manage critical event configuration files. Files are split into **Core Event Files** (standard server files) and **Other Events** (modular event folders).</p>
+
+            <h4>Invasion Files: Working Together</h4>
+            <p>The **Invasion Management** section now combines the two configuration files that work together:</p>
+            <ul>
+                <li><strong>Scheduler (`InvasionManager.xml`):</strong> Controls **WHEN** and **WHERE** the event *starts* (schedule and map areas).</li>
+                <li><strong>Monster Spawns (`InvasionMonsters.xml`):</strong> Controls **WHO** shows up (Monster IDs, count, group, etc.).</li>
+            </ul>
+            <p style="margin-top: 10px;">**Rule:** Both files use the **Index** to link the schedule to the monster list. If you create a new Invasion, you must ensure both files have an entry for that **Index**.</p>
+            
+            <h4>File Reference</h4>
+            <ul>
+                <li><strong>Common Events (`Event.ini`):</strong> Simple on/off toggles and basic settings (like duration or points) for common events like **Happy Hour**, **Battle Soccer**, and **Nixies Lake**. This file uses INI format.</li>
+                <li><strong>Seasons Manager (`EventSeasonManager.xml`):</strong> Used for long-running, time-specific events like **Christmas** or **Halloween**, allowing you to set a fixed start and end date for seasonal changes.</li>
+            </ul>
+            
+            <h4>Modular Events (e.g., Chaos Castle)</h4>
+            <p>Modular events are stored in their own folders (e.g., <code>ChaosCastle/</code>) and often consist of two files: a main scheduler/settings file and a monster list file. These are grouped together for editing convenience.</p>
+        </div>
+    </div>
+
     <script>
-        // Render all icons on load
-        document.addEventListener('DOMContentLoaded', () => {
+        const SERVER_URL = '';
+        
+        const MAP_NAMES = {
+            0: 'Lorencia', 1: 'Dungeon', 2: 'Devias', 3: 'Noria', 4: 'Loren',
+            6: 'Arena', 7: 'Atlans', 8: 'Tarkan', 10: 'Icarus', 33: 'Aida',
+            34: 'Crywolf Fortress', 36: 'Kanturu Relics', 37: 'Silent Map (Vulcan)', 38: 'Karutan',
+            41: 'Acheron', 51: 'Debenter', 52: 'Tohp', 56: 'Arca War', 57: 'Arca War 2',
+            62: 'Aetla', 63: 'Nars', 80: 'Cubera Mine', 81: 'Uruk Mountain',
+            91: 'Ferea', 92: 'Nixies Lake', 95: 'Swamp of Darkness', 96: 'Kubera',
+            97: 'Debenter 2', 98: 'Kanturu', 99: 'Aida 2', 100: 'Tarkan 2',
+            101: 'Icarus 2', 102: 'Doppelganger', 103: 'Vulcan', 53: 'Chaos Castle'
+        };
+        const DAY_OF_WEEK = { '-1': 'Every Day', '0': 'Sunday', '1': 'Monday', '2': 'Tuesday', '3': 'Wednesday', '4': 'Thursday', '5': 'Friday', '6': 'Saturday' };
+        const CC_DAYS = { '1': 'Sunday', '2': 'Monday', '3': 'Tuesday', '4': 'Wednesday', '5': 'Thursday', '6': 'Friday', '7': 'Saturday', '-1': 'Every Day' };
+        const CC_MONSTER_DIRS = { '0': 'Central', '1': 'SW', '2': 'South', '3': 'SE', '4': 'East', '5': 'NE', '6': 'North', '7': 'NW', '8': 'West', '-1': 'Random' };
+
+
+        let rawData = {};
+        let parsedData = {
+            'Event.ini': [],
+            'EventSeasonManager.xml': [],
+            'InvasionManager.xml': [],
+            'InvasionMonsters.xml': []
+        };
+        let modularEventConfigs = {}; // Stores dynamically loaded modular event data, keyed by folder name
+
+        let dataLoaded = false;
+        let currentFile = 'Event.ini';
+        let monsterList = {};
+        let monsterNameMap = {};
+        let itemList = {};
+        let itemNameMap = {};
+        let mapNameMap = {};
+        
+        let selectedItemId = '0'; 
+        let filterText = ''; 
+        let filterTimeout = null;
+
+        let currentInvasionTab = 'quick';
+        let currentModularTab = 'settings'; // For Chaos Castle, etc.
+
+        let history = [];
+        let historyIndex = -1;
+        const MAX_HISTORY = 30;
+        
+        // --- ITEM FLAT ID CONSTANTS ---
+        const ITEM_FLAT_ID_DIVISOR = 512;
+        // --- END ITEM FLAT ID CONSTANTS ---
+
+
+        function updateHistoryButtons() {
+            document.getElementById('undoButton').disabled = historyIndex <= 0;
+            document.getElementById('redoButton').disabled = historyIndex >= history.length - 1;
+        }
+
+        function pushHistory() {
+            let filesToSave = [];
+            let isModular = false;
+            let modularFolder = '';
+
+            if (currentFile.includes('/')) {
+                isModular = true;
+                modularFolder = currentFile.split('/')[0];
+                const config = modularEventConfigs[modularFolder];
+                if (config) {
+                     filesToSave = Object.keys(config).map(k => `${modularFolder}/${k}`);
+                }
+            } else if (currentFile === 'InvasionManager') {
+                filesToSave = ['InvasionManager.xml', 'InvasionMonsters.xml'];
+            } else {
+                filesToSave = [currentFile];
+            }
+
+            if (historyIndex < history.length - 1) {
+                history.splice(historyIndex + 1);
+            }
+            
+            const stateToSave = {};
+            filesToSave.forEach(file => {
+                let dataToSave;
+                if (isModular) {
+                    const fileName = file.split('/')[1];
+                    const configEntry = modularEventConfigs[modularFolder][fileName];
+                    dataToSave = configEntry ? configEntry.data : undefined;
+                } else {
+                    dataToSave = parsedData[file];
+                }
+                
+                // --- FIX: Safely clone data only if it exists ---
+                if (dataToSave !== undefined) {
+                    stateToSave[file] = JSON.parse(JSON.stringify(dataToSave));
+                }
+                // --- END FIX ---
+            });
+            
+            history.push({ 
+                filename: currentFile,
+                data: stateToSave,
+                selectedItemId: selectedItemId,
+                currentInvasionTab: currentInvasionTab,
+                currentModularTab: currentModularTab
+            });
+            historyIndex++;
+
+            if (history.length > MAX_HISTORY) {
+                history.shift();
+                historyIndex--;
+            }
+            
+            updateHistoryButtons();
+        }
+
+        function applyHistoryState(state) {
+            if (!state || !state.data) return;
+            
+            for (const file in state.data) {
+                if (file.includes('/')) {
+                    const [folder, fileName] = file.split('/');
+                    if (modularEventConfigs[folder] && modularEventConfigs[folder][fileName]) {
+                        modularEventConfigs[folder][fileName].data = state.data[file];
+                    }
+                } else if (parsedData.hasOwnProperty(file)) {
+                    parsedData[file] = state.data[file];
+                }
+            }
+
+            selectedItemId = state.selectedItemId;
+            currentInvasionTab = state.currentInvasionTab || 'quick';
+            currentModularTab = state.currentModularTab || 'settings';
+            
+            switchFile(state.filename, false);
+        }
+
+        function undo() {
+            if (historyIndex > 0) {
+                historyIndex--;
+                applyHistoryState(history[historyIndex]);
+                updateHistoryButtons();
+            }
+        }
+
+        function redo() {
+            if (historyIndex < history.length - 1) {
+                historyIndex++;
+                applyHistoryState(history[historyIndex]);
+                updateHistoryButtons();
+            }
+        }
+        
+        function updateModel(callback) {
+            pushHistory();
+            callback();
+            renderEditor();
+        }
+
+        function updateFilter(value) {
+            filterText = value;
+            
+            if (filterTimeout) {
+                clearTimeout(filterTimeout);
+            }
+            const filterInput = document.querySelector('.filter-input');
+            const currentCaret = filterInput ? filterInput.selectionStart : 0;
+            
+            filterTimeout = setTimeout(() => {
+                renderEditor();
+                const newFilterInput = document.querySelector('.filter-input');
+                if (newFilterInput) {
+                    newFilterInput.focus();
+                    newFilterInput.setSelectionRange(currentCaret, currentCaret);
+                }
+            }, 300);
+        }
+        
+        function switchInvasionTab(tab) {
+            currentInvasionTab = tab;
+            renderEditor();
+        }
+        
+        function switchModularTab(tab) {
+            currentModularTab = tab;
+            renderEditor();
+        }
+
+        function openGuideModal() {
+            document.getElementById('guideModal').style.display = 'flex';
+        }
+
+        function closeGuideModal() {
+            document.getElementById('guideModal').style.display = 'none';
+        }
+
+        async function loadData() {
+            const loader = document.getElementById('initialLoader');
+            if (loader) loader.innerHTML = `<i data-lucide="loader-2" class="spin" style="width: 40px; height: 40px;"></i><p>Loading configuration data...</p>`;
+
+            try {
+                const res = await fetch(`${SERVER_URL}/api/event-data`);
+                if (!res.ok) throw new Error(`Server returned status ${res.status}: ${await res.text()}`);
+                
+                rawData = await res.json();
+                
+                parseMonsterList(rawData.monsterList);
+                parseItemList(rawData.itemList); // NEW: Parse ItemList for CC Rewards
+                
+                for (const [id, name] of Object.entries(MAP_NAMES)) {
+                    mapNameMap[name] = id;
+                }
+                
+                parsedData['Event.ini'] = parseINI(rawData.eventIni);
+                parsedData['EventSeasonManager.xml'] = parseSeasons(rawData.eventSeasonManager);
+                parsedData['InvasionManager.xml'] = parseInvasionManager(rawData.invasionManager);
+                parsedData['InvasionMonsters.xml'] = parseInvasionMonsters(rawData.invasionMonsters);
+                
+                // NEW: Handle Modular Events
+                await loadModularEvents(rawData.modularEvents);
+
+                dataLoaded = true;
+                
+                selectedItemId = parsedData['Event.ini'].length > 0 ? parsedData['Event.ini'][0].name : '0'; 
+                pushHistory(); 
+
+                renderSidebarModularEvents(rawData.modularEvents);
+                renderEditor();
+                if (loader) loader.style.display = 'none';
+
+            } catch (e) {
+                dataLoaded = false;
+                console.error("Data Load Error:", e);
+                const container = document.getElementById('editorContainer');
+                container.innerHTML = `
+                    <div style="padding: 50px; text-align: center; color: var(--accent-pink);">
+                        <i data-lucide="plug-zap" style="width: 48px; height: 48px; margin-bottom: 15px;"></i>
+                        <h2 style="color:var(--text-bright); margin-bottom: 10px;">Connection Failed</h2>
+                        <p>Could not connect to the backend server at <code>${SERVER_URL}</code>.</p>
+                        <p>Please ensure your **Node.js server is running** and accessible on port 3000 at this IP.</p>
+                        <p style="margin-top: 15px;">Error: ${e.message}</p>
+                    </div>
+                `;
+                lucide.createIcons();
+            }
+        }
+        
+        async function loadModularEvents(folders) {
+            for (const folder of folders) {
+                // Hardcode files for ChaosCastle for now. Extend this switch/map later for other events.
+                const files = [];
+                if (folder === 'ChaosCastle') {
+                    files.push('ChaosCastle.xml', 'ChaosCastle_Monster.xml');
+                } else {
+                    // Skip folders we don't know how to handle yet
+                    continue;
+                }
+
+                const config = { folder };
+                
+                for (const file of files) {
+                    try {
+                        const res = await fetch(`${SERVER_URL}/api/modular-event-file?folder=${folder}&filename=${file}`);
+                        if (!res.ok) throw new Error(`Failed to fetch ${file}`);
+                        const xmlText = await res.text();
+                        
+                        let parsedData;
+                        if (file === 'ChaosCastle.xml') {
+                            parsedData = parseChaosCastle(xmlText);
+                        } else if (file === 'ChaosCastle_Monster.xml') {
+                            parsedData = parseChaosCastleMonsters(xmlText);
+                        } else {
+                            parsedData = { raw: xmlText }; // Fallback
+                        }
+                        
+                        config[file] = { data: parsedData, rawXml: xmlText };
+
+                    } catch (e) {
+                         console.error(`Error loading modular file ${folder}/${file}:`, e);
+                         showStatus(`Error loading required modular file ${folder}/${file}.`, true);
+                    }
+                }
+
+                if (Object.keys(config).length > 1) { // Check if we successfully loaded data beyond just the folder name
+                    modularEventConfigs[folder] = config;
+                }
+            }
+        }
+        
+        function renderSidebarModularEvents(folders) {
+            const list = document.getElementById('modularEventsList');
+            const header = document.getElementById('modularEventsHeader');
+            list.innerHTML = '';
+            
+            const eventButtons = folders.map(folder => {
+                if (!modularEventConfigs[folder]) return ''; // Skip if failed to load
+                
+                let icon = 'swords';
+                let description = 'Modular event configuration.';
+
+                if (folder === 'ChaosCastle') {
+                    icon = 'chess-rook';
+                    description = 'Schedule, settings, and monster placements.';
+                }
+
+                return `
+                    <button class="file-btn" onclick="switchFile('${folder}/main')">
+                        <div style="text-align: left; display: flex; align-items: center; gap: 10px;">
+                            <i data-lucide="${icon}" style="width:18px;"></i>
+                            <div>
+                                ${folder}
+                                <p>${description}</p>
+                            </div>
+                        </div>
+                    </button>
+                `;
+            }).join('');
+
+            if (eventButtons.length > 0) {
+                 list.innerHTML = eventButtons;
+                 header.style.display = 'block';
+                 lucide.createIcons();
+            }
+        }
+
+
+        function parseMonsterList(xml) {
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(xml, 'text/xml');
+            Array.from(doc.getElementsByTagName('Monster')).forEach(m => {
+                const id = m.getAttribute('ID');
+                const name = m.getAttribute('Name');
+                monsterList[id] = name; 
+                monsterNameMap[name] = id; 
+            });
+        }
+        
+        function parseItemList(xml) {
+             const parser = new DOMParser();
+             const doc = parser.parseFromString(xml, 'text/xml');
+             
+             // Strategy 1: Try Standard Section-based structure (<Section Index="X"> ... <Item Index="Y">)
+             const sections = Array.from(doc.getElementsByTagName('Section'));
+             
+             if (sections.length > 0) {
+                sections.forEach(section => {
+                    const cat = section.getAttribute('Index');
+                    Array.from(section.getElementsByTagName('Item')).forEach(item => {
+                        const id = item.getAttribute('Index'); // Standard uses 'Index'
+                        const name = item.getAttribute('Name');
+                        
+                        if (cat !== null && id !== null && name) {
+                             // Ensure parsing matches integer keys used in map
+                             const fullId = `${parseInt(cat)},${parseInt(id)}`;
+                             itemList[fullId] = name;
+                             itemNameMap[name] = fullId;
+                        }
+                    });
+                });
+             } else {
+                 // Strategy 2: Fallback for flat structure or explicit attributes (<Item Cat="X" ID="Y"> or <Item Section="X" Index="Y">)
+                 Array.from(doc.getElementsByTagName('Item')).forEach(item => {
+                     let cat = item.getAttribute('Cat');
+                     let id = item.getAttribute('ID');
+                     
+                     // Try alternative attribute names if standard ones fail
+                     if (cat === null) cat = item.getAttribute('Section'); 
+                     if (id === null) id = item.getAttribute('Index');    
+
+                     const name = item.getAttribute('Name');
+                     
+                     if (cat !== null && id !== null && name) {
+                         const fullId = `${parseInt(cat)},${parseInt(id)}`;
+                         
+                         itemList[fullId] = name;
+                         itemNameMap[name] = fullId;
+                     }
+                 });
+             }
+        }
+
+        function renderSearchInput(type, initialId, parentIdx, mIdx, key) {
+            const isMonster = type === 'monster';
+            const isItem = type === 'item';
+            const sourceMap = isMonster ? monsterList : (isItem ? itemList : MAP_NAMES);
+            const reverseMap = isMonster ? monsterNameMap : (isItem ? itemNameMap : mapNameMap);
+
+            let fileKey = 'InvasionMonsters.xml'; // Default for invasion
+            let inputKey = isMonster ? 'ID' : (isItem ? 'RewardItemID' : 'WorldID');
+            let itemType = isItem ? 'item' : (isMonster ? 'monster' : 'map');
+            
+            const [folder, isModular] = currentFile.includes('/') ? currentFile.split('/') : [null, false];
+
+            // If modular, the parentIdx is actually the folder name, and mIdx is the internal array index
+            if (isModular) {
+                 fileKey = key.includes('Monster') ? 'ChaosCastle_Monster.xml' : 'ChaosCastle.xml';
+            }
+
+
+            const currentName = sourceMap[initialId] || `Unknown ID: ${initialId}`;
+            
+            const listId = `${itemType}-list-${parentIdx}-${mIdx}-${key}`;
+            const hiddenId = `${itemType}-${key}-${parentIdx}-${mIdx}`;
+            
+            const optionsHtml = Object.entries(sourceMap)
+                .map(([id, name]) => `<option value="${name}">`).join('');
+            
+            const changeHandler = `
+                updateModel(() => {
+                    const input = document.getElementById('${listId.replace('list-', 'input-')}');
+                    const hiddenInput = document.getElementById('${hiddenId}');
+                    if (!hiddenInput) return;
+
+                    // 1. Try to find by name first
+                    const newId = reverseMap[input.value];
+                    let finalId;
+                    
+                    if (newId !== undefined) {
+                        finalId = newId;
+                    } else if (input.value.trim() !== '') {
+                        // 2. If name fails, check if the raw input is a valid ID (flat or Cat,ID)
+                        const rawId = input.value.includes(',') ? input.value : parseInt(input.value);
+                        if (rawId && !isNaN(parseInt(rawId))) {
+                            finalId = rawId.toString();
+                        } else {
+                            // 3. Fallback to current stored value
+                            finalId = hiddenInput.value;
+                        }
+                    } else {
+                        // 4. Fallback to 0 if input is empty
+                        finalId = '0'; 
+                    }
+                    
+                    hiddenInput.value = finalId;
+                    
+                    // --- Dynamic Model Update ---
+                    let model;
+                    let targetIndex;
+
+                    if (isModular) {
+                        const config = modularEventConfigs['${folder}'];
+                        model = config['${fileKey}'].data;
+                        targetIndex = mIdx;
+                        
+                        if (fileKey.includes('Monster')) { // CC Monster
+                            model.castles[parentIdx].monsters[targetIndex][inputKey] = finalId;
+                        } else if (fileKey.includes('Castle')) { // CC Reward
+                            const groundIndex = parseInt(model.grounds[parentIdx].id);
+                            const ground = model.grounds.find(g => parseInt(g.id) === groundIndex);
+                            const reward = ground.rewards[mIdx];
+                            
+                            // Item ID is split into Category and ID for rewards
+                            const [cat, id] = finalId.split(',');
+                            if (cat && id) {
+                                // If the new ID is Cat,ID, update both properties
+                                reward['RewardItemCat'] = cat;
+                                reward['RewardItemID'] = id;
+                                reward.isFlatID = false; // Mark as explicit Cat,ID input
+                            } else {
+                                // If the new ID is a flat number (like 7450), store it as item ID and flag it
+                                reward['RewardItemID'] = finalId;
+                                reward['RewardItemCat'] = Math.floor(parseInt(finalId) / ITEM_FLAT_ID_DIVISOR).toString();
+                                reward.isFlatID = true; // Mark as flat ID input
+                            }
+                        }
+
+                    } else { // Invasion/Standard Update
+                        const monInvIdx = getMonsterInvasionIndex(parentIdx);
+                        if (monInvIdx !== -1) {
+                            parsedData[fileKey][monInvIdx].Monsters[mIdx][inputKey] = finalId;
+                        }
+                    }
+                    // --- End Dynamic Model Update ---
+
+                    const confirmedName = sourceMap[finalId] || \`Unknown ID: \${finalId}\`;
+                    input.value = confirmedName;
+                });
+            `.trim();
+
+
+            return `
+                <div class="search-select-container">
+                    <input type="hidden" id="${hiddenId}" value="${initialId}">
+                    <input list="${listId}" class="inline-input search-input" id="${listId.replace('list-', 'input-')}" value="${currentName}" placeholder="Search Name..."
+                           onchange="${changeHandler}" 
+                           onblur="${changeHandler}">
+                    
+                    <datalist id="${listId}">
+                        ${optionsHtml}
+                    </datalist>
+                    <span class="id-hint">ID: ${initialId}</span>
+                </div>
+            `;
+        }
+
+        // --- CORE PARSERS ---
+
+        function parseINI(text) {
+            const lines = text.split(/\r?\n/);
+            const sections = [];
+            let currentSection = null;
+
+            lines.forEach(line => {
+                line = line.trim();
+                if (!line || line.startsWith(';') || line.startsWith('//')) return;
+
+                if (line.startsWith('[') && line.endsWith(']')) {
+                    currentSection = { name: line.slice(1, -1), keys: [] };
+                    sections.push(currentSection);
+                } else if (currentSection && line.includes('=')) {
+                    const [key, ...valParts] = line.split('=');
+                    currentSection.keys.push({ key: key.trim(), value: valParts.join('=').trim() });
+                }
+            });
+            return sections;
+        }
+
+        function parseSeasons(xml) {
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(xml, 'text/xml');
+            if (doc.getElementsByTagName('parsererror').length > 0) {
+                 showStatus("XML Parsing Error in EventSeasonManager.xml. Check console.", true);
+                 return [];
+            }
+            return Array.from(doc.getElementsByTagName('Event')).map(el => ({
+                ID: el.getAttribute('ID'), Name: el.getAttribute('Name'), StartDate: el.getAttribute('StartDate'),
+                StartEnd: el.getAttribute('StartEnd'), Ocurrence: el.getAttribute('Ocurrence'), Duration: el.getAttribute('Duration'),
+                StartMessage: el.getAttribute('StartMessage') || '', EndMessage: el.getAttribute('EndMessage') || ''
+            }));
+        }
+
+        function parseInvasionManager(xml) {
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(xml, 'text/xml');
+            if (doc.getElementsByTagName('parsererror').length > 0) {
+                 showStatus("XML Parsing Error in InvasionManager.xml. Check console.", true);
+                 return [];
+            }
+            const invasions = [];
+            
+            // FIX: Only search for Invasion tags within InvasionStart for the scheduler part
+            const invasionStartNode = doc.getElementsByTagName('InvasionStart')[0];
+            if (!invasionStartNode) {
+                console.warn("InvasionManager.xml is missing the <InvasionStart> tag.");
+                return [];
+            }
+
+            Array.from(invasionStartNode.getElementsByTagName('Invasion')).forEach(inv => {
+                const invasion = { Index: inv.getAttribute('Index'), Name: inv.getAttribute('Name'), Starts: [], Groups: [] };
+                Array.from(inv.getElementsByTagName('Start')).forEach(s => {
+                    invasion.Starts.push({ Duration: s.getAttribute('Duration'), Hour: s.getAttribute('Hour'), Minute: s.getAttribute('Minute'), DayOfWeek: s.getAttribute('DayOfWeek') });
+                });
+                invasions.push(invasion);
+            });
+            
+            const invasionMap = new Map();
+            invasions.forEach(inv => invasionMap.set(inv.Index, inv));
+
+            // Populate Groups from InvasionGroup section
+            Array.from(doc.getElementsByTagName('InvasionGroup')[0]?.getElementsByTagName('Invasion') || []).forEach(inv => {
+                const index = inv.getAttribute('Index');
+                const target = invasionMap.get(index);
+                if (target) {
+                    Array.from(inv.getElementsByTagName('Data')).forEach(d => {
+                        target.Groups.push({ Group: d.getAttribute('Group'), Rate: d.getAttribute('Rate'), WorldID: d.getAttribute('WorldID'), GroupX1: d.getAttribute('GroupX1'), GroupY1: d.getAttribute('GroupY1'), GroupX2: d.getAttribute('GroupX2'), GroupY2: d.getAttribute('GroupY2') });
+                    });
+                }
+            });
+
+            return Array.from(invasionMap.values());
+        }
+
+        function parseInvasionMonsters(xml) {
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(xml, 'text/xml');
+            if (doc.getElementsByTagName('parsererror').length > 0) {
+                 showStatus("XML Parsing Error in InvasionMonsters.xml. Check console.", true);
+                 return [];
+            }
+            const data = [];
+            Array.from(doc.getElementsByTagName('Invasion')).forEach(inv => {
+                const entry = { Index: inv.getAttribute('Index'), Name: inv.getAttribute('Name'), Monsters: [] };
+                Array.from(inv.getElementsByTagName('Monster')).forEach(m => {
+                    entry.Monsters.push({
+                        ID: m.getAttribute('ID'), WorldID: m.getAttribute('WorldID'), StartX: m.getAttribute('StartX'), StartY: m.getAttribute('StartY'), EndX: m.getAttribute('EndX'), EndY: m.getAttribute('EndY'),
+                        Count: m.getAttribute('Count'), Boss: m.getAttribute('Boss'), Group: m.getAttribute('Group'), AttackPercent: m.getAttribute('AttackPercent')
+                    });
+                });
+                data.push(entry);
+            });
+            return data;
+        }
+
+        // --- MODULAR EVENT PARSERS ---
+
+        function parseChaosCastle(xml) {
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(xml, 'text/xml');
+            if (doc.getElementsByTagName('parsererror').length > 0) {
+                 showStatus("XML Parsing Error in ChaosCastle.xml. Check console.", true);
+                 return {};
+            }
+            
+            const cc = doc.getElementsByTagName('ChaosCastle')[0];
+            const settings = {
+                Enable: cc.getAttribute('Enable'),
+                MinPlayer: cc.getAttribute('MinPlayer'),
+                AllowDarkLordSpirit: cc.getAttribute('AllowDarkLordSpirit')
+            };
+
+            const time = doc.getElementsByTagName('Time')[0];
+            const timeSettings = time ? {
+                StartIn: time.getAttribute('StartIn'),
+                Duration: time.getAttribute('Duration'),
+                TownSpawn: time.getAttribute('TownSpawn')
+            } : {};
+            
+            const schedules = Array.from(doc.getElementsByTagName('Schedule')).map(s => {
+                 return {
+                     Year: s.getAttribute('Year'), Month: s.getAttribute('Month'), Day: s.getAttribute('Day'),
+                     DayOfWeek: s.getAttribute('DayOfWeek'), Hour: s.getAttribute('Hour'), Minute: s.getAttribute('Minute')
+                 };
+            });
+            
+            const grounds = Array.from(doc.getElementsByTagName('Ground')).map(g => {
+                const groundId = g.getAttribute('ID');
+                const rewards = Array.from(g.getElementsByTagName('Reward')).map(r => {
+                    let cat = r.getAttribute('RewardItemCat');
+                    let id = r.getAttribute('RewardItemID');
+                    let isFlatID = false;
+                    
+                    if (!cat || cat === '') {
+                        // If Cat is missing or empty, assume it's a flat ID and convert it
+                        const flatId = parseInt(id);
+                        if (!isNaN(flatId)) {
+                            cat = Math.floor(flatId / ITEM_FLAT_ID_DIVISOR).toString();
+                            id = (flatId % ITEM_FLAT_ID_DIVISOR).toString();
+                            isFlatID = true;
+                        } else {
+                            cat = '0';
+                            id = '0';
+                        }
+                    }
+
+                    return {
+                        ContributionMin: r.getAttribute('ContributionMin'), ContributionMax: r.getAttribute('ContributionMax'),
+                        RewardItemCat: cat, 
+                        RewardItemID: id, // This is now the actual Item Index
+                        Count: r.getAttribute('Count'),
+                        isFlatID: isFlatID, // Internal flag for saving correctly
+                        originalFlatID: isFlatID ? r.getAttribute('RewardItemID') : null // Store original flat ID if it existed
+                    };
+                });
+                return { id: groundId, rewards };
+            });
+
+            return { settings, time: timeSettings, schedules, grounds };
+        }
+
+        function parseChaosCastleMonsters(xml) {
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(xml, 'text/xml');
+            if (doc.getElementsByTagName('parsererror').length > 0) {
+                 showStatus("XML Parsing Error in ChaosCastle_Monster.xml. Check console.", true);
+                 return { castles: [] };
+            }
+
+            const castles = Array.from(doc.getElementsByTagName('Castle')).map(c => {
+                const level = c.getAttribute('Level');
+                const monsters = Array.from(c.getElementsByTagName('Monster')).map(m => ({
+                    Index: m.getAttribute('Index'), MapNumber: m.getAttribute('MapNumber'),
+                    Distance: m.getAttribute('Distance'), StartX: m.getAttribute('StartX'),
+                    StartY: m.getAttribute('StartY'), Dir: m.getAttribute('Dir')
+                }));
+                return { level, monsters };
+            });
+
+            return { castles };
+        }
+
+
+        // --- CORE RENDER/SAVE LOGIC ---
+
+        function switchFile(filename, pushToHistory = true) {
+            if (!dataLoaded) {
+                showStatus("Error: Data not loaded. Check server connection.", true);
+                return;
+            }
+            
+            // Check if switching away from modular event, and if so, push current state before switch
+            if (currentFile.includes('/') && pushToHistory) {
+                 pushHistory();
+            }
+
+            if (pushToHistory && currentFile !== filename) {
+                 filterText = '';
+                 selectedItemId = '0'; 
+            }
+
+            currentFile = filename;
+            
+            document.querySelectorAll('.file-btn').forEach(btn => {
+                btn.classList.remove('active');
+                if (btn.outerText.includes(filename.includes('/') ? filename.split('/')[0] : (filename.includes('.ini') ? 'Common' : (filename === 'InvasionManager' ? 'Invasion Management' : filename.split('.')[0])))) {
+                    btn.classList.add('active');
+                }
+            });
+            
+            renderEditor();
+            updateHistoryButtons(); 
+        }
+
+        function renderEditor() {
+            const container = document.getElementById('editorContainer');
+            container.innerHTML = '';
+            
+            if (!dataLoaded) {
+                 return;
+            }
+
+            const header = document.createElement('div');
+            header.className = 'panel-header';
+            header.innerHTML = `<div class="panel-title">${currentFile.includes('/') ? currentFile.split('/')[0] + ' Editor' : (currentFile === 'InvasionManager' ? 'Invasion Management' : currentFile)}</div>`;
+            container.appendChild(header);
+
+            if (currentFile === 'Event.ini') renderINI(container);
+            else if (currentFile === 'EventSeasonManager.xml') renderSeasonsTable(container);
+            else if (currentFile === 'InvasionManager') renderInvasionManager(container);
+            else if (currentFile.startsWith('ChaosCastle/')) renderChaosCastleEditor(container);
+            
+            const filterInput = document.querySelector('.filter-input');
+            if (filterInput) {
+                const tempValue = filterInput.value;
+                filterInput.value = ''; 
+                filterInput.focus();
+                filterInput.value = tempValue;
+            }
+
             lucide.createIcons();
-        });
+        }
+
+        // --- MODULAR RENDERERS ---
+
+        function renderChaosCastleEditor(container) {
+            const folder = currentFile.split('/')[0];
+            const config = modularEventConfigs[folder];
+
+            if (!config || !config['ChaosCastle.xml'] || !config['ChaosCastle_Monster.xml']) {
+                container.innerHTML = `<p style="color:var(--accent-pink);">Failed to load required files for ${folder}. Check server logs.</p>`;
+                return;
+            }
+            
+            const tabs = document.createElement('div');
+            tabs.className = 'invasion-tabs';
+            tabs.innerHTML = `
+                <button class="invasion-tab-btn ${currentModularTab === 'settings' ? 'active' : ''}" onclick="switchModularTab('settings')">General Settings & Rewards</button>
+                <button class="invasion-tab-btn ${currentModularTab === 'monsters' ? 'active' : ''}" onclick="switchModularTab('monsters')">Monster Spawns</button>
+            `;
+            container.appendChild(tabs);
+            
+            if (currentModularTab === 'settings') {
+                 renderCCSettingsAndRewards(container, folder);
+            } else {
+                 renderCCMonsterEditor(container, folder);
+            }
+
+            lucide.createIcons();
+        }
+        
+        function renderCCSettingsAndRewards(container, folder) {
+            const ccData = modularEventConfigs[folder]['ChaosCastle.xml'].data;
+            
+            // --- General Settings ---
+            container.innerHTML += `<h4 style="color:var(--accent-blue); margin: 20px 0 10px;">General Settings & Times</h4>`;
+            
+            const settingsContainer = document.createElement('div');
+            settingsContainer.className = 'ini-section';
+            settingsContainer.innerHTML = `<div class="ini-header">Core Configuration</div>`;
+            const settingsGrid = document.createElement('div');
+            settingsGrid.className = 'ini-grid';
+
+            Object.keys(ccData.settings).forEach(key => {
+                 settingsGrid.innerHTML += `
+                    <div class="ini-group">
+                        <label class="ini-label">${key}</label>
+                        <input type="text" class="inline-input" value="${ccData.settings[key]}" 
+                               onchange="updateModel(() => { modularEventConfigs['${folder}']['ChaosCastle.xml'].data.settings['${key}'] = this.value; })">
+                    </div>
+                 `;
+            });
+            
+            Object.keys(ccData.time).forEach(key => {
+                 settingsGrid.innerHTML += `
+                    <div class="ini-group">
+                        <label class="ini-label">Time: ${key} (min)</label>
+                        <input type="number" class="inline-input" value="${ccData.time[key]}" 
+                               onchange="updateModel(() => { modularEventConfigs['${folder}']['ChaosCastle.xml'].data.time['${key}'] = this.value; })">
+                    </div>
+                 `;
+            });
+
+            settingsContainer.appendChild(settingsGrid);
+            container.appendChild(settingsContainer);
+            
+            // --- Schedule Table ---
+            container.innerHTML += `<h4 style="color:var(--accent-green); margin: 20px 0 10px;">Schedule</h4>`;
+            const scheduleTable = document.createElement('table');
+            scheduleTable.innerHTML = `
+                <thead>
+                    <tr>
+                        <th style="width: 15%">Year</th><th style="width: 15%">Month</th><th style="width: 15%">Day</th>
+                        <th style="width: 20%">Day of Week</th><th style="width: 15%">Hour</th><th style="width: 15%">Minute</th>
+                        <th style="width: 5%; border-radius: 0 4px 0 0;"></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${ccData.schedules.map((s, i) => `
+                        <tr>
+                            <td><input type="number" class="inline-input" value="${s.Year}" onchange="updateModel(() => updateCCSchedule('${folder}', ${i}, 'Year', this.value))"></td>
+                            <td><input type="number" class="inline-input" value="${s.Month}" onchange="updateModel(() => updateCCSchedule('${folder}', ${i}, 'Month', this.value))"></td>
+                            <td><input type="number" class="inline-input" value="${s.Day}" onchange="updateModel(() => updateCCSchedule('${folder}', ${i}, 'Day', this.value))"></td>
+                            <td><input type="number" class="inline-input" value="${s.DayOfWeek}" title="${CC_DAYS[s.DayOfWeek] || 'Custom'}" onchange="updateModel(() => updateCCSchedule('${folder}', ${i}, 'DayOfWeek', this.value))"></td>
+                            <td><input type="number" class="inline-input" value="${s.Hour}" onchange="updateModel(() => updateCCSchedule('${folder}', ${i}, 'Hour', this.value))"></td>
+                            <td><input type="number" class="inline-input" value="${s.Minute}" onchange="updateModel(() => updateCCSchedule('${folder}', ${i}, 'Minute', this.value))"></td>
+                            <td><button class="btn-icon btn-danger" onclick="updateModel(() => deleteCCSchedule('${folder}', ${i}))"><i data-lucide="trash-2" style="width:14px;"></i></button></td>
+                        </tr>
+                    `).join('')}
+                    <tr><td colspan="7" style="text-align: center;"><button class="btn btn-outline btn-sm" onclick="updateModel(() => addCCSchedule('${folder}'))">+ Add Schedule</button></td></tr>
+                </tbody>
+            `;
+            container.appendChild(scheduleTable);
+            
+            // --- Rewards Table ---
+            container.innerHTML += `<h4 style="color:var(--accent-blue); margin: 20px 0 10px;">Reward Settings (By Ground ID)</h4>`;
+            
+            ccData.grounds.forEach((g, gIdx) => {
+                 const groundContainer = document.createElement('div');
+                 groundContainer.className = 'group-container';
+                 groundContainer.innerHTML = `<div class="group-header"><span class="group-title">Ground ID: ${g.id}</span></div>`;
+                 
+                 const rewardTable = document.createElement('table');
+                 rewardTable.style.marginBottom = '10px';
+                 rewardTable.innerHTML = `
+                    <thead>
+                        <tr>
+                            <th style="width: 20%">Min Cont.</th><th style="width: 20%">Max Cont.</th><th style="width: 35%">Reward Item (Cat, ID)</th><th style="width: 15%">Count</th><th style="width: 10%; border-radius: 0 4px 0 0;"></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${g.rewards.map((r, rIdx) => {
+                            const fullItemId = `${r.RewardItemCat},${r.RewardItemID}`;
+                            
+                            // Determine what ID to display in the hint: the Cat,ID combo, or the original flat ID.
+                            const displayId = r.isFlatID && r.originalFlatID ? r.originalFlatID : fullItemId;
+
+                            // Get the Item Name Input field. This will control RewardItemCat and RewardItemID.
+                            const itemNameInput = renderSearchInput('item', fullItemId, gIdx, rIdx, 'RewardItemID');
+
+                            return `
+                                <tr>
+                                    <td><input type="number" class="inline-input" value="${r.ContributionMin}" onchange="updateModel(() => updateCCReward('${folder}', ${gIdx}, ${rIdx}, 'ContributionMin', this.value))"></td>
+                                    <td><input type="number" class="inline-input" value="${r.ContributionMax}" onchange="updateModel(() => updateCCReward('${folder}', ${gIdx}, ${rIdx}, 'ContributionMax', this.value))"></td>
+                                    <td>
+                                         ${itemNameInput}
+                                         <span class="id-hint">Cat, ID: ${fullItemId} | Flat ID: ${displayId}</span>
+                                    </td>
+                                    <td><input type="number" class="inline-input" value="${r.Count}" onchange="updateModel(() => updateCCReward('${folder}', ${gIdx}, ${rIdx}, 'Count', this.value))"></td>
+                                    <td><button class="btn-icon btn-danger" onclick="updateModel(() => deleteCCReward('${folder}', ${gIdx}, ${rIdx}))"><i data-lucide="trash-2" style="width:14px;"></i></button></td>
+                                </tr>
+                            `;
+                        }).join('')}
+                    </tbody>
+                 `;
+                 groundContainer.appendChild(rewardTable);
+                 
+                 const addButton = document.createElement('div');
+                 addButton.style.textAlign = 'center';
+                 addButton.innerHTML = `<button class="btn btn-outline btn-sm" onclick="updateModel(() => addCCReward('${folder}', ${gIdx}))">+ Add Reward Rule</button>`;
+                 groundContainer.appendChild(addButton);
+                 
+                 container.appendChild(groundContainer);
+            });
+        }
+        
+        function renderCCMonsterEditor(container, folder) {
+            const ccMonsterData = modularEventConfigs[folder]['ChaosCastle_Monster.xml'].data;
+            
+            container.innerHTML += `<h4 style="color:var(--accent-blue); margin: 20px 0 10px;">Monster Spawns by Castle Level (ChaosCastle_Monster.xml)</h4>`;
+
+            ccMonsterData.castles.forEach((castle, cIdx) => {
+                const castleContainer = document.createElement('div');
+                castleContainer.className = 'group-container';
+                castleContainer.style.borderColor = 'var(--accent-purple)';
+                castleContainer.style.background = 'rgba(111, 66, 193, 0.05)';
+                
+                castleContainer.innerHTML = `
+                    <div class="group-header">
+                        <span class="group-title" style="color: var(--accent-purple);">Castle Level: ${castle.level}</span>
+                        <input type="number" class="inline-input" value="${castle.level}" style="width: 80px;" 
+                               onchange="updateModel(() => { modularEventConfigs['${folder}']['ChaosCastle_Monster.xml'].data.castles[cIdx].level = this.value; })">
+                    </div>
+                `;
+                
+                const monsterTable = document.createElement('table');
+                monsterTable.style.marginBottom = '10px';
+                monsterTable.innerHTML = `
+                    <thead>
+                        <tr>
+                            <th style="width: 25%">Mob Index (Name)</th><th style="width: 15%">Map Number</th><th style="width: 25%">Spawn Coords (X, Y)</th><th style="width: 15%">Distance</th><th style="width: 15%">Direction</th><th style="width: 5%"></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${castle.monsters.map((m, mIdx) => `
+                            <tr>
+                                <td>${renderSearchInput('monster', m.Index, cIdx, mIdx, 'Index')}</td>
+                                <td><input type="number" class="inline-input" value="${m.MapNumber}" title="${MAP_NAMES[m.MapNumber] || 'Unknown Map'}" onchange="updateModel(() => updateCCMonster('${folder}', ${cIdx}, ${mIdx}, 'MapNumber', this.value))"></td>
+                                <td>
+                                    <div class="coord-inputs" style="padding: 0;">
+                                        <input type="number" class="inline-input" value="${m.StartX}" placeholder="X" onchange="updateModel(() => updateCCMonster('${folder}', ${cIdx}, ${mIdx}, 'StartX', this.value))">
+                                        <input type="number" class="inline-input" value="${m.StartY}" placeholder="Y" onchange="updateModel(() => updateCCMonster('${folder}', ${cIdx}, ${mIdx}, 'StartY', this.value))">
+                                    </div>
+                                </td>
+                                <td><input type="number" class="inline-input" value="${m.Distance}" onchange="updateModel(() => updateCCMonster('${folder}', ${cIdx}, ${mIdx}, 'Distance', this.value))"></td>
+                                <td><input type="number" class="inline-input" value="${m.Dir}" title="${CC_MONSTER_DIRS[m.Dir] || 'Custom'}" onchange="updateModel(() => updateCCMonster('${folder}', ${cIdx}, ${mIdx}, 'Dir', this.value))"></td>
+                                <td><button class="btn-icon btn-danger" onclick="updateModel(() => deleteCCMonster('${folder}', ${cIdx}, ${mIdx}))"><i data-lucide="trash-2" style="width:14px;"></i></button></td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                `;
+                castleContainer.appendChild(monsterTable);
+                
+                const addButton = document.createElement('div');
+                addButton.style.textAlign = 'center';
+                addButton.innerHTML = `<button class="btn btn-outline btn-sm" onclick="updateModel(() => addCCMonster('${folder}', ${cIdx}))">+ Add Monster Spawn</button>`;
+                castleContainer.appendChild(addButton);
+                
+                container.appendChild(castleContainer);
+            });
+            
+            const addLevelButton = document.createElement('div');
+            addLevelButton.style.textAlign = 'center';
+            addLevelButton.innerHTML = `<button class="btn btn-primary" onclick="updateModel(() => addCCCastleLevel('${folder}'))"><i data-lucide="plus" style="width:14px;"></i> Add New Castle Level</button>`;
+            container.appendChild(addLevelButton);
+        }
+
+        // --- CC UPDATE FUNCTIONS ---
+
+        function updateCCSchedule(folder, sIdx, key, val) { modularEventConfigs[folder]['ChaosCastle.xml'].data.schedules[sIdx][key] = val; }
+        function addCCSchedule(folder) { modularEventConfigs[folder]['ChaosCastle.xml'].data.schedules.push({Year:'-1', Month:'-1', Day:'-1', DayOfWeek:'-1', Hour:'0', Minute:'0'}); }
+        function deleteCCSchedule(folder, sIdx) { modularEventConfigs[folder]['ChaosCastle.xml'].data.schedules.splice(sIdx, 1); }
+
+        function updateCCReward(folder, gIdx, rIdx, key, val) {
+            const reward = modularEventConfigs[folder]['ChaosCastle.xml'].data.grounds[gIdx].rewards[rIdx];
+            // Only update non-item-related keys directly
+            if (key !== 'RewardItemID' && key !== 'RewardItemCat') {
+                reward[key] = val;
+            }
+        }
+        function addCCReward(folder, gIdx) {
+            modularEventConfigs[folder]['ChaosCastle.xml'].data.grounds[gIdx].rewards.push({
+                ContributionMin:'0', ContributionMax:'100', 
+                RewardItemCat:'14', RewardItemID:'13', // Default: Jewel of Harmony 
+                Count:'1',
+                isFlatID: false,
+                originalFlatID: null
+            });
+        }
+        function deleteCCReward(folder, gIdx, rIdx) { modularEventConfigs[folder]['ChaosCastle.xml'].data.grounds[gIdx].rewards.splice(rIdx, 1); }
+        
+        function updateCCMonster(folder, cIdx, mIdx, key, val) { modularEventConfigs[folder]['ChaosCastle_Monster.xml'].data.castles[cIdx].monsters[mIdx][key] = val; }
+        function addCCMonster(folder, cIdx) { modularEventConfigs[folder]['ChaosCastle_Monster.xml'].data.castles[cIdx].monsters.push({Index:'0', MapNumber:'53', Distance:'30', StartX:'1', StartY:'1', Dir:'-1'}); }
+        function deleteCCMonster(folder, cIdx, mIdx) { modularEventConfigs[folder]['ChaosCastle_Monster.xml'].data.castles[cIdx].monsters.splice(mIdx, 1); }
+        function addCCCastleLevel(folder) {
+            const castles = modularEventConfigs[folder]['ChaosCastle_Monster.xml'].data.castles;
+            const newLevel = castles.length;
+            castles.push({level: newLevel.toString(), monsters: []});
+        }
+
+
+        // --- INVASION HELPERS (retained from previous work) ---
+
+        function getMonsterInvasionIndex(managerInvIndex) {
+            const managerInv = parsedData['InvasionManager.xml'][managerInvIndex];
+            if (!managerInv) return -1;
+            return parsedData['InvasionMonsters.xml'].findIndex(i => i.Index === managerInv.Index);
+        }
+        function updateInvMob(managerInvIndex, mIdx, k, v) { 
+            const monInvIdx = getMonsterInvasionIndex(managerInvIndex);
+            if (monInvIdx !== -1) parsedData['InvasionMonsters.xml'][monInvIdx].Monsters[mIdx][k] = v; 
+        }
+        function addInvMob(managerInvIndex) { 
+            const monInvIdx = getMonsterInvasionIndex(managerInvIndex);
+            if (monInvIdx !== -1) {
+                parsedData['InvasionMonsters.xml'][monInvIdx].Monsters.push({
+                    ID:'0', WorldID:'0', StartX:'1', StartY:'1', EndX:'255', EndY:'255', 
+                    Count:'1', Boss:'0', Group:'0', AttackPercent:'100'
+                }); 
+            }
+        }
+        function dupInvMob(managerInvIndex, mIdx) {
+            const monInvIdx = getMonsterInvasionIndex(managerInvIndex);
+            if (monInvIdx !== -1) {
+                const copy = {...parsedData['InvasionMonsters.xml'][monInvIdx].Monsters[mIdx]};
+                parsedData['InvasionMonsters.xml'][monInvIdx].Monsters.splice(mIdx+1, 0, copy);
+            }
+        }
+        function delInvMob(managerInvIndex, mIdx) {
+             const monInvIdx = getMonsterInvasionIndex(managerInvIndex);
+             if (monInvIdx !== -1) parsedData['InvasionMonsters.xml'][monInvIdx].Monsters.splice(mIdx, 1);
+        }
+        function addNewInvasionMonsterGroup(index, name, reRender = true) {
+            const invasions = parsedData['InvasionMonsters.xml'];
+            const exists = invasions.some(inv => inv.Index === index);
+            
+            if (!exists) {
+                 invasions.push({ Index: index, Name: name, Monsters: [] });
+            }
+            if (reRender) renderEditor();
+        }
+
+
+        // --- STANDARD EVENT RENDERERS (retained) ---
+        
+        function renderINI(container) {
+            const iniData = parsedData['Event.ini'];
+            if (iniData && iniData.length > 0) {
+                iniData.forEach((section, sIdx) => {
+                    const sectionDiv = document.createElement('div');
+                    sectionDiv.className = 'ini-section';
+                    sectionDiv.innerHTML = `<div class="ini-header">[${section.name}]</div>`;
+                    
+                    const grid = document.createElement('div');
+                    grid.className = 'ini-grid';
+                    
+                    section.keys.forEach((k, kIdx) => {
+                        const group = document.createElement('div');
+                        group.className = 'ini-group';
+                        group.innerHTML = `
+                            <label class="ini-label">${k.key}</label>
+                            <input type="text" class="inline-input" value="${k.value}" 
+                                   onchange="updateModel(() => { parsedData['Event.ini'][${sIdx}].keys[${kIdx}].value = this.value; })">
+                        `;
+                        grid.appendChild(group);
+                    });
+                    sectionDiv.appendChild(grid);
+                    container.appendChild(sectionDiv);
+                });
+            } else {
+                 container.innerHTML += `<p style="color:var(--accent-amber);">No configuration sections found in Event.ini, or file is empty.</p>`;
+            }
+        }
+
+        function renderSeasonsTable(container) {
+            const seasonData = parsedData['EventSeasonManager.xml'];
+            
+            const filteredData = seasonData.filter(evt => 
+                evt.Name.toLowerCase().includes(filterText.toLowerCase()) || 
+                evt.ID.toString().includes(filterText)
+            );
+            
+            let selectedEvt = seasonData.find(evt => evt.ID === selectedItemId);
+            if (!selectedEvt) { selectedEvt = filteredData[0] || seasonData[0]; }
+            selectedItemId = selectedEvt ? selectedEvt.ID : (seasonData.length > 0 ? seasonData[0].ID : '0');
+
+            const selBar = document.createElement('div');
+            selBar.className = 'master-selector-container';
+            selBar.innerHTML = `
+                <input type="text" class="filter-input" placeholder="Search Event Name/ID..." value="${filterText}"
+                       oninput="updateFilter(this.value)">
+                <div class="master-selector-controls">
+                    <label>Select Event:</label>
+                    <select onchange="selectedItemId = this.value; renderEditor();">
+                        ${filteredData.map(evt => `<option value="${evt.ID}" ${evt.ID === selectedEvt.ID ? 'selected' : ''}>[${evt.ID}] ${evt.Name}</option>`).join('')}
+                    </select>
+                    <button class="btn btn-primary btn-sm" onclick="updateModel(addSeason)"><i data-lucide="plus" style="width:14px;"></i> Add New Event</button>
+                </div>
+            `;
+            container.appendChild(selBar);
+
+            if (filteredData && filteredData.length > 0 && selectedEvt) {
+                const table = document.createElement('table');
+                table.innerHTML = `
+                    <thead>
+                        <tr>
+                            <th>ID</th><th>Name</th><th>Start Date</th><th>End Date</th><th>Occurrence (min)</th><th>Duration (min)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${filteredData.map(evt => {
+                            const currentOriginalIndex = seasonData.findIndex(s => s.ID === evt.ID);
+                            return `
+                                <tr>
+                                    <td>${evt.ID}</td>
+                                    <td><input class="inline-input" value="${evt.Name}" onchange="updateModel(() => { updateSeason(${currentOriginalIndex}, 'Name', this.value); })"></td>
+                                    <td><input class="inline-input" value="${evt.StartDate}" onchange="updateModel(() => { updateSeason(${currentOriginalIndex}, 'StartDate', this.value); })"></td>
+                                    <td><input class="inline-input" value="${evt.StartEnd}" onchange="updateModel(() => { updateSeason(${currentOriginalIndex}, 'StartEnd', this.value); })"></td>
+                                    <td><input type="number" class="inline-input" value="${evt.Ocurrence}" onchange="updateModel(() => { updateSeason(${currentOriginalIndex}, 'Ocurrence', this.value); })"></td>
+                                    <td><input type="number" class="inline-input" value="${evt.Duration}" onchange="updateModel(() => { updateSeason(${currentOriginalIndex}, 'Duration', this.value); })"></td>
+                                </tr>
+                            `;
+                        }).join('')}
+                    </tbody>
+                `;
+                container.appendChild(table);
+            } else { container.innerHTML += `<p style="color:var(--accent-amber);">No matching event season definitions found.</p>`; }
+            
+            function updateSeason(idx, key, val) { parsedData['EventSeasonManager.xml'][idx][key] = val; }
+            function addSeason() {
+                const seasonData = parsedData['EventSeasonManager.xml'];
+                const newID = (seasonData.length > 0 ? 
+                            Math.max(...seasonData.map(e => parseInt(e.ID))) + 1 : 
+                            0).toString();
+                seasonData.push({
+                    ID: newID, Name: `New Event ${newID}`, StartDate: 'YYYY-MM-DD HH:MM:SS', StartEnd: 'YYYY-MM-DD HH:MM:SS',
+                    Ocurrence: '525600', Duration: '44640', StartMessage: '', EndMessage: ''
+                });
+                filterText = newID;
+                selectedItemId = newID; // Set new item as selected
+            }
+        }
+
+        function renderInvasionManager(container) {
+            const invasions = parsedData['InvasionManager.xml'];
+            if (!invasions || invasions.length === 0) {
+                 container.innerHTML += `<p style="color:var(--accent-amber);">No invasion definitions found in InvasionManager.xml.</p>`;
+                 return;
+            }
+            const filteredInvasions = invasions.filter(inv => inv.Name.toLowerCase().includes(filterText.toLowerCase()) || inv.Index.toString().includes(filterText));
+            
+            let selectedInv = invasions.find(inv => inv.Index === selectedItemId);
+            if (!selectedInv) { selectedInv = filteredInvasions[0] || invasions[0]; }
+            selectedItemId = selectedInv ? selectedInv.Index : (invasions.length > 0 ? invasions[0].Index : '0'); 
+            const currentInvasionIndex = selectedInv ? invasions.findIndex(i => i.Index === selectedInv.Index) : 0;
+
+            const tabs = document.createElement('div');
+            tabs.className = 'invasion-tabs';
+            tabs.innerHTML = `<button class="invasion-tab-btn ${currentInvasionTab === 'quick' ? 'active' : ''}" onclick="switchInvasionTab('quick')">Quick Edit</button><button class="invasion-tab-btn ${currentInvasionTab === 'advanced' ? 'active' : ''}" onclick="switchInvasionTab('advanced')">Advanced Groups</button>`;
+            container.appendChild(tabs);
+
+            const selBar = document.createElement('div');
+            selBar.className = 'master-selector-container';
+            selBar.innerHTML = `<input type="text" class="filter-input" placeholder="Search Invasion Name/Index..." value="${filterText}" oninput="updateFilter(this.value)"><div class="master-selector-controls"><label>Select Invasion:</label><select onchange="selectedItemId = this.value; renderEditor();">${filteredInvasions.map(inv => `<option value="${inv.Index}" ${inv.Index === selectedInv.Index ? 'selected' : ''}>[${inv.Index}] ${inv.Name}</option>`).join('')}</select><button class="btn btn-primary btn-sm" onclick="updateModel(addNewInvasionManagerGroup)"><i data-lucide="plus" style="width:14px;"></i> Add New Invasion</button></div>`;
+            container.appendChild(selBar);
+            const inv = selectedInv;
+            if (!inv) return; 
+            container.innerHTML += `<h3 style="color:var(--accent-amber); margin-top: 10px;">Editing Invasion [${inv.Index}]: ${inv.Name}</h3>`;
+
+            if (currentInvasionTab === 'quick') { renderInvasionQuickEdit(container, currentInvasionIndex); } else { renderInvasionAdvancedGroups(container, currentInvasionIndex); }
+            lucide.createIcons();
+        }
+
+        function renderInvasionQuickEdit(container, currentInvasionIndex) {
+            const scheduleContent = renderScheduleTable(currentInvasionIndex);
+            const monsterContent = renderQuickMonsterTable(currentInvasionIndex);
+            const quickEditGrid = document.createElement('div');
+            quickEditGrid.className = 'quick-edit-grid';
+            quickEditGrid.innerHTML = `<div class="schedule-panel"><h4 style="color:var(--accent-green); margin-bottom: 10px;">Schedule (InvasionManager.xml)</h4>${scheduleContent}<div style="text-align:center; margin-top: 15px;"><button class="btn btn-outline btn-sm" onclick="updateModel(() => { addInvStart(${currentInvasionIndex}); })">+ Add Time</button></div></div><div class="monster-panel"><h4 style="color:var(--accent-blue); margin-bottom: 10px;">Monster Spawns (InvasionMonsters.xml)</h4>${monsterContent}<div style="text-align:center; margin-top: 15px;"><button class="btn btn-outline btn-sm" onclick="updateModel(() => { addInvMob(${currentInvasionIndex}); })">+ Add Monster</button></div></div>`;
+            container.appendChild(quickEditGrid);
+        }
+
+        function renderScheduleTable(currentInvasionIndex) {
+            const inv = parsedData['InvasionManager.xml'][currentInvasionIndex];
+            if (!inv) return '';
+            return `
+                <table style="min-width: 0;"><thead><tr><th style="border-radius: 4px 0 0 0;">Time</th><th>Day</th><th>Dur (min)</th><th style="border-radius: 0 4px 0 0;"></th></tr></thead><tbody>
+                        ${inv.Starts.map((s, i) => `<tr><td><div style="display:flex; gap:3px;"><input type="number" class="inline-input" value="${s.Hour}" placeholder="H" onchange="updateModel(() => { updateInvStart(${currentInvasionIndex}, ${i}, 'Hour', this.value); })" style="width: 40px;"><input type="number" class="inline-input" value="${s.Minute}" placeholder="M" onchange="updateModel(() => { updateInvStart(${currentInvasionIndex}, ${i}, 'Minute', this.value); })" style="width: 40px;"></div></td><td><input type="number" class="inline-input" value="${s.DayOfWeek}" title="${DAY_OF_WEEK[s.DayOfWeek] || 'Custom'}" onchange="updateModel(() => { updateInvStart(${currentInvasionIndex}, ${i}, 'DayOfWeek', this.value); })"></td><td><input type="number" class="inline-input" value="${s.Duration}" onchange="updateModel(() => { updateInvStart(${currentInvasionIndex}, ${i}, 'Duration', this.value); })"></td><td><button class="btn-icon btn-danger" onclick="updateModel(() => { deleteInvStart(${currentInvasionIndex}, ${i}); })" title="Delete Schedule"><i data-lucide="trash-2" style="width:14px;"></i></button></td></tr>`).join('')}
+                    </tbody></table>`;
+        }
+
+        function renderQuickMonsterTable(currentInvasionIndex) {
+            const inv = parsedData['InvasionMonsters.xml'].find(i => i.Index === parsedData['InvasionManager.xml'][currentInvasionIndex].Index);
+            if (!inv || !inv.Monsters) return '<p style="color:var(--accent-pink);">No monster list found for this invasion index.</p>';
+            return `
+                <table style="min-width: 0;"><thead><tr><th style="border-radius: 4px 0 0 0;">Mob ID (Name)</th><th>Map (ID)</th><th>Count</th><th>Group</th><th style="border-radius: 0 4px 0 0;"></th></tr></thead><tbody>
+                        ${inv.Monsters.map((m, i) => `<tr><td>${renderSearchInput('monster', m.ID, currentInvasionIndex, i, 'ID')}</td><td>${renderSearchInput('map', m.WorldID, currentInvasionIndex, i, 'WorldID')}</td><td><input type="number" class="inline-input" value="${m.Count}" onchange="updateModel(() => { updateInvMob(${currentInvasionIndex}, ${i}, 'Count', this.value); })"></td><td><input type="number" class="inline-input" value="${m.Group}" onchange="updateModel(() => { updateInvMob(${currentInvasionIndex}, ${i}, 'Group', this.value); })"></td><td><button class="btn-icon btn-danger" onclick="updateModel(() => { delInvMob(${currentInvasionIndex}, ${i}); })" title="Delete Monster"><i data-lucide="trash-2" style="width:14px;"></i></button></td></tr>`).join('')}
+                    </tbody></table>`;
+        }
+
+        function renderInvasionAdvancedGroups(container, currentInvasionIndex) {
+            const invasions = parsedData['InvasionManager.xml'];
+            const inv = invasions[currentInvasionIndex];
+            container.innerHTML += `<h4 style="color:var(--accent-blue); margin: 20px 0 10px;">Map Spawn Groups (InvasionManager.xml)</h4><p style="font-size: 12px; color: var(--text-secondary); margin-bottom: 15px;">Define the map region, rate, and group ID for monster placement. **Group ID is often used to match monsters in InvasionMonsters.xml.**</p>`;
+            
+            inv.Groups.forEach((g, i) => {
+                const groupContainer = document.createElement('div');
+                groupContainer.className = 'group-container';
+                const mapName = MAP_NAMES[g.WorldID] || `Unknown Map (${g.WorldID})`;
+                groupContainer.innerHTML = `<div class="group-header"><span class="group-title">Group ID: ${g.Group} / Map: ${mapName}</span><button class="btn-icon btn-danger" onclick="updateModel(() => { deleteInvGroup(${currentInvasionIndex}, ${i}); })"><i data-lucide="trash-2" style="width:14px;"></i></button></div><div class="ini-grid"><div class="ini-group"><label class="ini-label">Group ID</label><input type="number" class="inline-input" value="${g.Group}" onchange="updateModel(() => { updateInvGroup(${currentInvasionIndex}, ${i}, 'Group', this.value); })"></div><div class="ini-group"><label class="ini-label">Rate (%)</label><input type="number" class="inline-input" value="${g.Rate}" onchange="updateModel(() => { updateInvGroup(${currentInvasionIndex}, ${i}, 'Rate', this.value); })"></div><div class="ini-group"><label class="ini-label">Map ID (${mapName})</label><input type="number" class="inline-input" value="${g.WorldID}" onchange="updateModel(() => { updateInvGroup(${currentInvasionIndex}, ${i}, 'WorldID', this.value); })"></div></div><h5 style="color: var(--text-primary); font-size: 14px; margin: 15px 0 5px;">Spawn Coordinates (Area where monsters will spawn)</h5><div class="group-coord-grid"><div class="ini-group"><label class="ini-label">Start X / Y</label><div style="display:flex; gap:5px;"><input type="number" class="inline-input" value="${g.GroupX1}" placeholder="X1" onchange="updateModel(() => { updateInvGroup(${currentInvasionIndex}, ${i}, 'GroupX1', this.value); })"><input type="number" class="inline-input" value="${g.GroupY1}" placeholder="Y1" onchange="updateModel(() => { updateInvGroup(${currentInvasionIndex}, ${i}, 'GroupY1', this.value); })"></div></div><div class="ini-group"><label class="ini-label">End X / Y</label><div style="display:flex; gap:5px;"><input type="number" class="inline-input" value="${g.GroupX2}" placeholder="X2" onchange="updateModel(() => { updateInvGroup(${currentInvasionIndex}, ${i}, 'GroupX2', this.value); })"><input type="number" class="inline-input" value="${g.GroupY2}" placeholder="Y2" onchange="updateModel(() => { updateInvGroup(${currentInvasionIndex}, ${i}, 'GroupY2', this.value); })"></div></div></div>`;
+                container.appendChild(groupContainer);
+            });
+            const addButton = document.createElement('div');
+            addButton.style.textAlign = 'center';
+            addButton.innerHTML = `<button class="btn btn-outline btn-sm" onclick="updateModel(() => { addInvGroup(${currentInvasionIndex}); })"><i data-lucide="map" style="width:14px;"></i> Add Map/Group</button>`;
+            container.appendChild(addButton);
+            container.innerHTML += `<h4 style="color:var(--accent-green); margin: 30px 0 10px;">Monster Spawns Detail (InvasionMonsters.xml)</h4>`;
+            renderInvasionMonstersTable(container, currentInvasionIndex);
+        }
+
+        function renderInvasionMonstersTable(container, currentInvasionIndex) {
+             const invasionsMon = parsedData['InvasionMonsters.xml'];
+             const invMon = invasionsMon.find(i => i.Index === parsedData['InvasionManager.xml'][currentInvasionIndex].Index);
+            if (!invMon || invMon.Monsters.length === 0) {
+                 container.innerHTML += `<p style="color:var(--accent-amber);">No monsters defined for this invasion index.</p>`;
+                 if (!invMon) { container.innerHTML += `<button class="btn btn-primary btn-sm" onclick="updateModel(() => { addNewInvasionMonsterGroup(parsedData['InvasionManager.xml'][currentInvasionIndex].Index, parsedData['InvasionManager.xml'][currentInvasionIndex].Name); })">Initialize Monster List</button>`; }
+                 return;
+            }
+            const table = document.createElement('table');
+            table.innerHTML = `
+                <thead><tr><th style="border-radius: 4px 0 0 0;">Mob ID (Name)</th><th>Map (ID)</th><th>Coords (S-E)</th><th>Count</th><th>Boss?</th><th>Group</th><th>Atk %</th><th style="border-radius: 0 4px 0 0;">Action</th></tr></thead><tbody>
+                    ${invMon.Monsters.map((m, i) => { return `
+                        <tr><td>${renderSearchInput('monster', m.ID, currentInvasionIndex, i, 'ID')}</td><td>${renderSearchInput('map', m.WorldID, currentInvasionIndex, i, 'WorldID')}</td><td class="coord-group-cell"><div class="coord-inputs"><input type="number" class="inline-input" value="${m.StartX}" placeholder="SX" onchange="updateModel(() => { updateInvMob(${currentInvasionIndex}, ${i}, 'StartX', this.value); })"><input type="number" class="inline-input" value="${m.StartY}" placeholder="SY" onchange="updateModel(() => { updateInvMob(${currentInvasionIndex}, ${i}, 'StartY', this.value); })"><input type="number" class="inline-input" value="${m.EndX}" placeholder="EX" onchange="updateModel(() => { updateInvMob(${currentInvasionIndex}, ${i}, 'EndX', this.value); })"><input type="number" class="inline-input" value="${m.EndY}" placeholder="EY" onchange="updateModel(() => { updateInvMob(${currentInvasionIndex}, ${i}, 'EndY', this.value); })"></div></td><td><input type="number" class="inline-input" value="${m.Count}" onchange="updateModel(() => { updateInvMob(${currentInvasionIndex}, ${i}, 'Count', this.value); })"></td><td><input type="number" class="inline-input" value="${m.Boss}" onchange="updateModel(() => { updateInvMob(${currentInvasionIndex}, ${i}, 'Boss', this.value); })"></td><td><input type="number" class="inline-input" value="${m.Group}" onchange="updateModel(() => { updateInvMob(${currentInvasionIndex}, ${i}, 'Group', this.value); })"></td><td><input type="number" class="inline-input" value="${m.AttackPercent}" onchange="updateModel(() => { updateInvMob(${currentInvasionIndex}, ${i}, 'AttackPercent', this.value); })"></td><td><button class="btn-icon btn-primary" onclick="updateModel(() => { dupInvMob(${currentInvasionIndex}, ${i}); })"><i data-lucide="copy" style="width:14px;"></i></button><button class="btn-icon btn-danger" onclick="updateModel(() => { delInvMob(${currentInvasionIndex}, ${i}); })"><i data-lucide="trash-2" style="width:14px;"></i></button></td></tr>`; }).join('')}
+                     <tr><td colspan="8"><button class="btn btn-outline btn-sm" onclick="updateModel(() => { addInvMob(${currentInvasionIndex}); })">+ Add Monster</button></td></tr>
+                </tbody></table>`;
+            container.appendChild(table);
+        }
+        
+        // --- INVASION HELPERS (simplified for display) ---
+
+        function updateInvStart(invIdx, sIdx, k, v) { parsedData['InvasionManager.xml'][invIdx].Starts[sIdx][k] = v; }
+        function addInvStart(invIdx) { parsedData['InvasionManager.xml'][invIdx].Starts.push({Hour:'0', Minute:'0', Duration:'30', DayOfWeek:'-1'}); }
+        function deleteInvStart(invIdx, sIdx) { parsedData['InvasionManager.xml'][invIdx].Starts.splice(sIdx, 1); }
+        function updateInvGroup(invIdx, gIdx, k, v) { parsedData['InvasionManager.xml'][invIdx].Groups[gIdx][k] = v; }
+        function addInvGroup(invIdx) { parsedData['InvasionManager.xml'][invIdx].Groups.push({Group:'0', Rate:'100', WorldID:'0', GroupX1:'0', GroupY1:'0', GroupX2:'255', GroupY2:'255'}); }
+        function deleteInvGroup(invIdx, gIdx) { parsedData['InvasionManager.xml'][invIdx].Groups.splice(gIdx, 1); }
+        function addNewInvasionManagerGroup() {
+            const invasions = parsedData['InvasionManager.xml'];
+            const newIndex = (invasions.length > 0 ? Math.max(...invasions.map(e => parseInt(e.Index))) + 1 : 0).toString();
+            const newIndexStr = newIndex;
+            invasions.push({
+                Index: newIndexStr, Name: `New Invasion ${newIndexStr}`, 
+                Starts: [{Duration: '30', Hour:'0', Minute:'0', DayOfWeek:'-1'}],
+                Groups: [{Group:'0', Rate:'100', WorldID:'0', GroupX1:'0', GroupY1:'0', GroupX2:'255', GroupY2:'255'}]
+            });
+            filterText = newIndexStr;
+            selectedItemId = newIndexStr;
+            addNewInvasionMonsterGroup(newIndexStr, `New Invasion ${newIndexStr}`, false);
+        }
+
+
+        // --- XML GENERATORS (simplified for display) ---
+
+        function generateCoreEventXml(file) {
+            let content = '';
+            if (file === 'Event.ini') {
+                 parsedData['Event.ini'].forEach(sec => {
+                    content += `[${sec.name}]\n`;
+                    sec.keys.forEach(k => content += `${k.key}=${k.value}\n`);
+                    content += '\n';
+                });
+            } else if (file === 'EventSeasonManager.xml') {
+                content = `<?xml version="1.0" encoding="utf-8"?>\n<EventSeasonManager>\n`;
+                parsedData['EventSeasonManager.xml'].forEach(e => {
+                    content += `\t<Event ID="${e.ID}" Name="${e.Name}" StartDate="${e.StartDate}" StartEnd="${e.StartEnd}" Ocurrence="${e.Ocurrence}" Duration="${e.Duration}" StartMessage="${e.StartMessage}" EndMessage="${e.EndMessage}" />\n`;
+                });
+                content += `</EventSeasonManager>`;
+            }
+            return content;
+        }
+
+        function generateInvasionManagerXml() {
+            let content = `<?xml version="1.0" encoding="utf-8"?>\n<InvasionManager Enable="1">\n\t<InvasionStart>\n`;
+            parsedData['InvasionManager.xml'].forEach(inv => {
+                content += `\t\t<Invasion Index="${inv.Index}" Name="${inv.Name}">\n`;
+                inv.Starts.forEach(s => content += `\t\t\t<Start Duration="${s.Duration}" Hour="${s.Hour}" Minute="${s.Minute}" DayOfWeek="${s.DayOfWeek}"/>\n`);
+                content += `\t\t</Invasion>\n`;
+            });
+            content += `\t</InvasionStart>\n\t<InvasionNotice>\n\t\t<!-- InvasionNotice elements are currently ignored by the editor for simplicity, relying on the server's default configuration -->\n\t</InvasionNotice>\n\t<InvasionGroup>\n`;
+            
+            const groupsByIndex = parsedData['InvasionManager.xml'].reduce((acc, inv) => {
+                if (inv.Groups && inv.Groups.length > 0) {
+                    acc[inv.Index] = { Name: inv.Name, Groups: inv.Groups };
+                }
+                return acc;
+            }, {});
+
+            Object.keys(groupsByIndex).forEach(index => {
+                const invGroupData = groupsByIndex[index];
+                content += `\t\t<Invasion Index="${index}" Name="${invGroupData.Name}">\n`;
+                invGroupData.Groups.forEach(g => content += `\t\t\t<Data Group="${g.Group}" Rate="${g.Rate}" FollowBoss="0" ProtectBoss="0" OffattackDamage="1" WorldID="${g.WorldID}" GroupX1="${g.GroupX1}" GroupY1="${g.GroupY1}" GroupX2="${g.GroupX2}" GroupY2="${g.GroupY2}"/>\n`);
+                content += `\t\t</Invasion>\n`;
+            });
+
+            content += `\t</InvasionGroup>\n</InvasionManager>`;
+            return content;
+        }
+
+        function generateInvasionMonstersXml() {
+             let content = `<?xml version="1.0" encoding="utf-8"?>\n<InvasionMonsters>\n`;
+            parsedData['InvasionMonsters.xml'].forEach(inv => {
+                content += `\t<Invasion Index="${inv.Index}" Name="${inv.Name}">\n`;
+                inv.Monsters.forEach(m => {
+                    content += `\t\t<Monster ID="${m.ID}" WorldID="${m.WorldID}" StartX="${m.StartX}" StartY="${m.StartY}" EndX="${m.EndX}" EndY="${m.EndY}" Dir="-1" MoveDistance="30" Group="${m.Group}" Boss="${m.Boss}" AttackPercent="${m.AttackPercent}" ItemBag="" Count="${m.Count}"/>\n`;
+                });
+                content += `\t</Invasion>\n`;
+            });
+            content += `</InvasionMonsters>`;
+            return content;
+        }
+
+        function generateModularEventXml(folder, file) {
+            const config = modularEventConfigs[folder];
+            if (!config) return '';
+
+            if (folder === 'ChaosCastle') {
+                if (file === 'ChaosCastle.xml') {
+                    const data = config['ChaosCastle.xml'].data;
+                    let content = `<?xml version="1.0" encoding="utf-8"?>\n<ChaosCastle Enable="${data.settings.Enable}" MinPlayer="${data.settings.MinPlayer}" AllowDarkLordSpirit="${data.settings.AllowDarkLordSpirit}">\n`;
+                    
+                    content += `\t<Time StartIn="${data.time.StartIn}" Duration="${data.time.Duration}" TownSpawn="${data.time.TownSpawn}"/>\n`;
+                    
+                    content += `\t<Schedule>\n`;
+                    data.schedules.forEach(s => {
+                        content += `\t\t<Start Year="${s.Year}" Month="${s.Month}" Day="${s.Day}" DayOfWeek="${s.DayOfWeek}" Hour="${s.Hour}" Minute="${s.Minute}"/>\n`;
+                    });
+                    content += `\t</Schedule>\n`;
+
+                    data.grounds.forEach(g => {
+                        content += `\t<Ground ID="${g.id}">\n`;
+                        g.rewards.forEach(r => {
+                            let rewardItemID;
+                            
+                            if (r.isFlatID || r.originalFlatID) {
+                                const cat = parseInt(r.RewardItemCat);
+                                const id = parseInt(r.RewardItemID);
+                                rewardItemID = (cat * ITEM_FLAT_ID_DIVISOR) + id;
+                            } else {
+                                const cat = parseInt(r.RewardItemCat);
+                                const id = parseInt(r.RewardItemID);
+                                rewardItemID = (cat * ITEM_FLAT_ID_DIVISOR) + id;
+                            }
+                            
+                            content += `\t\t<Reward ContributionMin="${r.ContributionMin}" ContributionMax="${r.ContributionMax}" RewardItemID="${rewardItemID}" Count="${r.Count}"/>\n`;
+                        });
+                        content += `\t</Ground>\n`;
+                    });
+
+                    content += `</ChaosCastle>`;
+                    return content;
+
+                } else if (file === 'ChaosCastle_Monster.xml') {
+                    const data = config['ChaosCastle_Monster.xml'].data;
+                    let content = `<?xml version="1.0" encoding="utf-8"?>\n<ChaosCastle>\n`;
+                    
+                    data.castles.forEach(c => {
+                        content += `\t<Castle Level="${c.level}">\n`;
+                        c.monsters.forEach(m => {
+                            content += `\t\t<Monster Index="${m.Index}" MapNumber="${m.MapNumber}" Distance="${m.Distance}" StartX="${m.StartX}" StartY="${m.StartY}" Dir="${m.Dir}"/>\n`;
+                        });
+                        content += `\t</Castle>\n`;
+                    });
+
+                    content += `</ChaosCastle>`;
+                    return content;
+                }
+            }
+            return '';
+        }
+
+
+        function showStatus(msg, isError, isWarning = false) {
+            const sb = document.getElementById('statusBar');
+            sb.innerText = msg;
+            sb.className = `status-bar ${isError ? 'status-error' : (isWarning ? 'status-warning' : 'status-success')}`;
+            sb.style.display = 'block';
+            setTimeout(() => sb.style.display = 'none', 4000);
+            lucide.createIcons();
+        }
+        
+        async function saveCurrentFile() {
+            const saveButton = document.getElementById('saveButton');
+            saveButton.disabled = true;
+            saveButton.innerHTML = `<i data-lucide="loader-2" class="spin"></i> Saving...`;
+            lucide.createIcons();
+
+            if (!dataLoaded) {
+                showStatus("Error: Cannot save. Data not loaded from server.", true);
+                saveButton.disabled = false;
+                saveButton.innerHTML = `<i data-lucide="save"></i> Save Changes`;
+                lucide.createIcons();
+                return;
+            }
+
+            let filesToSave = [];
+            
+            if (currentFile.includes('/')) {
+                const folder = currentFile.split('/')[0];
+                const config = modularEventConfigs[folder];
+                if (config) {
+                    filesToSave = Object.keys(config).filter(k => k !== 'folder' && config[k].data).map(k => ({ file: k, content: generateModularEventXml(folder, k) }));
+                }
+            } else if (currentFile === 'InvasionManager') {
+                filesToSave = [
+                    { file: 'InvasionManager.xml', content: generateInvasionManagerXml() },
+                    { file: 'InvasionMonsters.xml', content: generateInvasionMonstersXml() }
+                ];
+            } else {
+                filesToSave = [
+                    { file: currentFile, content: generateCoreEventXml(currentFile) }
+                ];
+            }
+
+            let success = true;
+
+            for (const { file, content } of filesToSave) {
+                let saveUrl = (file.includes('.ini') || file.includes('.xml')) && !file.includes('/') 
+                    ? `${SERVER_URL}/api/save-event-file` 
+                    : `${SERVER_URL}/api/save-modular-event-file`;
+                
+                let body = { filename: file, content: content };
+
+                if (saveUrl.includes('modular')) {
+                    const folder = currentFile.split('/')[0];
+                    body = { folder: folder, filename: file, content: content };
+                }
+
+                try {
+                    const res = await fetch(saveUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(body)
+                    });
+                    
+                    if (!res.ok) throw new Error(await res.text());
+                    showStatus(`Success: ${file} saved!`, false);
+
+                } catch (e) {
+                    showStatus(`Error saving ${file}: ${e.message}`, true);
+                    success = false;
+                    break;
+                }
+            }
+            
+            if (success) {
+                history = [];
+                historyIndex = -1;
+                loadData();
+            }
+
+            saveButton.disabled = false;
+            saveButton.innerHTML = `<i data-lucide="save"></i> Save Changes`;
+            lucide.createIcons();
+        }
+
+        function initApp() {
+            loadData();
+            lucide.createIcons();
+        }
+
+        document.addEventListener('DOMContentLoaded', initApp);
     </script>
 </body>
 </html>

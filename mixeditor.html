@@ -3,17 +3,441 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chaos Mix Editor (Web Edition)</title>
+    <title>Chaos Mix Manager</title>
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@500&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/style.css">
 
     <script src="https://unpkg.com/lucide@latest"></script>
-    <script src="js/utils.js"></script>
     <!-- NEW: Import the separate module for Main Mixes -->
     <script src="mix_main_mix.js"></script>
+
+    <style>
+        :root {
+            --bg-dark: #0a0f1e;
+            --bg-glass: rgba(26, 34, 63, 0.6);
+            --text-primary: #e0e0e0;
+            --text-secondary: #a0a0c0;
+            --text-bright: #ffffff;
+            --font-ui: 'Inter', sans-serif;
+            --font-data: 'Fira Code', monospace;
+            
+            --accent-blue: #00aaff;
+            --accent-green: #00ff9b;
+            --accent-amber: #ffc107;
+            --accent-pink: #ff0055;
+            --accent-purple: #6f42c1;
+        }
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: var(--font-ui);
+            background: linear-gradient(135deg, #1a223f 0%, var(--bg-dark) 100%);
+            color: var(--text-primary);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            background: transparent;
+            border-radius: 12px;
+            padding: 30px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .glass-effect {
+            background: var(--bg-glass);
+            -webkit-backdrop-filter: blur(10px);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(0, 170, 255, 0.2);
+            border-radius: 12px;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+        }
+        
+        .header { position: relative; padding: 30px; text-align: center; }
+        .header .header-controls { position: absolute; top: 25px; left: 30px; display: flex; align-items: center; gap: 10px; background: rgba(0, 170, 255, 0.1); padding: 8px 12px; border-radius: 6px; }
+        .header .header-controls label { font-weight: 600; font-size: 14px; }
+        .header h1 { font-size: 28px; margin-bottom: 10px; color: var(--text-bright); display: flex; align-items: center; justify-content: center; gap: 15px; }
+        .header p { color: var(--text-secondary); }
+        
+        /* Status Bar Variants */
+        .status-bar { display: none; padding: 15px; border-radius: 8px; font-weight: 600; }
+        .status-bar-success { background: rgba(0, 255, 155, 0.2); color: var(--accent-green); border: 1px solid var(--accent-green); }
+        .status-bar-error { background: rgba(255, 0, 85, 0.2); color: var(--accent-pink); border: 1px solid var(--accent-pink); }
+        .status-bar-warning { background: rgba(255, 193, 7, 0.2); color: var(--accent-amber); border: 1px solid var(--accent-amber); }
+        .status-bar-info { background: rgba(0, 170, 255, 0.2); color: var(--accent-blue); border: 1px solid var(--accent-blue); }
+        .status-bar-controls { display: flex; gap: 10px; margin-top: 10px; }
+        
+        .data-management-section h3 { display: flex; align-items: center; gap: 10px; margin-bottom: 15px; color: var(--text-bright); }
+        
+        /* Layout */
+        .main-content { display: grid; grid-template-columns: 1fr; gap: 20px; }
+        
+        .btn { padding: 10px 18px; border: none; border-radius: 6px; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.3s; display: inline-flex; align-items: center; gap: 8px; }
+        .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+        .btn-primary { background: var(--accent-blue); color: var(--bg-dark); }
+        .btn-primary:hover:not(:disabled) { background: #fff; }
+        .btn-success { background: var(--accent-green); color: var(--bg-dark); }
+        .btn-success:hover:not(:disabled) { background: #fff; }
+        .btn-danger { background: var(--accent-pink); color: #fff; }
+        .btn-danger:hover:not(:disabled) { background: #fff; color: var(--accent-pink); }
+        .btn-undo { background: var(--accent-purple); color: white; }
+        .btn-undo:hover:not(:disabled) { background: #5a32a3; }
+        .btn-outline { background: transparent; border: 1px solid rgba(0, 170, 255, 0.5); color: var(--accent-blue); }
+        .btn-outline:hover { background: rgba(0, 170, 255, 0.1); }
+        .btn-sm { padding: 4px 8px; font-size: 12px; }
+        
+        /* Tab Navigation */
+        .tab-nav { display: flex; gap: 5px; margin-bottom: 20px; border-bottom: 2px solid rgba(0, 170, 255, 0.2); overflow-x: auto; padding-bottom: 2px; }
+        .tab-btn { padding: 12px 20px; border: none; border-bottom: 3px solid transparent; background: transparent; color: var(--text-secondary); font-size: 15px; font-weight: 600; cursor: pointer; transition: all 0.2s; border-radius: 6px 6px 0 0; white-space: nowrap; }
+        .tab-btn:hover { background: rgba(0, 170, 255, 0.1); color: var(--text-primary); }
+        .tab-btn.active { background: rgba(0, 170, 255, 0.1); border-bottom-color: var(--accent-green); color: var(--text-bright); }
+        .tab-btn i { width: 16px; height: 16px; margin-right: 2px; }
+        
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+
+        /* Controls inside tab */
+        .tab-controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding: 15px;
+            background: rgba(0,0,0,0.2);
+            border-radius: 8px;
+        }
+        .tab-controls h2 { color: var(--text-bright); }
+        .tab-controls p { color: var(--text-secondary); font-size: 14px; margin-top: 4px; }
+        
+        .table-container { 
+            background: rgba(0,0,0,0.2); 
+            border-radius: 8px; 
+            overflow: hidden; 
+            margin-bottom: 20px; 
+        }
+        .table-header { display: flex; align-items: center; justify-content: space-between; transition: background-color 0.2s; padding: 15px; background: rgba(0,0,0,0.2); border-bottom: 1px solid rgba(0, 170, 255, 0.2); cursor: pointer; -webkit-user-select: none; user-select: none; }
+        .table-header:hover { background-color: rgba(0, 170, 255, 0.1) !important; }
+        .table-header h3 { display: flex; align-items: center; gap: 10px; color: var(--text-bright); }
+        .toggle-icon { transition: transform 0.3s ease; }
+        .table-container.collapsed .toggle-icon { transform: rotate(-90deg); }
+        .table-container.collapsed table { display: none; }
+
+        table { width: 100%; border-collapse: collapse; }
+        th { 
+            background: rgba(0, 170, 255, 0.1); 
+            color: var(--text-bright); 
+            padding: 10px 12px; 
+            text-align: left; 
+            font-weight: 600; 
+            font-size: 13px; 
+            vertical-align: top; 
+        }
+        td { padding: 8px 12px; border-bottom: 1px solid rgba(0, 170, 255, 0.1); vertical-align: middle; }
+        tr:hover { background: rgba(0, 170, 255, 0.05); }
+
+        .row-new { background-color: rgba(0, 255, 155, 0.1) !important; }
+        .row-modified { background-color: rgba(255, 193, 7, 0.1) !important; }
+        .row-empty { background-color: rgba(255, 0, 85, 0.1) !important; }
+        
+        .item-name { font-weight: 600; color: var(--text-primary); font-size: 14px; }
+        .item-id { font-family: var(--font-data); color: var(--text-secondary); }
+        .item-name-cell { min-width: 200px; }
+
+        /* NEW: Style for displaying requirements in Main Mix tab */
+        .req-item-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            border-left: 2px solid var(--accent-blue);
+            padding-left: 8px;
+            margin-bottom: 10px;
+        }
+        .req-item {
+            display: block;
+            font-size: 13px;
+            color: var(--text-secondary);
+            /* margin-left: 10px; */ /* Removed to allow flex/grid inside */
+            font-family: var(--font-data);
+            line-height: 1.5; /* Added for better readability */
+        }
+        .req-item-name {
+            font-weight: 600;
+            color: var(--text-primary);
+            font-family: var(--font-ui);
+            margin-right: 5px;
+        }
+        .req-item-flags {
+            color: var(--accent-amber); 
+            margin-left: 5px;
+        }
+        /* END NEW */
+        
+        .inline-input { width: 100%; padding: 4px 6px; border: 1px solid transparent; background: rgba(0,0,0,0.3); border-radius: 4px; font-family: var(--font-data); font-size: 14px; transition: all 0.2s; color: var(--text-primary); }
+        .inline-input:hover, .inline-input:focus { border-color: var(--accent-blue); background: var(--bg-dark); }
+        .inline-input.inline-input-invalid { border-color: var(--accent-pink); background-color: rgba(255, 0, 85, 0.2); }
+        .inline-input-small { width: 80px; text-align: center; }
+        
+        input[type=number]::-webkit-inner-spin-button, input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+        input[type=number] { -moz-appearance: textfield; appearance: textfield; }
+        
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.7); z-index: 1000; align-items: center; justify-content: center; }
+        .modal.show { display: flex; }
+        
+        .modal-content { box-shadow: 0 8px 32px 0 rgba(0,0,0,0.5); color: var(--text-primary); max-width: 900px; width: 90%; max-height: 90vh; overflow-y: auto; }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; padding: 20px 25px; border-bottom: 1px solid rgba(0, 170, 255, 0.2); }
+        .modal-header h2 { color: var(--text-bright); }
+        .modal-body { padding: 25px; }
+        .modal-footer { display: flex; gap: 10px; justify-content: flex-end; padding: 20px 25px; border-top: 1px solid rgba(0, 170, 255, 0.2); }
+        .close-btn { color: var(--text-secondary); transition: all 0.2s; background: none; border: none; cursor: pointer;}
+        .close-btn:hover { color: var(--text-bright); transform: rotate(90deg); }
+        
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 15px; }
+        .form-group.full-width { grid-column: 1 / -1; }
+        .form-group.span-2 { grid-column: span 2; }
+        .form-group label { display: block; margin-bottom: 5px; font-weight: 600; color: var(--text-secondary); }
+        .form-group input, .form-group select { width: 100%; padding: 10px; border: 1px solid rgba(0, 170, 255, 0.2); border-radius: 6px; font-size: 14px; background-color: rgba(0,0,0,0.3); color: var(--text-primary); }
+        .form-group input:focus, .form-group select:focus { outline: none; border-color: var(--accent-blue); }
+        
+        /* Item Search in Modal */
+        .item-search { position: relative; }
+        .item-suggestions { background: var(--bg-dark); border: 1px solid var(--accent-blue); position: absolute; top: 100%; left: 0; right: 0; max-height: 250px; overflow-y: auto; z-index: 100; display: none; }
+        .item-suggestions.show { display: block; }
+        .suggestion-item { padding: 10px; cursor: pointer; border-bottom: 1px solid rgba(0, 170, 255, 0.1); }
+        .suggestion-item:hover { background: rgba(0, 170, 255, 0.1); }
+        .suggestion-item-id { color: var(--accent-blue); font-family: var(--font-data); margin-right: 8px; }
+        .suggestion-item-cat { color: var(--accent-amber); font-family: var(--font-data); margin-right: 8px; }
+        
+        .action-btn { padding: 5px; border-radius: 4px; cursor: pointer; background: transparent; border: none; color: var(--text-secondary); }
+        .action-btn:hover { color: var(--text-bright); }
+        .btn-edit:hover { color: var(--accent-amber); }
+        .btn-delete:hover { color: var(--accent-pink); }
+        
+        .empty-state { text-align: center; padding: 60px 20px; color: var(--text-secondary); }
+        
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: var(--accent-blue); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #fff; }
+
+        .btn i, .action-btn i, h1 i, h3 i { width: 16px; height: 16px; stroke-width: 2.5; }
+        .action-btn i { width: 18px; height: 18px; }
+        .header h1 i { width: 32px; height: 32px; color: var(--accent-green); }
+
+        /* Author/Confirm Modals */
+        #authorModal { z-index: 2000; }
+        .author-modal-content { background: var(--bg-glass); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); border: 1px solid rgba(0, 170, 255, 0.2); box-shadow: 0 8px 32px 0 rgba(0,0,0,0.5); text-align: center; padding: 40px; border-radius: 12px; }
+        .author-modal-content h2 { color: var(--text-bright); }
+        .author-modal-content p { color: var(--text-secondary); }
+        .author-modal-content input { background-color: rgba(0,0,0,0.3); color: var(--text-primary); border-color: rgba(0, 170, 255, 0.2); text-align: center; width: 100%; padding: 12px; font-size: 16px; border-radius: 6px; margin-bottom: 20px;}
+
+        #confirmModal .modal-content { max-width: 500px; }
+        
+        /* Guide Modal */
+        #guideContent { line-height: 1.7; color: var(--text-secondary); }
+        #guideContent h3 { color: var(--text-bright); margin-top: 20px; margin-bottom: 10px; border-bottom: 1px solid rgba(0, 170, 255, 0.2); padding-bottom: 5px; }
+        #guideContent h3:first-child { margin-top: 0; }
+        #guideContent ul { list-style-position: inside; padding-left: 10px; }
+        #guideContent li { margin-bottom: 10px; }
+        #guideContent code { background-color: rgba(0,0,0,0.3); padding: 3px 6px; border-radius: 4px; font-family: var(--font-data); color: var(--accent-green); }
+        
+        /* Special styles for Mastery Mix */
+        .mastery-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        .materials-list, .pools-list, .mixes-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .list-item {
+            background: rgba(0,0,0,0.2);
+            padding: 12px 15px;
+            border-radius: 6px;
+            border-left: 3px solid var(--accent-blue);
+        }
+        .list-item-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: 600;
+        }
+        .list-item-header .item-name { color: var(--accent-green); }
+        .list-item-body {
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin-top: 8px;
+            padding-left: 10px;
+            border-left: 2px solid rgba(0, 170, 255, 0.2);
+        }
+        .list-item-body span {
+            display: inline-block;
+            margin-right: 15px;
+            font-family: var(--font-data);
+        }
+
+        /* NEW: Styles for editable mastery tab */
+        .mastery-section {
+            background: rgba(0,0,0,0.2);
+            border-radius: 8px;
+            margin-bottom: 25px;
+            border: 1px solid rgba(0, 170, 255, 0.1);
+        }
+        .mastery-section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 20px;
+            background: rgba(0, 170, 255, 0.1);
+            border-bottom: 1px solid rgba(0, 170, 255, 0.2);
+        }
+        .mastery-section-header h3 {
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: var(--text-bright);
+        }
+        .mastery-section-body {
+            padding: 20px;
+        }
+        .mastery-section-body .table-container {
+            margin-bottom: 0;
+        }
+        
+        /* Styles for pool list */
+        .pool-list-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+        .pool-card {
+            background: rgba(0,0,0,0.3);
+            border-radius: 8px;
+            border: 1px solid rgba(0, 170, 255, 0.1);
+        }
+        .pool-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 15px;
+            border-bottom: 1px solid rgba(0, 170, 255, 0.2);
+        }
+        .pool-card-header .form-group {
+            margin: 0;
+            flex-grow: 1;
+        }
+        .pool-card-header label {
+            font-size: 12px;
+            margin-right: 8px;
+        }
+        .pool-card-header input {
+            padding: 4px 8px;
+            width: 100px;
+            font-family: var(--font-data);
+        }
+        .pool-card-body {
+            padding: 15px;
+        }
+        .pool-card-body table {
+            width: 100%;
+        }
+        .pool-card-body th, .pool-card-body td {
+            font-size: 13px;
+            padding: 6px 8px;
+        }
+        .pool-card-body .item-name-cell {
+            min-width: 150px;
+        }
+        .pool-card-body .item-name {
+            font-size: 13px;
+        }
+        .pool-card-footer {
+            padding: 10px 15px;
+            border-top: 1px solid rgba(0, 170, 255, 0.1);
+            text-align: right;
+        }
+
+        /* NEW: Sub-tab Navigation */
+        .sub-tab-nav { 
+            display: flex; 
+            gap: 4px; 
+            margin-bottom: 20px; 
+            border-bottom: 1px solid rgba(0, 170, 255, 0.2); 
+        }
+        .sub-tab-btn { 
+            padding: 8px 16px; 
+            border: none; 
+            border-bottom: 2px solid transparent; 
+            background: transparent; 
+            color: var(--text-secondary); 
+            font-size: 14px; 
+            font-weight: 600; 
+            cursor: pointer; 
+            transition: all 0.2s; 
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .sub-tab-btn:hover { 
+            background: rgba(0, 170, 255, 0.1); 
+            color: var(--text-primary); 
+        }
+        .sub-tab-btn.active { 
+            border-bottom-color: var(--accent-amber); 
+            color: var(--text-bright); 
+        }
+        .sub-tab-btn i { 
+            width: 14px; 
+            height: 14px; 
+        }
+
+        /* NEW: Styles for the inline material details */
+        .material-detail-row {
+            background-color: rgba(0,0,0,0.3) !important;
+        }
+        .material-detail-cell {
+            padding: 20px !important;
+            border-bottom: 1px solid rgba(0, 170, 255, 0.1);
+        }
+        .material-detail-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr); /* Two columns: ID/Count per material */
+            gap: 10px 20px;
+        }
+        .material-group {
+            border: 1px solid rgba(0, 170, 255, 0.2);
+            padding: 10px;
+            border-radius: 6px;
+            background: rgba(0,0,0,0.1);
+        }
+        .material-group label {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--accent-amber);
+            margin-bottom: 5px;
+            display: block;
+        }
+        .material-input-group {
+            display: flex;
+            gap: 5px;
+        }
+        .material-input-group .inline-input {
+            flex-grow: 1;
+        }
+        .material-input-group .btn-sm {
+            flex-shrink: 0;
+            padding: 4px 6px;
+        }
+    </style>
 </head>
 <body>
     <!-- Author Modal -->
@@ -27,7 +451,7 @@
                 <button class="close-btn" onclick="closeConfirmModal()"><i data-lucide="x"></i></button>
             </div>
             <div class="modal-body">
-                <p id="confirmMessage">This action cannot be undone.</p>
+                <p id="confirmMessage" style="color: var(--text-secondary); line-height: 1.6;">This action cannot be undone.</p>
             </div>
             <div class="modal-footer">
                 <button class="btn btn-outline" onclick="closeConfirmModal()">Cancel</button>
@@ -53,10 +477,8 @@
             </div>
             <h1><i data-lucide="flask-conical"></i>Chaos Mix Editor<i data-lucide="flask-conical"></i></h1>
             <p>Manage all Chaos Machine recipes and configurations</p>
-            <div class="header-right-controls">
-                <a href="index.html" class="btn btn-outline" title="Back to Dashboard">
-                    <i data-lucide="home"></i>Dashboard
-                </a>
+            <div style="position: absolute; top: 25px; right: 30px; display: flex; gap: 10px;">
+                <button class="btn btn-outline" onclick="window.location.href='dashboard.html'"><i data-lucide="layout-dashboard"></i> Dashboard</button>
                 <button class="btn btn-outline" onclick="openGuideModal()"><i data-lucide="help-circle"></i>Guide</button>
             </div>
         </div>
@@ -65,7 +487,7 @@
         <div id="statusBar" class="status-bar"></div>
         
         <!-- Data Management (Cache) -->
-        <div id="dataManagementSection" style="display: none; padding: 20px;">
+        <div id="dataManagementSection" class="glass-effect" style="display: none; padding: 20px;">
             <div style="display: flex; justify-content: space-between; align-items: center;">
                 <div>
                     <h3><i data-lucide="database"></i>Data Management</h3>
@@ -79,7 +501,7 @@
         
         <!-- Main Content -->
         <div class="main-content" id="mainContent" style="display: none;">
-            <div class="editor-panel" style="padding: 25px;">
+            <div class="editor-panel glass-effect" style="padding: 25px;">
                 <!-- Tab Navigation -->
                 <div class="tab-nav">
                     <button class="tab-btn active" data-tab-name="main" onclick="setActiveTab('main')"><i data-lucide="boxes"></i> Main Mixes</button>
@@ -176,7 +598,7 @@
     </div>
 
     <script>
-        const SERVER_URL = ''; // Use relative paths for API calls
+        const SERVER_URL = ''; 
         const CACHE_KEY = 'mixEditorCache';
         
         // --- Application State ---
@@ -214,13 +636,7 @@
             initializeAuthorLock();
         });
 
-        /**
-         * @description Displays a confirmation modal.
-         * @param {string} title - The title of the modal.
-         * @param {string} message - The message to display in the modal.
-         * @param {function} onConfirm - The callback function to execute on confirmation.
-         * @param {string} [buttonClass='btn-danger'] - The class for the confirm button.
-         */
+        // --- Confirmation Modal Logic (reused) ---
         function confirmAction(title, message, onConfirm, buttonClass = 'btn-danger') {
             document.getElementById('confirmTitle').textContent = title;
             document.getElementById('confirmMessage').textContent = message;
@@ -233,17 +649,10 @@
             document.getElementById('confirmModal').classList.add('show');
             lucide.createIcons();
         }
-        /** @description Closes the confirmation modal. */
         function closeConfirmModal() { closeModal('confirmModal'); }
-        /**
-         * @description Closes any modal by its ID.
-         * @param {string} id - The ID of the modal to close.
-         */
         function closeModal(id) { document.getElementById(id).classList.remove('show'); }
 
-        /**
-         * @description Initializes the author lock feature, prompting for a name if not set.
-         */
+        // --- Author Logic (reused) ---
         function initializeAuthorLock() {
             const authorName = localStorage.getItem('mixEditorAuthor'); 
             if (authorName && authorName.trim() !== '') {
@@ -254,9 +663,6 @@
                 lucide.createIcons();
             }
         }
-        /**
-         * @description Saves the initial author name from the modal.
-         */
         function saveInitialAuthorName() {
             const authorInput = document.getElementById('initialAuthorName');
             const authorName = authorInput.value.trim();
@@ -267,9 +673,6 @@
                 loadData();
             }
         }
-        /**
-         * @description Renders the author display and edit controls.
-         */
         function renderAuthorControls() {
             const authorName = localStorage.getItem('mixEditorAuthor') || 'Unknown';
             document.getElementById('authorNameDisplay').textContent = authorName;
@@ -277,18 +680,11 @@
             toggleAuthorEdit(false);
             lucide.createIcons();
         }
-        /**
-         * @description Toggles the author name between display and edit mode.
-         * @param {boolean} isEditing - True to show the edit input, false to show the display text.
-         */
         function toggleAuthorEdit(isEditing) {
             document.getElementById('authorDisplayView').style.display = isEditing ? 'none' : 'flex';
             document.getElementById('authorEditView').style.display = isEditing ? 'flex' : 'none';
             if (isEditing) document.getElementById('authorNameInput').focus();
         }
-        /**
-         * @description Saves the updated author name.
-         */
         function saveAuthorName() {
             const authorName = document.getElementById('authorNameInput').value.trim();
             if (authorName) {
@@ -298,20 +694,9 @@
                 showStatus("Author name cannot be empty.", true);
             }
         }
-        /**
-         * @description Gets the author's name from local storage.
-         * @returns {string} The author's name.
-         */
         function getAuthorName() { return localStorage.getItem('mixEditorAuthor') || 'Unknown Editor'; }
 
-        /**
-         * @description Displays a status message bar.
-         * @param {string} message - The message to display.
-         * @param {boolean} [isError=false] - If true, styles the bar as an error.
-         * @param {boolean} [isWarning=false] - If true, styles the bar as a warning.
-         * @param {boolean} [isInfo=false] - If true, styles the bar as info.
-         * @param {object[]} [controls=null] - Optional buttons to add to the status bar.
-         */
+        // --- Status & Cache Logic (reused) ---
         function showStatus(message, isError = false, isWarning = false, isInfo = false, controls = null) {
             const statusBar = document.getElementById('statusBar');
             statusBar.innerHTML = '';
@@ -340,9 +725,6 @@
                 setTimeout(() => { statusBar.style.display = 'none'; }, 5000);
             }
         }
-        /**
-         * @description Confirms and clears the local cache.
-         */
         function confirmClearCache() {
             confirmAction(
                 'Clear Local Cache?',
@@ -354,9 +736,6 @@
                 }
             );
         }
-        /**
-         * @description Saves the current application state to local storage.
-         */
         function saveToCache() {
             if (!isDataLoaded) return;
             try {
@@ -376,10 +755,6 @@
                 localStorage.removeItem(CACHE_KEY);
             }
         }
-        /**
-         * @description Loads the application state from local storage.
-         * @returns {boolean} True if cache was successfully loaded, false otherwise.
-         */
         function loadFromCache() {
             try {
                 const cache = JSON.parse(localStorage.getItem(CACHE_KEY));
@@ -400,9 +775,7 @@
             return false;
         }
 
-        /**
-         * @description Loads all necessary data from the server and handles cached data.
-         */
+        // --- Data Loading & Parsing ---
         async function loadData() {
             let serverData;
             try {
@@ -442,10 +815,6 @@
             }
         }
         
-        /**
-         * @description Parses and stores the XML headers from all server data files.
-         * @param {object} serverData - The object containing all XML file contents from the server.
-         */
         function parseAllHeaders(serverData) {
             originalXmlHeaders.main = serverData.mixXml.match(/^[\s\S]*?(?=<Mixes>)/i)?.[0] || '<?xml version="1.0" encoding="utf-8"?>\n';
             originalXmlHeaders.mastery = serverData.masteryItemMixXml.match(/^[\s\S]*?(?=<MasteryItemMix>)/i)?.[0] || '<?xml version="1.0" encoding="utf-8"?>\n';
@@ -456,10 +825,6 @@
             originalXmlHeaders.disable = serverData.mixDisableXml.match(/^[\s\S]*?(?=<MixDisable>)/i)?.[0] || '<?xml version="1.0" encoding="utf-8"?>\n';
         }
         
-        /**
-         * @description Parses all data from the server response.
-         * @param {object} serverData - The object containing all XML file contents from the server.
-         */
         function parseAllData(serverData) {
             // Parse all headers first
             parseAllHeaders(serverData);
@@ -476,10 +841,6 @@
             parseMixDisable(serverData.mixDisableXml);
         }
         
-        /**
-         * @description Finalizes the data loading process and renders the UI.
-         * @param {boolean} usedCache - Whether the data was loaded from cache.
-         */
         function finishLoading(usedCache) {
             isDataLoaded = true;
             document.getElementById('mainContent').style.display = 'grid';
@@ -496,10 +857,8 @@
             lucide.createIcons();
         }
         
-        /**
-         * @description Parses the ItemList.xml file content.
-         * @param {string} xmlText - The XML content of ItemList.xml.
-         */
+        // --- Parsers for each file (Only retaining non-main parsers) ---
+        
         function parseItemList(xmlText) {
             const parser = new DOMParser();
             const xmlDoc = parser.parseFromString(xmlText, "text/xml");
@@ -520,10 +879,8 @@
             }
         }
 
-        /**
-         * @description Parses the MasteryItemMix.xml file content.
-         * @param {string} xmlText - The XML content of MasteryItemMix.xml.
-         */
+        // REMOVED: parseMix logic (now in mix_main_mix.js)
+        
         function parseMasteryItemMix(xmlText) {
             // NOTE: This file is also extremely complex. Parsing for read-only.
             mixData.mastery = { materials: [], results: [], randomPools: [], settings: {} }; // <-- MODIFIED: Added settings object
@@ -607,10 +964,6 @@
             }
         }
 
-        /**
-         * @description Parses the AngelWeaponUpgrade.xml file content.
-         * @param {string} xmlText - The XML content of AngelWeaponUpgrade.xml.
-         */
         function parseAngelWeaponUpgrade(xmlText) {
             mixData.angel = [];
             const parser = new DOMParser();
@@ -635,10 +988,6 @@
             }
         }
         
-        /**
-         * @description Parses the MixJewelTemplate.xml file content.
-         * @param {string} xmlText - The XML content of MixJewelTemplate.xml.
-         */
         function parseMixJewelTemplate(xmlText) {
             mixData.jewel = [];
             const parser = new DOMParser();
@@ -663,10 +1012,6 @@
             }
         }
         
-        /**
-         * @description Parses the MixLuckyTemplate.xml file content.
-         * @param {string} xmlText - The XML content of MixLuckyTemplate.xml.
-         */
         function parseMixLuckyTemplate(xmlText) {
             mixData.lucky = [];
             const parser = new DOMParser();
@@ -683,10 +1028,6 @@
             }
         }
         
-        /**
-         * @description Parses the MixSpellStone.xml file content.
-         * @param {string} xmlText - The XML content of MixSpellStone.xml.
-         */
         function parseMixSpellStone(xmlText) {
             // This is read-only for now due to complexity
             mixData.spell = [];
@@ -710,10 +1051,6 @@
             }
         }
         
-        /**
-         * @description Parses the MixDisable.xml file content.
-         * @param {string} xmlText - The XML content of MixDisable.xml.
-         */
         function parseMixDisable(xmlText) {
             mixData.disable = [];
             const parser = new DOMParser();
@@ -726,11 +1063,7 @@
             }
         }
 
-        /**
-         * @description Decodes the OptKeepType bitmask into a human-readable string.
-         * @param {string|number} type - The OptKeepType value.
-         * @returns {string} A comma-separated string of the active flags.
-         */
+        // --- NEW: Helper function to decode OptKeepType flags (GLOBAL DEPENDENCY) ---
         function decodeOptKeepType(type) {
             const val = parseInt(type, 10);
             if (isNaN(val) || val === 0) return 'None';
@@ -751,11 +1084,8 @@
             return parts.length > 0 ? parts.join(', ') : 'None';
         }
 
-        /**
-         * @description Parses the ItemType bitmask into a human-readable string.
-         * @param {string|number} type - The ItemType value.
-         * @returns {string} A comma-separated string of the active flags.
-         */
+        // --- Item Name Helpers (GLOBAL DEPENDENCIES) ---
+        
         function parseItemType(type) {
             const itemType = parseInt(type, 10);
             if (itemType === 0) return 'no limit';
@@ -781,12 +1111,6 @@
             return parts.length > 0 ? parts.join(', ') : 'unknown type';
         }
         
-        /**
-         * @description Gets the name of an item from its category and index.
-         * @param {string|number} cat - The item category.
-         * @param {string|number} index - The item index.
-         * @returns {string} The name of the item.
-         */
         function getItemName(cat, index) {
             // FIX: Check for the common placeholder ID (0, 0) which is often "Kris" or "Sword"
             if (parseInt(cat, 10) === 0 && parseInt(index, 10) === 0) {
@@ -800,36 +1124,18 @@
             return `Unknown Item in ${catName}`;
         }
         
-        /**
-         * @description Gets the name of an item from its flat ID.
-         * @param {string|number} flatId - The flat ID of the item.
-         * @returns {string} The name of the item.
-         */
         function getItemNameFlat(flatId) {
             const cat = Math.floor(flatId / 512);
             const index = flatId % 512;
             return getItemName(cat, index);
         }
         
-        /**
-         * @description Converts a flat item ID to its category and index.
-         * @param {string|number} flatId - The flat ID of the item.
-         * @returns {{cat: number, index: number}} The category and index of the item.
-         */
         function getCatAndIndex(flatId) {
             const cat = Math.floor(flatId / 512);
             const index = flatId % 512;
             return { cat, index };
         }
         
-        /**
-         * @description Generates the HTML for displaying an item's name and ID.
-         * @param {string|number} cat - The item category.
-         * @param {string|number} index - The item index.
-         * @param {boolean} [isEditable=false] - If true, makes the display clickable to open the item modal.
-         * @param {string} [callbackContext=''] - The context to pass to the item modal callback.
-         * @returns {string} The HTML string for the item display.
-         */
         function getItemDisplay(cat, index, isEditable = false, callbackContext = '') {
             const name = getItemName(cat, index);
             const onClick = isEditable ? `onclick="openItemModal(${callbackContext})"` : '';
@@ -847,9 +1153,7 @@
             </div>`;
         }
 
-        /**
-         * @description Pushes the current state of the active tab's data to the undo history.
-         */
+        // --- Undo System (GLOBAL DEPENDENCIES) ---
         function pushUndo() {
             if (!activeTab || !mixData[activeTab]) return;
             
@@ -867,9 +1171,6 @@
             saveToCache();
         }
 
-        /**
-         * @description Reverts the active tab's data to the last state in the undo history.
-         */
         function executeUndo() {
             if (!activeTab || !undoHistory[activeTab] || undoHistory[activeTab].length === 0) return;
             
@@ -887,9 +1188,6 @@
             saveToCache();
         }
 
-        /**
-         * @description Updates the undo button's state and text based on the undo history.
-         */
         function updateUndoButton() {
             const btn = document.getElementById(`undoBtn-${activeTab}`);
             if (btn) {
@@ -900,10 +1198,7 @@
             }
         }
 
-        /**
-         * @description Sets the active tab and re-renders the editor.
-         * @param {string} tabName - The name of the tab to activate.
-         */
+        // --- UI Rendering ---
         function setActiveTab(tabName) {
             activeTab = tabName;
             document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.toggle('active', btn.dataset.tabName === tabName));
@@ -915,10 +1210,7 @@
             renderEditor();
         }
 
-        /**
-         * @description Sets the active sub-tab for the mastery editor and re-renders.
-         * @param {string} subTabName - The name of the sub-tab to activate.
-         */
+        // NEW: Function to control mastery sub-tabs
         function setMasterySubTab(subTabName) {
             activeMasterySubTab = subTabName;
             // Reset state when switching sub-tabs
@@ -929,9 +1221,6 @@
             renderEditor(); // Re-render the tab
         }
         
-        /**
-         * @description Renders the main editor content based on the active tab.
-         */
         function renderEditor() {
             let html = '';
             switch (activeTab) {
@@ -950,10 +1239,10 @@
             lucide.createIcons();
         }
         
-        /**
-         * @description Renders the content for the Mastery Items tab.
-         * @returns {string} The HTML content for the tab.
-         */
+        // --- Tab Renderers (Only non-main ones retained) ---
+        
+        // REMOVED: renderMainMixTab logic (now in mix_main_mix.js)
+        
         function renderMasteryMixTab() {
             let html = `
                 ${renderTabControls('Mastery Items (MasteryItemMix.xml)', 'Manages Blood Angel, Dark Angel, etc. This file is complex but is now editable.', 'MasteryItemMix.xml', false)}
@@ -992,10 +1281,7 @@
             return html;
         }
 
-        /**
-         * @description Toggles the collapsed state of a mix group in the mastery editor.
-         * @param {string} groupName - The name of the group to toggle.
-         */
+        // --- NEW: Toggle for mix group details ---
         function toggleMixGroup(groupName) {
             if (collapsedMixGroups.has(groupName)) {
                 collapsedMixGroups.delete(groupName);
@@ -1006,10 +1292,7 @@
             renderEditor(); // Just re-render the current tab
         }
         
-        /**
-         * @description Toggles the visibility of the material details row for a specific mix.
-         * @param {number} mixIndex - The index of the mix to toggle.
-         */
+        // NEW: Toggle visibility of the material details row
         function toggleMaterialDetails(mixIndex) {
             if (expandedMixRowIndex === mixIndex) {
                 expandedMixRowIndex = null;
@@ -1020,11 +1303,7 @@
             renderEditor(); // Re-render to show/hide the row
         }
 
-        /**
-         * @description Determines the grouping prefix for a mastery mix based on its name.
-         * @param {object} mix - The mix object.
-         * @returns {string} The name of the group for the mix.
-         */
+        // Function to determine the grouping prefix
         function getMixPrefix(mix) {
             // Priority list of common set/item names
             const name = mix.Name;
@@ -1044,10 +1323,7 @@
             return 'Miscellaneous Items';
         }
 
-        /**
-         * @description Renders the 'Final Mixes' sub-tab for the mastery editor.
-         * @returns {string} The HTML content for the sub-tab.
-         */
+        // NEW: Helper function to render just the Final Mixes part
         function renderMasteryFinalMixes() {
             // --- NEW: Filter and Group logic ---
             const searchTerm = masteryMixSearchTerm.toLowerCase();
@@ -1252,19 +1528,14 @@
             `;
         } // End of renderMasteryFinalMixes
 
-        /**
-         * @description Loads more items in the 'Final Mixes' sub-tab.
-         */
+        // NEW: Load More Function
         function loadMoreFinalMixes() {
             finalMixRenderLimit += FINAL_MIX_BATCH_SIZE;
             saveToCache();
             renderEditor();
         }
 
-        /**
-         * @description Renders the 'Random Pools' sub-tab for the mastery editor.
-         * @returns {string} The HTML content for the sub-tab.
-         */
+        // NEW: Helper function to render just the Random Pools part
         function renderMasteryRandomPools() {
             return `
                 <!-- Section 2: Random Item Pools -->
@@ -1308,10 +1579,7 @@
             `;
         }
 
-        /**
-         * @description Renders the 'Materials' sub-tab for the mastery editor.
-         * @returns {string} The HTML content for the sub-tab.
-         */
+        // NEW: Helper function to render just the Materials part
         function renderMasteryMaterials() {
             return `
                 <!-- Section 3: Materials -->
@@ -1368,10 +1636,6 @@
             `;
         }
 
-        /**
-         * @description Renders the content for the Angel Weapon tab.
-         * @returns {string} The HTML content for the tab.
-         */
         function renderAngelWeaponTab() {
             const settings = mixData.angel.find(r => r.isSettings) || { SuccessRate: 100, OptionUpgradeType: 0 };
             const items = mixData.angel.filter(r => !r.isSettings);
@@ -1415,10 +1679,6 @@
             return html;
         }
         
-        /**
-         * @description Renders the content for the Jewel Packs tab.
-         * @returns {string} The HTML content for the tab.
-         */
         function renderJewelTemplateTab() {
             let html = `
                 ${renderTabControls('Jewel Packs (MixJewelTemplate.xml)', 'Manages packing and unpacking jewels.', 'MixJewelTemplate.xml')}
@@ -1460,10 +1720,6 @@
             return html;
         }
 
-        /**
-         * @description Renders the content for the Lucky Tickets tab.
-         * @returns {string} The HTML content for the tab.
-         */
         function renderLuckyTemplateTab() {
             let html = `
                 ${renderTabControls('Lucky Tickets (MixLuckyTemplate.xml)', 'Manages item pools for lucky tickets.', 'MixLuckyTemplate.xml')}
@@ -1496,10 +1752,6 @@
             return html;
         }
         
-        /**
-         * @description Renders the content for the Spell Stone tab.
-         * @returns {string} The HTML content for the tab.
-         */
         function renderSpellStoneTab() {
              let html = `
                 ${renderTabControls('Spell Stone (MixSpellStone.xml)', 'Manages upgrade rates for Spell Stones. All rates are / 10000.', 'MixSpellStone.xml')}
@@ -1535,10 +1787,6 @@
             return html;
         }
         
-        /**
-         * @description Renders the content for the Disabled Items tab.
-         * @returns {string} The HTML content for the tab.
-         */
         function renderDisableTab() {
             let html = `
                 ${renderTabControls('Disabled Items (MixDisable.xml)', 'Items in this list are banned from the Chaos Machine.', 'MixDisable.xml')}
@@ -1567,14 +1815,6 @@
             return html;
         }
         
-        /**
-         * @description Renders the header controls for a tab.
-         * @param {string} title - The title of the tab.
-         * @param {string} description - The description for the tab.
-         * @param {string} fileName - The name of the file associated with the tab.
-         * @param {boolean} [isReadOnly=false] - If true, disables the save button.
-         * @returns {string} The HTML content for the tab controls.
-         */
         function renderTabControls(title, description, fileName, isReadOnly = false) {
             return `
                 <div class="tab-controls">
@@ -1592,18 +1832,11 @@
             `;
         }
         
-        /**
-         * @description Toggles the collapsed state of a table container.
-         * @param {HTMLElement} tableElement - The table container element to toggle.
-         */
         function toggleTable(tableElement) {
             tableElement.classList.toggle('collapsed');
         }
 
-        /**
-         * @description Opens the item search modal.
-         * @param {object} callbackContext - The context object to be passed to the callback function.
-         */
+        // --- Item Modal Logic (UPDATED) ---
         function openItemModal(callbackContext) {
             // callbackContext is an object like { type: 'angel', index: 0, field: 'Need', callback?: function }
             itemModalCallback = (cat, index) => {
@@ -1674,19 +1907,12 @@
             lucide.createIcons();
         }
         
-        /**
-         * @description Closes the item search modal.
-         */
         function closeItemModal() {
             itemModalCallback = null;
             closeModal('itemModal');
         }
         
-        /**
-         * @description Opens the material search modal.
-         * @param {number} rowIndex - The index of the mix row.
-         * @param {number} slotIndex - The index of the material slot.
-         */
+        // --- NEW: Material Search Modal Logic ---
         function openMaterialSearchModal(rowIndex, slotIndex) {
             materialSearchCallback = (materialID) => {
                 // We have the row and slot index, update the data
@@ -1703,17 +1929,11 @@
             lucide.createIcons();
         }
 
-        /**
-         * @description Closes the material search modal.
-         */
         function closeMaterialSearchModal() {
             materialSearchCallback = null;
             closeModal('materialSearchModal');
         }
 
-        /**
-         * @description Filters and displays material suggestions based on the search input.
-         */
         function filterMaterialSuggestions() {
             let html = '';
             let count = 0;
@@ -1741,19 +1961,13 @@
             suggestions.innerHTML = html;
         }
 
-        /**
-         * @description Selects a material and triggers the callback.
-         * @param {string|number} materialID - The ID of the selected material.
-         */
         function selectMaterial(materialID) {
             if (materialSearchCallback) {
                 materialSearchCallback(materialID);
             }
         }
+        // --- END NEW ---
 
-        /**
-         * @description Filters and displays item suggestions based on the search input.
-         */
         function filterItemSuggestions() {
             let html = '';
             let count = 0;
@@ -1779,11 +1993,6 @@
             suggestions.classList.add('show');
         }
         
-        /**
-         * @description Selects an item and triggers the callback.
-         * @param {string|number} cat - The category of the selected item.
-         * @param {string|number} index - The index of the selected item.
-         */
         function selectItem(cat, index) {
             if (itemModalCallback) {
                 // itemModalCallback is now a function that accepts (cat, index, context)
@@ -1791,11 +2000,8 @@
             }
         }
         
-        /**
-         * @description Updates a setting in the Angel Weapon data.
-         * @param {string} field - The name of the setting to update.
-         * @param {string|number} value - The new value for the setting.
-         */
+        // --- Data Manipulation ---
+        
         function updateAngelSettings(field, value) {
             pushUndo();
             let settings = mixData.angel.find(r => r.isSettings);
@@ -1809,11 +2015,6 @@
             saveToCache();
         }
 
-        /**
-         * @description Updates a setting in the Mastery Item data.
-         * @param {string} field - The name of the setting to update.
-         * @param {string|number} value - The new value for the setting.
-         */
         function updateMasterySettings(field, value) {
             pushUndo();
             mixData.mastery.settings[field] = value;
@@ -1822,13 +2023,6 @@
             saveToCache();
         }
 
-        /**
-         * @description Updates a value in a mastery item row.
-         * @param {string} section - The section of mastery data ('results', 'randomPools', 'materials').
-         * @param {number} index - The index of the row to update.
-         * @param {string} field - The field to update.
-         * @param {string|number} value - The new value.
-         */
         function updateMasteryValue(section, index, field, value) {
             pushUndo();
             const item = mixData.mastery[section][index];
@@ -1841,11 +2035,6 @@
             }
         }
         
-        /**
-         * @description Updates the result type of a mastery mix (single item or random pool).
-         * @param {number} index - The index of the mix to update.
-         * @param {string} type - The new type ('item' or 'pool').
-         */
         function updateMasteryResultType(index, type) {
             pushUndo();
             const mix = mixData.mastery.results[index];
@@ -1863,13 +2052,6 @@
             saveToCache();
         }
 
-        /**
-         * @description Updates a value for an item within a mastery random pool.
-         * @param {number} poolIndex - The index of the pool.
-         * @param {number} itemIndex - The index of the item within the pool.
-         * @param {string} field - The field to update.
-         * @param {string|number} value - The new value.
-         */
         function updateMasteryPoolItem(poolIndex, itemIndex, field, value) {
             pushUndo();
             const item = mixData.mastery.randomPools[poolIndex].items[itemIndex];
@@ -1882,10 +2064,6 @@
             }
         }
         
-        /**
-         * @description Adds a new row to a mastery data section.
-         * @param {string} section - The section to add the row to ('results', 'randomPools', 'materials').
-         */
         function addMasteryRow(section) {
             pushUndo();
             const data = mixData.mastery[section];
@@ -1914,11 +2092,6 @@
             saveToCache();
         }
         
-        /**
-         * @description Deletes a row from a mastery data section.
-         * @param {string} section - The section to delete the row from.
-         * @param {number} index - The index of the row to delete.
-         */
         function deleteMasteryRow(section, index) {
              confirmAction('Delete Row?', 'Are you sure you want to delete this row? This cannot be undone.', () => {
                 pushUndo();
@@ -1929,10 +2102,6 @@
             });
         }
         
-        /**
-         * @description Adds a new item to a mastery random pool.
-         * @param {number} poolIndex - The index of the pool to add the item to.
-         */
         function addMasteryPoolItem(poolIndex) {
             pushUndo();
             const pool = mixData.mastery.randomPools[poolIndex];
@@ -1944,11 +2113,6 @@
             saveToCache();
         }
         
-        /**
-         * @description Deletes an item from a mastery random pool.
-         * @param {number} poolIndex - The index of the pool.
-         * @param {number} itemIndex - The index of the item to delete.
-         */
         function deleteMasteryPoolItem(poolIndex, itemIndex) {
             // No confirm for this, it's minor
             pushUndo();
@@ -1961,10 +2125,6 @@
         // --- End of Mastery Updaters ---
 
 
-        /**
-         * @description Adds a new row to the data for a specific tab.
-         * @param {string} type - The type of data to add a row to (e.g., 'angel', 'lucky').
-         */
         function addRow(type) {
             pushUndo();
             let newItem;
@@ -1999,12 +2159,6 @@
             saveToCache();
         }
         
-        /**
-         * @description Deletes a row from the data for a specific tab.
-         * @param {string} type - The type of data to delete from.
-         * @param {number} index - The index of the row to delete.
-         * @param {number|null} [recIndex=null] - The sub-index for nested data structures (e.g., jewel recipes).
-         */
         function deleteRow(type, index, recIndex = null) {
             confirmAction('Delete Row?', 'Are you sure you want to delete this row? This cannot be undone.', () => {
                 pushUndo();
@@ -2024,10 +2178,10 @@
             });
         }
         
-        /**
-         * @description Generates the XML content for AngelWeaponUpgrade.xml.
-         * @returns {string} The generated XML content.
-         */
+        // --- XML Generators ---
+        // DELEGATE: Mix.xml generation to the new module
+        // function generateMixXml() { return MixMainMix.generateMixXml(); } 
+        
         function generateAngelWeaponXml() {
             let xml = originalXmlHeaders.angel;
             const settings = mixData.angel.find(r => r.isSettings) || { SuccessRate: 100, OptionUpgradeType: 0 };
@@ -2041,10 +2195,6 @@
             return xml;
         }
 
-        /**
-         * @description Generates the XML content for MixJewelTemplate.xml.
-         * @returns {string} The generated XML content.
-         */
         function generateJewelTemplateXml() {
             let xml = originalXmlHeaders.jewel + '<MixJewelTemplate>\n';
             mixData.jewel.forEach(mix => {
@@ -2058,10 +2208,6 @@
             return xml;
         }
         
-        /**
-         * @description Generates the XML content for MixLuckyTemplate.xml.
-         * @returns {string} The generated XML content.
-         */
         function generateLuckyTemplateXml() {
             let xml = originalXmlHeaders.lucky + '<MixLuckyTemplate>\n';
             mixData.lucky.forEach(mix => {
@@ -2071,10 +2217,6 @@
             return xml;
         }
         
-        /**
-         * @description Generates the XML content for MixDisable.xml.
-         * @returns {string} The generated XML content.
-         */
         function generateMixDisableXml() {
             let xml = originalXmlHeaders.disable + '<MixDisable>\n';
             mixData.disable.forEach(mix => {
@@ -2084,10 +2226,7 @@
             return xml;
         }
         
-        /**
-         * @description Generates the XML content for MasteryItemMix.xml.
-         * @returns {string} The generated XML content.
-         */
+        // --- NEW: XML Generator for Mastery Items ---
         function generateMasteryItemMixXml() {
             let xml = originalXmlHeaders.mastery + '<MasteryItemMix>\n';
             
@@ -2147,10 +2286,7 @@
             return xml;
         }
         
-        /**
-         * @description Saves the data for the current tab to the server.
-         * @param {string} fileName - The name of the file to save.
-         */
+        // --- Save to Server ---
         async function saveData(fileName) {
             const saveButton = document.querySelector(`.tab-controls .btn-success`);
             if (!saveButton) return;
@@ -2227,9 +2363,8 @@
             }
         }
         
-        /** @description Opens the guide modal. */
+        // --- Modal & Guide Logic ---
         function openGuideModal() { document.getElementById('guideModal').classList.add('show'); lucide.createIcons(); }
-        /** @description Closes the guide modal. */
         function closeGuideModal() { closeModal('guideModal'); }
         
         document.getElementById('guideModal').addEventListener('click', function (e) { if (e.target === this) closeGuideModal(); }); 
@@ -2238,14 +2373,7 @@
         document.getElementById('materialSearchModal').addEventListener('click', function (e) { if (e.target === this) closeMaterialSearchModal(); }); 
         
         
-        /**
-         * @description Updates a value in a row for simple tab structures (jewel, lucky, angel).
-         * @param {string} type - The type of data.
-         * @param {number} mixIndex - The index of the row.
-         * @param {number|null} recIndex - The sub-index for nested data.
-         * @param {string} field - The field to update.
-         * @param {string|number} value - The new value.
-         */
+        // --- Dummy implementation of updateRowValue (Needed for jewel/lucky tabs, but not used in this iteration) ---
         function updateRowValue(type, mixIndex, recIndex, field, value) {
             pushUndo();
             let item;

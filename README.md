@@ -1,62 +1,61 @@
 # MU Online Web Editor
 
-This project is a web-based suite of tools designed to edit common configuration files for a MU Online game server. It provides a user-friendly interface for managing complex XML and INI files, reducing the need for manual text editing and minimizing the risk of syntax errors.
+A set of easy-to-use web tools for editing MU Online server configuration files.
+Designed to be simple, visual, and safe to use.
 
-## Features
+## 🚀 Quick Start Guide (Read This First!)
 
--   **Modular Design**: Separate editors for different server configurations.
--   **Web-Based Interface**: Access the editor from any modern web browser on the local network.
--   **Data-Centric Views**: Tools are designed to present data in an intuitive, easy-to-manage format.
--   **Automatic Backups**: Automatically creates timestamped backups of any file before saving changes.
--   **Local Caching**: In-progress edits are saved to the browser's local storage, preventing data loss on refresh.
+You do not need to be a programmer to use this. Just follow these 3 steps:
 
-## Available Editors
+### 1. Install Node.js
+You need a free tool called **Node.js** to run this program.
+*   **[Download Node.js Here](https://nodejs.org/)** (Version 18 or higher recommended).
+*   Install it just like any other program.
 
-The dashboard provides access to the following modules:
+### 2. Start the Editor
+*   Open the folder where you downloaded this editor.
+*   Double-click the file named **`Start-Editor.bat`**.
+*   A black window will appear. **Do not close it.** This is the server.
+*   The editor should automatically open in your web browser.
 
--   **Monster Spawn Editor**: Manage monster spawn points across all maps.
--   **Monster Drop Editor**: Configure item drops from `EachMonsterMapDrop` files.
--   **Drop Rate Editor**: Adjust server-wide Zen drop rates and Excellent Option probabilities.
--   **Shop Manager**: Configure NPC shop inventories and item prices.
--   **Chaos Mix Editor**: Manage Chaos Machine recipes for item upgrades, jewel packing, and more.
--   **Event Scheduler** (Coming Soon): A tool for scheduling in-game events.
+### 3. Start Editing!
+*   The editor comes with **sample files** so you can test it immediately.
+*   Your changes are saved automatically.
+*   When you are done, just close the web browser and the black window.
 
-## Tech Stack
+---
 
--   **Backend**: Node.js with Express for serving files and handling API requests.
--   **Frontend**: Vanilla HTML, CSS, and JavaScript. No frameworks.
--   **Icons**: [Lucide Icons](https://lucide.dev/)
+## ⚙️ How to Edit Your Server (Configuration)
 
-## Setup
+By default, this editor modifies the "Sample Data" included in the `data/` folder.
+If you want to edit your **real** MU Online server files:
 
-1.  **Prerequisites**: You must have [Node.js](https://nodejs.org/) (version 18 or higher) installed.
+1.  Open the editor in your browser.
+2.  Click on **Server Configuration** (Module 7).
+3.  Change the file paths to point to your server files (e.g., `D:\Muserver\Data\...`).
+4.  Click **Save Configuration**.
+5.  **Restart the editor** (Close the black window and run `Start-Editor.bat` again).
 
-2.  **Install Dependencies**: Open a terminal in the project root and run the following command:
-    ```bash
-    npm install
-    ```
+> **Note:** If you get "File Not Found" errors, it means your paths in Server Configuration are wrong.
 
-3.  **Configure Data Files**:
-    -   Place your game server's data files into the `data` directory, preserving the original folder structure (e.g., `data/Monster/MonsterSetBase.xml`).
-    -   The required file paths are defined in `config.json`. You can modify this file if your data is stored in a different location. The server will check for the existence of these files on startup.
+---
 
-4.  **Run the Server**:
-    ```bash
-    node server.js
-    ```
-    The server will start, and you should see a confirmation message in the console indicating that it's running on `http://localhost:3000`.
+## 🛠️ Included Tools
 
-5.  **Access the Editor**: Open your web browser and navigate to `http://localhost:3000`. You will be greeted by the main dashboard, where you can select an editor to begin.
+*   **Monster Spawn Editor**: Drag-and-drop monsters onto maps.
+*   **Shop Manager**: Edit NPC shops visually.
+*   **Drop Rate Editor**: Control item drops and zen rates.
+*   **Chaos Mix Editor**: Adjust success rates for chaos machine.
+*   **Event Scheduler**: Schedule invasions and events.
+*   **Monster Drop Editor**: Configure what items monsters drop.
 
-## How to Use
+## ⚠️ Troubleshooting
 
--   **Select a Module**: Click on any of the available editor cards on the dashboard to launch that tool.
--   **Author Name**: Most editors will prompt for an author name on the first visit. This is used to tag changes in the XML files for auditing purposes.
--   **Editing**: Each editor has its own interface for modifying data. Changes are typically saved to your browser's local storage automatically.
--   **Saving to Server**: To make your changes permanent, you must click the **Save** button within the editor. This will send the data to the server, which then overwrites the corresponding file in the `data` directory and creates a backup.
+*   **"Node is not recognized"**: You didn't install Node.js (Step 1). Install it and restart your computer.
+*   **Browser didn't open**: Open your browser and type `http://localhost:3000` in the address bar.
+*   **Screen is stuck**: Press `F5` or `Ctrl+F5` to refresh the page.
 
-## Development
-
--   **Server**: The main server logic is in `server.js`. This file handles API routes for reading and writing files.
--   **Frontend**: Each editor is a standalone HTML file in the project root (e.g., `shopeditor.html`). Client-side JavaScript is embedded within `<script>` tags in these files or located in the `public/js` directory.
--   **Styling**: All styles are in `public/css/style.css`.
+---
+**Tech Info (For Developers)**
+*   Built with Node.js, Express, and Vanilla JS.
+*   No database required (edits XML/INI files directly).

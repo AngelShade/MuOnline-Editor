@@ -1,17 +1,10 @@
-/**
- * @file Contains all logic for parsing, manipulating, and rendering the Main Mix (Mix.xml) data.
- * @namespace MixMainMix
- * @description Global object holding all functions for the Main Mix editor tab.
- * Assumes access to global variables and functions from the main editor script,
- * such as `mixData`, `pushUndo`, `saveToCache`, `renderEditor`, `getItemName`, etc.
- */
 // Global placeholder for Main Mix data and functions
-// NOTE: This file assumes global access to mixData, originalXmlHeaders,
+// NOTE: This file assumes global access to mixData, originalXmlHeaders, 
 // pushUndo, saveToCache, renderTabControls, getCatAndIndex, getItemName, and parseItemType
 const MixMainMix = {};
 
 /**
- * Parses the Mix.xml string and populates the `mixData.main` array.
+ * Parses the Mix.xml string and populates mixData.main.
  * NOTE: This implementation is read-only for item groups due to complexity.
  * @param {string} xmlText The XML content of Mix.xml.
  */
@@ -19,7 +12,7 @@ MixMainMix.parseMix = function(xmlText) {
     mixData.main = [];
     const parser = new DOMParser();
     const xmlDoc = parser.parseFromString(xmlText, "text/xml");
-
+    
     // Store header (if needed, though this is done in parseAllData in the main file)
     // We keep this line just to ensure we catch the XML data structure for consistency.
     originalXmlHeaders.main = xmlText.match(/^[\s\S]*?(?=<Mixes>)/i)?.[0] || '<?xml version="1.0" encoding="utf-8"?>\n';
@@ -39,7 +32,7 @@ MixMainMix.parseMix = function(xmlText) {
         const mixEntry = {
             ID: mix.getAttribute('ID'),
             ReqMoney: mix.getAttribute('ReqMoney'),
-            MaxRates: maxRates,
+            MaxRates: maxRates, 
             groups: []
         };
         for (let group of mix.getElementsByTagName('Group')) {
@@ -68,10 +61,10 @@ MixMainMix.parseMix = function(xmlText) {
 };
 
 /**
- * Updates a top-level value in a specific Mix.xml data entry.
- * @param {number} index The index of the mix entry in `mixData.main`.
- * @param {string} field The property name to update (e.g., 'ReqMoney', 'MaxRate_0').
- * @param {string} value The new value to set.
+ * Updates a value in the Mix.xml data structure.
+ * @param {number} index Index of the mix entry in mixData.main.
+ * @param {string} field Field name to update (e.g., 'ReqMoney').
+ * @param {string} value New value.
  */
 MixMainMix.updateMixValue = function(index, field, value) {
     if (mixData.main[index]) {
@@ -100,17 +93,17 @@ MixMainMix.calculateFlatId = function(cat, index) {
 };
 
 /**
- * Updates a specific data field for an item requirement within a group.
- * @param {number} mixIndex The index of the mix entry.
+ * Updates a specific data field within a group.
+ * @param {number} mixIndex The index of the mix.
  * @param {number} groupIndex The index of the group within the mix.
- * @param {number} dataIndex The index of the item data element within the group.
- * @param {string} field The property name to update (e.g., 'ItemMin', 'LevelMax').
- * @param {string} value The new value for the field.
+ * @param {number} dataIndex The index of the data element within the group.
+ * @param {string} field The field name to update (e.g., 'ItemMin').
+ * @param {string} value The new value.
  */
 MixMainMix.updateGroupData = function(mixIndex, groupIndex, dataIndex, field, value) {
     if (mixData.main[mixIndex] && mixData.main[mixIndex].groups[groupIndex] && mixData.main[mixIndex].groups[groupIndex].data[dataIndex]) {
         pushUndo();
-
+        
         // Find the specific data object
         const dataObj = mixData.main[mixIndex].groups[groupIndex].data[dataIndex];
         dataObj[field] = value.toString(); // Ensure attribute value is string
@@ -118,7 +111,7 @@ MixMainMix.updateGroupData = function(mixIndex, groupIndex, dataIndex, field, va
         mixData.main[mixIndex].isModified = true;
         // Re-render to show updated item name if ItemMin/ItemMax changed, but not for every input
         if (field === 'ItemMin' || field === 'ItemMax' || field === 'ItemType') {
-            renderEditor();
+            renderEditor(); 
         } else {
             saveToCache();
         }
@@ -126,53 +119,49 @@ MixMainMix.updateGroupData = function(mixIndex, groupIndex, dataIndex, field, va
 };
 
 /**
- * Handles the callback from the item search modal for updating `ItemMin` or `ItemMax`.
- * This function is the entry point for item selection via the modal.
- * @param {number} cat The selected item's category.
- * @param {number} index The selected item's index.
- * @param {object} context The context object passed from the modal opener.
- * @param {number} context.mixIndex The index of the mix.
- * @param {number} context.groupIndex The index of the group.
- * @param {number} context.dataIndex The index of the data element.
- * @param {string} context.field The field being updated ('ItemMin' or 'ItemMax').
+ * Handles the callback from the item search modal for ItemMin/ItemMax.
+ * NOTE: This function is the new entry point for item selection.
+ * @param {number} cat Item Category.
+ * @param {number} index Item Index.
+ * @param {object} context The context object passed by openItemModal.
  */
 MixMainMix.handleItemModalCallback = function(cat, index, context) {
     const { mixIndex, groupIndex, dataIndex, field } = context;
     const flatId = MixMainMix.calculateFlatId(cat, index);
-
+    
     // Use the existing updateGroupData to ensure undo history is tracked correctly
     MixMainMix.updateGroupData(mixIndex, groupIndex, dataIndex, field, flatId);
     // updateGroupData calls renderEditor if ItemMin/ItemMax changes.
 };
 
 /**
- * Adds a new item requirement (`<Data>`) to a specified group.
- * @param {number} mixIndex The index of the mix entry.
- * @param {number} groupIndex The index of the group within the mix.
+ * Adds a new item requirement (<Data>) to a Group.
+ * @param {number} mixIndex Index of the mix.
+ * @param {number} groupIndex Index of the group within the mix.
  */
 MixMainMix.addItemToGroup = function(mixIndex, groupIndex) {
     if (mixData.main[mixIndex] && mixData.main[mixIndex].groups[groupIndex]) {
         pushUndo();
         const group = mixData.main[mixIndex].groups[groupIndex];
-
+        
         const newItem = {
             // Default placeholder values: Any Item (0, 0) x1 -> Flat ID 0
-            ItemMin: "0", ItemMax: "0", LevelMin: "0", LevelMax: "255",
-            OptMin: "0", OptMax: "255", CountMin: "1", CountMax: "1",
+            ItemMin: "0", ItemMax: "0", LevelMin: "0", LevelMax: "255", 
+            OptMin: "0", OptMax: "255", CountMin: "1", CountMax: "1", 
             ItemType: "0", KindA: ""
         };
         group.data.push(newItem);
         mixData.main[mixIndex].isModified = true;
-        renderEditor();
+        renderEditor(); 
         saveToCache();
     }
 };
 
 /**
- * Removes an item requirement (`<Data>`) from a specified group after user confirmation.
- * @param {number} mixIndex The index of the mix entry.
- * @param {number} groupIndex The index of the group within the mix.
- * @param {number} dataIndex The index of the data item to remove.
+ * Removes an item requirement (<Data>) from a Group.
+ * @param {number} mixIndex Index of the mix.
+ * @param {number} groupIndex Index of the group within the mix.
+ * @param {number} dataIndex Index of the data item to remove.
  */
 MixMainMix.removeItemFromGroup = function(mixIndex, groupIndex, dataIndex) {
     if (mixData.main[mixIndex] && mixData.main[mixIndex].groups[groupIndex] && mixData.main[mixIndex].groups[groupIndex].data.length > 0) {
@@ -181,7 +170,7 @@ MixMainMix.removeItemFromGroup = function(mixIndex, groupIndex, dataIndex) {
             const group = mixData.main[mixIndex].groups[groupIndex];
             group.data.splice(dataIndex, 1);
             mixData.main[mixIndex].isModified = true;
-            renderEditor();
+            renderEditor(); 
             saveToCache();
         });
     }
@@ -189,9 +178,8 @@ MixMainMix.removeItemFromGroup = function(mixIndex, groupIndex, dataIndex) {
 
 
 /**
- * Adds a new, empty requirement group (`<Group>`) to a mix entry.
- * The new group will have one default item rule.
- * @param {number} mixIndex The index of the mix entry in `mixData.main`.
+ * Adds a new empty requirement group (<Group>) to a Mix entry.
+ * @param {number} mixIndex Index of the mix entry in mixData.main.
  */
 MixMainMix.addGroup = function(mixIndex) {
     if (mixData.main[mixIndex]) {
@@ -205,8 +193,8 @@ MixMainMix.addGroup = function(mixIndex) {
             Index: nextIndex.toString(),
             data: [{
                 // Default placeholder values for a single item requirement
-                ItemMin: "0", ItemMax: "0", LevelMin: "0", LevelMax: "255",
-                OptMin: "0", OptMax: "255", CountMin: "1", CountMax: "1",
+                ItemMin: "0", ItemMax: "0", LevelMin: "0", LevelMax: "255", 
+                OptMin: "0", OptMax: "255", CountMin: "1", CountMax: "1", 
                 ItemType: "0", KindA: ""
             }]
         };
@@ -218,8 +206,8 @@ MixMainMix.addGroup = function(mixIndex) {
 };
 
 /**
- * Removes the last requirement group (`<Group>`) from a mix entry after user confirmation.
- * @param {number} mixIndex The index of the mix entry in `mixData.main`.
+ * Removes the last requirement group (<Group>) from a Mix entry.
+ * @param {number} mixIndex Index of the mix entry in mixData.main.
  */
 MixMainMix.removeGroup = function(mixIndex) {
     if (mixData.main[mixIndex] && mixData.main[mixIndex].groups.length > 0) {
@@ -228,7 +216,7 @@ MixMainMix.removeGroup = function(mixIndex) {
             const mix = mixData.main[mixIndex];
             mix.groups.pop();
             mix.isModified = true;
-            renderEditor();
+            renderEditor(); 
             saveToCache();
         });
     }
@@ -245,7 +233,7 @@ MixMainMix.generateMixXml = function() {
 
     mixData.main.forEach(mix => {
         let mixAttributes = `ID="${mix.ID}" ReqMoney="${mix.ReqMoney}"`;
-
+        
         // Output MaxRate or MaxRate1-N
         if (mix.MaxRates.length === 1) {
             mixAttributes += ` MaxRate="${mix.MaxRates[0]}"`;
@@ -254,11 +242,11 @@ MixMainMix.generateMixXml = function() {
                 mixAttributes += ` MaxRate${i + 1}="${rate}"`;
             });
         }
-
+        
         xml += `\t<Mix ${mixAttributes}>\n`;
 
         mix.groups.forEach(group => {
-            xml += `\t\t<Group Index ="${group.Index}" >\n`;
+            xml += `\t\t<Group Index ="${group.Index}" >\n`; 
             group.data.forEach(data => {
                 let dataAttributes = `ItemMin="${data.ItemMin}" ItemMax="${data.ItemMax}" LevelMin="${data.LevelMin}" LevelMax="${data.LevelMax}" OptMin="${data.OptMin}" OptMax="${data.OptMax}" CountMin="${data.CountMin}" CountMax="${data.CountMax}" ItemType="${data.ItemType}"`;
                 if (data.KindA) {
@@ -306,13 +294,13 @@ MixMainMix.renderMainMixTab = function() {
                             <tr class="${isModified}">
                                 <td>${mix.isModified ? '<i data-lucide="pencil-line" style="color:var(--accent-amber);"></i>' : ''}</td>
                                 <td>
-                                    <input type="number" class="inline-input" style="width: 100%;"
-                                           value="${mix.ID}"
+                                    <input type="number" class="inline-input" style="width: 100%;" 
+                                           value="${mix.ID}" 
                                            onchange="MixMainMix.updateMixValue(${mixIndex}, 'ID', this.value)">
                                 </td>
                                 <td>
-                                    <input type="number" class="inline-input" style="width: 100%;"
-                                           value="${mix.ReqMoney}"
+                                    <input type="number" class="inline-input" style="width: 100%;" 
+                                           value="${mix.ReqMoney}" 
                                            onchange="MixMainMix.updateMixValue(${mixIndex}, 'ReqMoney', this.value)">
                                 </td>
                                 <td>
@@ -320,8 +308,8 @@ MixMainMix.renderMainMixTab = function() {
                                         const label = mixRateLabels[i] || `Rate ${i + 1}`;
                                         return `<div style="display: flex; gap: 5px; align-items: center; margin-bottom: 5px;">
                                             <span style="font-size: 11px; color: var(--text-secondary); width: 80px;">${label}:</span>
-                                            <input type="number" class="inline-input" style="width: 60px;"
-                                                   value="${rate}"
+                                            <input type="number" class="inline-input" style="width: 60px;" 
+                                                   value="${rate}" 
                                                    onchange="MixMainMix.updateMixValue(${mixIndex}, 'MaxRate_${i}', this.value)"
                                                    title="${label}">
                                             <span style="font-size: 14px; color: var(--accent-green);">%</span>
@@ -350,7 +338,7 @@ MixMainMix.renderMainMixTab = function() {
                                                 const itemMaxId = parseInt(d.ItemMax, 10);
                                                 const { cat: minCat, index: minIndex } = getCatAndIndex(itemMinId);
                                                 const { cat: maxCat, index: maxIndex } = getCatAndIndex(itemMaxId);
-
+                                                
                                                 const itemNameMin = getItemName(minCat, minIndex);
                                                 const itemNameMax = getItemName(maxCat, maxIndex);
                                                 const isRange = itemMinId !== itemMaxId;
@@ -358,7 +346,7 @@ MixMainMix.renderMainMixTab = function() {
 
                                                 // Determine ItemType display
                                                 const itemTypeFlags = parseItemType(d.ItemType);
-
+                                                
                                                 return `
                                                     <div class="req-item glass-effect" style="border: 1px solid rgba(0, 170, 255, 0.2); border-radius: 6px; padding: 8px; margin-bottom: 5px;">
                                                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
@@ -369,90 +357,90 @@ MixMainMix.renderMainMixTab = function() {
                                                                 <i data-lucide="x-circle"></i>
                                                             </button>
                                                         </div>
-
+                                                        
                                                         <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px;">
                                                             <!-- ItemMin/Max -->
                                                             <div title="ItemMin Flat ID (${minCat}, ${minIndex})">
                                                                 <label style="font-size: 10px; color: var(--text-secondary); cursor: pointer;"
-                                                                    onclick="openItemModal({
-                                                                        type: 'main',
-                                                                        mixIndex: ${mixIndex},
-                                                                        groupIndex: ${groupIndex},
-                                                                        dataIndex: ${dataIndex},
+                                                                    onclick="openItemModal({ 
+                                                                        type: 'main', 
+                                                                        mixIndex: ${mixIndex}, 
+                                                                        groupIndex: ${groupIndex}, 
+                                                                        dataIndex: ${dataIndex}, 
                                                                         field: 'ItemMin',
                                                                         callback: MixMainMix.handleItemModalCallback
                                                                     })">
                                                                     <i data-lucide="search" style="width: 10px; height: 10px; margin-right: 3px;"></i>ItemMin (Flat ID)
                                                                 </label>
-                                                                <input type="number" class="inline-input" value="${d.ItemMin}"
+                                                                <input type="number" class="inline-input" value="${d.ItemMin}" 
                                                                     onchange="MixMainMix.updateGroupData(${mixIndex}, ${groupIndex}, ${dataIndex}, 'ItemMin', this.value)">
                                                             </div>
                                                             <div title="ItemMax Flat ID (${maxCat}, ${maxIndex})">
                                                                 <label style="font-size: 10px; color: var(--text-secondary); cursor: pointer;"
-                                                                    onclick="openItemModal({
-                                                                        type: 'main',
-                                                                        mixIndex: ${mixIndex},
-                                                                        groupIndex: ${groupIndex},
-                                                                        dataIndex: ${dataIndex},
+                                                                    onclick="openItemModal({ 
+                                                                        type: 'main', 
+                                                                        mixIndex: ${mixIndex}, 
+                                                                        groupIndex: ${groupIndex}, 
+                                                                        dataIndex: ${dataIndex}, 
                                                                         field: 'ItemMax',
                                                                         callback: MixMainMix.handleItemModalCallback
                                                                     })">
                                                                     <i data-lucide="search" style="width: 10px; height: 10px; margin-right: 3px;"></i>ItemMax (Flat ID)
                                                                 </label>
-                                                                <input type="number" class="inline-input" value="${d.ItemMax}"
+                                                                <input type="number" class="inline-input" value="${d.ItemMax}" 
                                                                     onchange="MixMainMix.updateGroupData(${mixIndex}, ${groupIndex}, ${dataIndex}, 'ItemMax', this.value)">
                                                             </div>
 
                                                             <!-- CountMin/Max -->
                                                             <div title="CountMin" >
                                                                 <label style="font-size: 10px; color: var(--text-secondary);">Count Min</label>
-                                                                <input type="number" class="inline-input" value="${d.CountMin}"
+                                                                <input type="number" class="inline-input" value="${d.CountMin}" 
                                                                     onchange="MixMainMix.updateGroupData(${mixIndex}, ${groupIndex}, ${dataIndex}, 'CountMin', this.value)">
                                                             </div>
                                                             <div title="CountMax">
                                                                 <label style="font-size: 10px; color: var(--text-secondary);">Count Max</label>
-                                                                <input type="number" class="inline-input" value="${d.CountMax}"
+                                                                <input type="number" class="inline-input" value="${d.CountMax}" 
                                                                     onchange="MixMainMix.updateGroupData(${mixIndex}, ${groupIndex}, ${dataIndex}, 'CountMax', this.value)">
                                                             </div>
 
                                                             <!-- LevelMin/Max -->
                                                             <div title="LevelMin">
                                                                 <label style="font-size: 10px; color: var(--text-secondary);">Lvl Min</label>
-                                                                <input type="number" class="inline-input" value="${d.LevelMin}"
+                                                                <input type="number" class="inline-input" value="${d.LevelMin}" 
                                                                     onchange="MixMainMix.updateGroupData(${mixIndex}, ${groupIndex}, ${dataIndex}, 'LevelMin', this.value)">
                                                             </div>
                                                             <div title="LevelMax">
                                                                 <label style="font-size: 10px; color: var(--text-secondary);">Lvl Max</label>
-                                                                <input type="number" class="inline-input" value="${d.LevelMax}"
+                                                                <input type="number" class="inline-input" value="${d.LevelMax}" 
                                                                     onchange="MixMainMix.updateGroupData(${mixIndex}, ${groupIndex}, ${dataIndex}, 'LevelMax', this.value)">
                                                             </div>
-
+                                                            
                                                             <!-- OptMin/Max -->
                                                             <div title="OptMin">
                                                                 <label style="font-size: 10px; color: var(--text-secondary);">Opt Min</label>
-                                                                <input type="number" class="inline-input" value="${d.OptMin}"
+                                                                <input type="number" class="inline-input" value="${d.OptMin}" 
                                                                     onchange="MixMainMix.updateGroupData(${mixIndex}, ${groupIndex}, ${dataIndex}, 'OptMin', this.value)">
                                                             </div>
                                                             <div title="OptMax">
                                                                 <label style="font-size: 10px; color: var(--text-secondary);">Opt Max</label>
-                                                                <input type="number" class="inline-input" value="${d.OptMax}"
+                                                                <input type="number" class="inline-input" value="${d.OptMax}" 
                                                                     onchange="MixMainMix.updateGroupData(${mixIndex}, ${groupIndex}, ${dataIndex}, 'OptMax', this.value)">
                                                             </div>
 
                                                             <!-- ItemType/KindA -->
                                                             <div title="ItemType (Bitwise flags)">
                                                                 <label style="font-size: 10px; color: var(--text-secondary);">ItemType (Flags)</label>
-                                                                <input type="number" class="inline-input" value="${d.ItemType}"
+                                                                <input type="number" class="inline-input" value="${d.ItemType}" 
                                                                     onchange="MixMainMix.updateGroupData(${mixIndex}, ${groupIndex}, ${dataIndex}, 'ItemType', this.value)"
                                                                     title="${itemTypeFlags}">
                                                             </div>
                                                             <div title="KindA (Optional Attribute)">
                                                                 <label style="font-size: 10px; color: var(--text-secondary);">KindA (Optional)</label>
-                                                                <input type="number" class="inline-input" value="${d.KindA}"
+                                                                <input type="number" class="inline-input" value="${d.KindA}" 
                                                                     onchange="MixMainMix.updateGroupData(${mixIndex}, ${groupIndex}, ${dataIndex}, 'KindA', this.value)">
                                                             </div>
                                                         </div>
-
+                                                        
                                                         <!-- Item Name Hint -->
                                                         <div style="margin-top: 5px; font-size: 12px; color: var(--text-secondary); border-top: 1px dashed rgba(0, 170, 255, 0.1); padding-top: 5px;">
                                                             Rule: ${isSingleItem ? itemNameMin : `${itemNameMin} to ${itemNameMax}`}

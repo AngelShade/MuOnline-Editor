@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Configuration Editor</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@500&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        .config-group {
+            margin-bottom: 20px;
+        }
+        .config-label {
+            display: block;
+            margin-bottom: 8px;
+            color: var(--text-secondary);
+            font-size: 0.9em;
+        }
+        .config-input {
+            width: 100%;
+            padding: 10px;
+            background: rgba(0, 0, 0, 0.2);
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            color: var(--text-bright);
+            font-family: var(--font-data);
+        }
+        .config-input:focus {
+            outline: none;
+            border-color: var(--accent-blue);
+        }
+    </style>
+</head>
+<body>
+    <div class="container glass-effect">
+        <div class="header">
+            <h1><i data-lucide="settings"></i>Server Configuration<i data-lucide="sliders"></i></h1>
+            <p>Manage server paths and network settings</p>
+            <div class="header-right-controls">
+                <a href="dashboard.html" class="btn btn-outline" title="Back to Dashboard">
+                    <i data-lucide="layout-dashboard"></i>Dashboard
+                </a>
+            </div>
+        </div>
+
+        <div id="statusBar" class="status-bar" style="display: none;"></div>
+
+        <div class="main-content" style="display: block; padding: 20px;">
+            <div class="editor-panel glass-effect" style="padding: 25px; max-width: 800px; margin: 0 auto;">
+                <div id="loadingState" class="empty-state">
+                    <h3>Loading Configuration...</h3>
+                </div>
+                
+                <form id="configForm" style="display: none;">
+                    <div id="formFields"></div>
+                    
+                    <div style="margin-top: 30px; display: flex; justify-content: flex-end; gap: 10px;">
+                        <button type="button" class="btn btn-outline" onclick="loadConfig()">Discard Changes</button>
+                        <button type="submit" class="btn btn-success"><i data-lucide="save"></i> Save Configuration</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = '/api/config';
+
+        document.addEventListener('DOMContentLoaded', () => {
+            lucide.createIcons();
+            loadConfig();
+        });
+
+        function showStatus(message, isError = false) {
+            const statusBar = document.getElementById('statusBar');
+            statusBar.textContent = message;
+            statusBar.className = `status-bar ${isError ? 'status-bar-error' : 'status-bar-success'}`;
+            statusBar.style.display = 'block';
+            setTimeout(() => { statusBar.style.display = 'none'; }, 5000);
+        }
+
+        async function loadConfig() {
+            try {
+                const response = await fetch(API_URL);
+                if (!response.ok) throw new Error('Failed to load config');
+                const config = await response.json();
+                renderForm(config);
+            } catch (error) {
+                console.error(error);
+                document.getElementById('loadingState').innerHTML = `<h3>Error Loading Config</h3><p>${error.message}</p>`;
+            }
+        }
+
+        function renderForm(config) {
+            const container = document.getElementById('formFields');
+            container.innerHTML = '';
+            
+            // Prioritize specific keys
+            const priorityKeys = ['SERVER_IP', 'SERVER_PORT'];
+            const sortedKeys = Object.keys(config).sort((a, b) => {
+                const aPrio = priorityKeys.indexOf(a);
+                const bPrio = priorityKeys.indexOf(b);
+                if (aPrio !== -1 && bPrio !== -1) return aPrio - bPrio;
+                if (aPrio !== -1) return -1;
+                if (bPrio !== -1) return 1;
+                return a.localeCompare(b);
+            });
+
+            // --- Quick Setup Section ---
+            const quickSetupDiv = document.createElement('div');
+            quickSetupDiv.style.marginBottom = '30px';
+            quickSetupDiv.style.padding = '20px';
+            quickSetupDiv.style.background = 'rgba(255, 255, 255, 0.05)';
+            quickSetupDiv.style.borderRadius = '8px';
+            quickSetupDiv.style.border = '1px solid var(--border-color)';
+
+            quickSetupDiv.innerHTML = `
+                <h3 style="margin-top: 0; color: var(--accent-blue); display: flex; align-items: center; gap: 8px;">
+                    <i data-lucide="zap"></i> Quick Setup
+                </h3>
+                <p style="color: var(--text-secondary); margin-bottom: 15px; font-size: 0.9em;">
+                    Path to your Server <b>Data</b> folder (e.g., <code>C:/Muserver/Data</code>).
+                    <br>We will automatically set all file paths relative to this folder.
+                </p>
+                <div style="display: flex; gap: 10px;">
+                    <button type="button" class="btn btn-outline" id="btnBrowse" title="Open Folder Picker">
+                        <i data-lucide="folder-open"></i> Browse
+                    </button>
+                    <input type="text" id="baseDataPath" placeholder="Paste your Data folder path here..." class="config-input" style="flex: 1;">
+                    <button type="button" class="btn btn-primary" id="btnAutoFill">Auto-Fill Paths</button>
+                </div>
+            `;
+            container.appendChild(quickSetupDiv);
+            lucide.createIcons();
+
+            // Auto-fill logic
+            setTimeout(() => {
+                // Browse Button Logic
+                document.getElementById('btnBrowse').addEventListener('click', async () => {
+                    const btn = document.getElementById('btnBrowse');
+                    const originalText = btn.innerHTML;
+                    btn.innerHTML = `<i data-lucide="loader-2" class="spin"></i> Opening...`;
+                    btn.disabled = true;
+                    lucide.createIcons();
+
+                    try {
+                        const response = await fetch('/api/browse-folder');
+                        if (!response.ok) throw new Error('Failed to open picker');
+                        const data = await response.json();
+                        
+                        if (data.path) {
+                            document.getElementById('baseDataPath').value = data.path;
+                            showStatus('Folder selected! Now click Auto-Fill.');
+                        } else if (data.cancelled) {
+                            // User cancelled, do nothing
+                        }
+                    } catch (error) {
+                        console.error(error);
+                        showStatus('Could not open folder picker.', true);
+                    } finally {
+                        btn.innerHTML = originalText;
+                        btn.disabled = false;
+                        lucide.createIcons();
+                    }
+                });
+
+                document.getElementById('btnAutoFill').addEventListener('click', () => {
+                    const basePathInput = document.getElementById('baseDataPath').value.trim();
+                    if (!basePathInput) {
+                        alert('Please enter a base Data path first.');
+                        return;
+                    }
+
+                    // Normalize path separators to forward slash
+                    const base = basePathInput.replace(/\\/g, '/').replace(/\/$/, '');
+
+                    // Standard DV Team Season 19 Structure
+                    const standardPaths = {
+                        "MONSTER_SPAWN_PATH": "Monster/MonsterSpawn.xml",
+                        "MONSTER_LIST_PATH": "Monster/MonsterList.xml",
+                        "MONSTER_BACKUP_DIR": "Monster/Backups",
+                        
+                        "SHOP_LIST_PATH": "Shops/ShopList.xml",
+                        "SHOPS_DIR": "Shops/Scripts",
+                        "SHOPS_BACKUP_DIR": "Shops/Backups",
+                        
+                        "ZEN_DROP_PATH": "Item/Drop/ZenDrop.xml",
+                        "ZEN_BACKUP_DIR": "Item/Drop/Backups",
+                        
+                        "ITEM_LIST_PATH": "Item/ItemList.xml",
+                        "ITEM_EXCELLENT_OPTIONS_PATH": "Item/ItemExcellentOptions.xml",
+                        "ITEM_STACK_PATH": "Item/ItemStack.xml",
+                        
+                        "MIX_DIR": "Mix",
+                        "MIX_BACKUP_DIR": "Mix/Backups",
+                        
+                        "EACH_MONSTER_MAP_DROP_DIR": "Item/Drop/EachMonsterMapDrop",
+                        "MAP_DROP_BACKUP_DIR": "Item/Drop/EachMonsterMapDrop/Backups",
+                        
+                        "MASTERY_EXC_OPTIONS_PATH": "Item/MasteryExcOptions.xml",
+                        "PENTAGRAM_DROP_RATE_PATH": "Item/Drop/PentagramItemDropRate.xml",
+                        "SOCKET_ITEM_DROP_RATES_PATH": "Item/Drop/SocketItemDropRates.xml",
+                        "ITEM_DROP_RATE_CONTROL_PATH": "Item/Drop/ItemDropRateControl.ini",
+                        
+                        "EVENT_SCHEDULE_PATH": "Event",
+                        "EVENT_BACKUP_DIR": "Event/Backups"
+                    };
+
+                    // Update inputs
+                    for (const [key, subPath] of Object.entries(standardPaths)) {
+                        const input = document.querySelector(`input[name="${key}"]`);
+                        if (input) {
+                            input.value = `${base}/${subPath}`;
+                            // Highlight changed inputs
+                            input.style.borderColor = '#4CAF50';
+                            setTimeout(() => { input.style.borderColor = 'var(--border-color)'; }, 1000);
+                        }
+                    }
+                    
+                    showStatus('Paths auto-filled! Review them below and click Save.');
+                });
+            }, 0);
+            // ---------------------------
+
+            sortedKeys.forEach(key => {
+                const group = document.createElement('div');
+                group.className = 'config-group';
+                
+                const label = document.createElement('label');
+                label.className = 'config-label';
+                label.textContent = key;
+                
+                const input = document.createElement('input');
+                input.className = 'config-input';
+                input.name = key;
+                input.value = config[key];
+                
+                // Type hints
+                if (key.includes('PORT')) input.type = 'number';
+                else input.type = 'text';
+
+                group.appendChild(label);
+                group.appendChild(input);
+                container.appendChild(group);
+            });
+
+            document.getElementById('loadingState').style.display = 'none';
+            document.getElementById('configForm').style.display = 'block';
+        }
+
+        document.getElementById('configForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            const newConfig = {};
+            
+            formData.forEach((value, key) => {
+                // Convert numbers back to numbers
+                if (key.includes('PORT') || !isNaN(value) && value.trim() !== '') {
+                   const num = Number(value);
+                   if (!isNaN(num)) newConfig[key] = num;
+                   else newConfig[key] = value;
+                } else {
+                    newConfig[key] = value;
+                }
+            });
+
+            try {
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(newConfig)
+                });
+                
+                if (response.ok) {
+                    showStatus('Configuration saved successfully! Please restart the server.');
+                } else {
+                    throw new Error('Failed to save');
+                }
+            } catch (error) {
+                showStatus('Error saving configuration.', true);
+                console.error(error);
+            }
+        });
+    </script>
+</body>
+</html>
