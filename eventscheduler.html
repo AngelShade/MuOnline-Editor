@@ -141,6 +141,8 @@
             align-items: center;
             height: 100%; 
         }
+        
+        /* Blood Castle Specific Logic needs key to handle 'key' passed to renderSearchInput being a composite string */
 
         .search-select-container {
             display: flex;
@@ -703,6 +705,8 @@
                 const files = [];
                 if (folder === 'ChaosCastle') {
                     files.push('ChaosCastle.xml', 'ChaosCastle_Monster.xml');
+                } else if (folder === 'BloodCastle') {
+                    files.push('BloodCastle.xml', 'BloodCastle_Monster.xml');
                 } else {
                     // Skip folders we don't know how to handle yet
                     continue;
@@ -721,6 +725,10 @@
                             parsedData = parseChaosCastle(xmlText);
                         } else if (file === 'ChaosCastle_Monster.xml') {
                             parsedData = parseChaosCastleMonsters(xmlText);
+                        } else if (file === 'BloodCastle.xml') {
+                            parsedData = parseBloodCastle(xmlText);
+                        } else if (file === 'BloodCastle_Monster.xml') {
+                            parsedData = parseBloodCastleMonsters(xmlText);
                         } else {
                             parsedData = { raw: xmlText }; // Fallback
                         }
@@ -753,6 +761,9 @@
                 if (folder === 'ChaosCastle') {
                     icon = 'chess-rook';
                     description = 'Schedule, settings, and monster placements.';
+                } else if (folder === 'BloodCastle') {
+                    icon = 'castle'; // or 'crown' or 'sword'
+                    description = 'Gates, statues, and archangel configuration.';
                 }
 
                 return `
@@ -845,7 +856,16 @@
 
             // If modular, the parentIdx is actually the folder name, and mIdx is the internal array index
             if (isModular) {
-                 fileKey = key.includes('Monster') ? 'ChaosCastle_Monster.xml' : 'ChaosCastle.xml';
+                 if (folder === 'BloodCastle') {
+                     // Blood Castle uses complex nested structure, simplified keys for now or handle special cases
+                     if (key.includes('Index')) fileKey = 'BloodCastle_Monster.xml';
+                     else fileKey = 'BloodCastle.xml';
+                     
+                     // Custom logic for finding the model in renderSearchInput callback:
+                     // We perform logic in the callback string generation below
+                 } else {
+                     fileKey = key.includes('Monster') ? 'ChaosCastle_Monster.xml' : 'ChaosCastle.xml';
+                 }
             }
 
 
@@ -892,30 +912,45 @@
                     if (isModular) {
                         const config = modularEventConfigs['${folder}'];
                         model = config['${fileKey}'].data;
-                        targetIndex = mIdx;
+                        targetIndex = ${mIdx};
                         
-                        if (fileKey.includes('Monster')) { // CC Monster
-                            model.castles[parentIdx].monsters[targetIndex][inputKey] = finalId;
-                        } else if (fileKey.includes('Castle')) { // CC Reward
-                            const groundIndex = parseInt(model.grounds[parentIdx].id);
-                            const ground = model.grounds.find(g => parseInt(g.id) === groundIndex);
-                            const reward = ground.rewards[mIdx];
-                            
-                            // Item ID is split into Category and ID for rewards
-                            const [cat, id] = finalId.split(',');
-                            if (cat && id) {
-                                // If the new ID is Cat,ID, update both properties
-                                reward['RewardItemCat'] = cat;
-                                reward['RewardItemID'] = id;
-                                reward.isFlatID = false; // Mark as explicit Cat,ID input
-                            } else {
-                                // If the new ID is a flat number (like 7450), store it as item ID and flag it
-                                reward['RewardItemID'] = finalId;
-                                reward['RewardItemCat'] = Math.floor(parseInt(finalId) / ITEM_FLAT_ID_DIVISOR).toString();
-                                reward.isFlatID = true; // Mark as flat ID input
+                        const fFolder = '${folder}';
+                        const fKey = '${fileKey}';
+                        const fInputKey = '${key}';
+
+                        if (fFolder === 'BloodCastle') {
+                             if (fKey.includes('Monster')) {
+                                   if (${mIdx} === -1) {
+                                       const entity = fInputKey.split('_')[0]; 
+                                       model.castles[${parentIdx}][entity]['${inputKey}'] = finalId;
+                                   } else {
+                                       const groupName = fInputKey.split('_')[0];
+                                       model.castles[${parentIdx}][groupName][targetIndex]['Index'] = finalId;
+                                   }
+                             } else {
+                                 const groundIndex = parseInt(model.grounds[${parentIdx}].id);
+                                 model.grounds.find(g => parseInt(g.id) === groundIndex).rewards[targetIndex]['RewardItemID'] = finalId;
+                             }
+                        } else {
+                            if (fKey.includes('Monster')) { // CC Monster
+                                model.castles[${parentIdx}].monsters[targetIndex]['${inputKey}'] = finalId;
+                            } else if (fKey.includes('Castle')) { // CC Reward
+                                const groundIndex = parseInt(model.grounds[${parentIdx}].id);
+                                const ground = model.grounds.find(g => parseInt(g.id) === groundIndex);
+                                const reward = ground.rewards[targetIndex];
+                                
+                                const [cat, id] = finalId.split(',');
+                                if (cat && id) {
+                                    reward['RewardItemCat'] = cat;
+                                    reward['RewardItemID'] = id;
+                                    reward.isFlatID = false;
+                                } else {
+                                    reward['RewardItemID'] = finalId;
+                                    reward['RewardItemCat'] = Math.floor(parseInt(finalId) / ITEM_FLAT_ID_DIVISOR).toString();
+                                    reward.isFlatID = true;
+                                }
                             }
                         }
-
                     } else { // Invasion/Standard Update
                         const monInvIdx = getMonsterInvasionIndex(parentIdx);
                         if (monInvIdx !== -1) {
@@ -1130,6 +1165,126 @@
             return { castles };
         }
 
+        function parseBloodCastle(xml) {
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(xml, 'text/xml');
+            if (doc.getElementsByTagName('parsererror').length > 0) {
+                 showStatus("XML Parsing Error in BloodCastle.xml. Check console.", true);
+                 return {};
+            }
+
+            const root = doc.getElementsByTagName('BloodCastle')[0];
+            const settings = {
+                Enable: root.getAttribute('Enable'),
+                EarlyFinishRestriction: root.getAttribute('EarlyFinishRestriction'),
+                EarlyFinishMinTime: root.getAttribute('EarlyFinishMinTime'),
+                MonsterKillReqPerPlayer: root.getAttribute('MonsterKillReqPerPlayer'),
+                DeliverWeaponTime: root.getAttribute('DeliverWeaponTime'),
+                RewardScore: root.getAttribute('RewardScore'),
+                SkillRushCheck: root.getAttribute('SkillRushCheck'),
+                EventEnterCount: root.getAttribute('EventEnterCount')
+            };
+
+            const timeNode = doc.getElementsByTagName('Time')[0];
+            const time = timeNode ? {
+                ToOpen: timeNode.getAttribute('ToOpen'),
+                StandBy: timeNode.getAttribute('StandBy'),
+                PlayDuration: timeNode.getAttribute('PlayDuration'),
+                ToClose: timeNode.getAttribute('ToClose')
+            } : {};
+
+            const schedules = Array.from(doc.getElementsByTagName('Start')).map(s => ({
+                Year: s.getAttribute('Year'), Month: s.getAttribute('Month'), Day: s.getAttribute('Day'),
+                DayOfWeek: s.getAttribute('DayOfWeek'), Hour: s.getAttribute('Hour'), Minute: s.getAttribute('Minute'),
+                Second: s.getAttribute('Second')
+            }));
+
+            // Helper to map a collection of <Castle> nodes by Level
+            const mapLevels = (tagName) => {
+                const map = {};
+                const section = doc.getElementsByTagName(tagName)[0];
+                if (section) {
+                    Array.from(section.getElementsByTagName('Castle')).forEach(c => {
+                        const lvl = c.getAttribute('Level');
+                        const attrs = {};
+                        for (let i = 0; i < c.attributes.length; i++) {
+                            const attr = c.attributes[i];
+                            if (attr.name !== 'Level') attrs[attr.name] = attr.value;
+                        }
+                        map[lvl] = attrs;
+                    });
+                }
+                return map;
+            };
+
+            const entryLevels = mapLevels('EntryLevel');
+            const eventSettings = mapLevels('EventSettings');
+            const rewardExpSettings = mapLevels('RewardExpSettings');
+
+            // Contribution Rewards
+            const rewardSection = doc.getElementsByTagName('EventContributionReward')[0];
+            const grounds = [];
+            if (rewardSection) {
+                Array.from(rewardSection.getElementsByTagName('Ground')).forEach(g => {
+                    const groundID = g.getAttribute('ID');
+                    const rewards = Array.from(g.getElementsByTagName('Reward')).map(r => ({
+                        ContributionMin: r.getAttribute('ContributionMin'),
+                        ContributionMax: r.getAttribute('ContributionMax'),
+                        RewardItemID: r.getAttribute('RewardItemID'),
+                        Count: r.getAttribute('Count')
+                    }));
+                    grounds.push({ id: groundID, rewards });
+                });
+            }
+
+            return { settings, time, schedules, entryLevels, eventSettings, rewardExpSettings, grounds };
+        }
+
+        function parseBloodCastleMonsters(xml) {
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(xml, 'text/xml');
+            if (doc.getElementsByTagName('parsererror').length > 0) {
+                 showStatus("XML Parsing Error in BloodCastle_Monster.xml. Check console.", true);
+                 return { castles: [] };
+            }
+
+            const castles = Array.from(doc.getElementsByTagName('Castle')).map(c => {
+                const level = c.getAttribute('Level');
+                
+                const getSingle = (tag) => {
+                    const el = c.getElementsByTagName(tag)[0];
+                    if (!el) return null;
+                    return {
+                        Index: el.getAttribute('Index'), MapNumber: el.getAttribute('MapNumber'),
+                        Distance: el.getAttribute('Distance'), StartX: el.getAttribute('StartX'),
+                        StartY: el.getAttribute('StartY'), Dir: el.getAttribute('Dir')
+                    };
+                };
+
+                const getGroup = (tag) => {
+                    const group = c.getElementsByTagName(tag)[0];
+                    if (!group) return [];
+                    return Array.from(group.getElementsByTagName('Monster')).map(m => ({
+                        Index: m.getAttribute('Index'), MapNumber: m.getAttribute('MapNumber'),
+                        Distance: m.getAttribute('Distance'), StartX: m.getAttribute('StartX'),
+                        StartY: m.getAttribute('StartY'), Dir: m.getAttribute('Dir')
+                    }));
+                };
+
+                return {
+                    level,
+                    Archangel: getSingle('Archangel'),
+                    Gate: getSingle('Gate'),
+                    Statue: getSingle('Statue'),
+                    Bosses: getGroup('Bosses'),
+                    General: getGroup('General'),
+                    Misc: getGroup('Misc')
+                };
+            });
+
+            return { castles };
+        }
+
 
         // --- CORE RENDER/SAVE LOGIC ---
 
@@ -1178,7 +1333,9 @@
             if (currentFile === 'Event.ini') renderINI(container);
             else if (currentFile === 'EventSeasonManager.xml') renderSeasonsTable(container);
             else if (currentFile === 'InvasionManager') renderInvasionManager(container);
+            else if (currentFile === 'InvasionManager') renderInvasionManager(container);
             else if (currentFile.startsWith('ChaosCastle/')) renderChaosCastleEditor(container);
+            else if (currentFile.startsWith('BloodCastle/')) renderBloodCastleEditor(container);
             
             const filterInput = document.querySelector('.filter-input');
             if (filterInput) {
@@ -1395,6 +1552,238 @@
             container.appendChild(addLevelButton);
         }
 
+        // --- BLOOD CASTLE RENDERERS ---
+
+        function renderBloodCastleEditor(container) {
+            const folder = currentFile.split('/')[0];
+            const config = modularEventConfigs[folder];
+
+            if (!config || !config['BloodCastle.xml'] || !config['BloodCastle_Monster.xml']) {
+                container.innerHTML = `<p style="color:var(--accent-pink);">Failed to load required files for ${folder}. Check server logs.</p>`;
+                return;
+            }
+
+            const tabs = document.createElement('div');
+            tabs.className = 'invasion-tabs';
+            tabs.innerHTML = `
+                <button class="invasion-tab-btn ${currentModularTab === 'settings' ? 'active' : ''}" onclick="switchModularTab('settings')">Settings & Schedule</button>
+                <button class="invasion-tab-btn ${currentModularTab === 'stats' ? 'active' : ''}" onclick="switchModularTab('stats')">Levels & Stats</button>
+                <button class="invasion-tab-btn ${currentModularTab === 'rewards' ? 'active' : ''}" onclick="switchModularTab('rewards')">Rewards</button>
+                <button class="invasion-tab-btn ${currentModularTab === 'monsters' ? 'active' : ''}" onclick="switchModularTab('monsters')">Spawns</button>
+            `;
+            container.appendChild(tabs);
+
+            if (currentModularTab === 'settings') renderBCSettings(container, folder);
+            else if (currentModularTab === 'stats') renderBCStats(container, folder);
+            else if (currentModularTab === 'rewards') renderBCRewards(container, folder);
+            else renderBCMonsters(container, folder);
+            
+            lucide.createIcons();
+        }
+
+        function renderBCSettings(container, folder) {
+            const data = modularEventConfigs[folder]['BloodCastle.xml'].data;
+            
+            // Core Settings
+            renderGenericIniSection(container, 'General Configuration', data.settings, (key, val) => {
+                data.settings[key] = val;
+            });
+            
+            // Time
+            renderGenericIniSection(container, 'Time Settings', data.time, (key, val) => {
+                data.time[key] = val;
+            });
+
+            // Schedule
+            container.innerHTML += `<h4 style="color:var(--accent-green); margin: 20px 0 10px;">Event Schedule</h4>`;
+            const table = document.createElement('table');
+            table.innerHTML = `
+                <thead><tr><th>H</th><th>M</th><th>S</th><th>Day</th><th>Month</th><th>Year</th><th>DoW</th><th></th></tr></thead>
+                <tbody>
+                    ${data.schedules.map((s, i) => `
+                        <tr>
+                            <td><input type="number" class="inline-input" value="${s.Hour}" onchange="updateModel(() => modularEventConfigs['${folder}']['BloodCastle.xml'].data.schedules[${i}].Hour = this.value)"></td>
+                            <td><input type="number" class="inline-input" value="${s.Minute}" onchange="updateModel(() => modularEventConfigs['${folder}']['BloodCastle.xml'].data.schedules[${i}].Minute = this.value)"></td>
+                            <td><input type="number" class="inline-input" value="${s.Second}" onchange="updateModel(() => modularEventConfigs['${folder}']['BloodCastle.xml'].data.schedules[${i}].Second = this.value)"></td>
+                            <td><input type="number" class="inline-input" value="${s.Day}" onchange="updateModel(() => modularEventConfigs['${folder}']['BloodCastle.xml'].data.schedules[${i}].Day = this.value)"></td>
+                            <td><input type="number" class="inline-input" value="${s.Month}" onchange="updateModel(() => modularEventConfigs['${folder}']['BloodCastle.xml'].data.schedules[${i}].Month = this.value)"></td>
+                            <td><input type="number" class="inline-input" value="${s.Year}" onchange="updateModel(() => modularEventConfigs['${folder}']['BloodCastle.xml'].data.schedules[${i}].Year = this.value)"></td>
+                            <td><input type="number" class="inline-input" value="${s.DayOfWeek}" onchange="updateModel(() => modularEventConfigs['${folder}']['BloodCastle.xml'].data.schedules[${i}].DayOfWeek = this.value)"></td>
+                            <td><button class="btn-icon btn-danger" onclick="updateModel(() => modularEventConfigs['${folder}']['BloodCastle.xml'].data.schedules.splice(${i}, 1))"><i data-lucide="trash-2"></i></button></td>
+                        </tr>
+                    `).join('')}
+                    <tr><td colspan="8" style="text-align:center;"><button class="btn btn-outline btn-sm" onclick="updateModel(() => modularEventConfigs['${folder}']['BloodCastle.xml'].data.schedules.push({Hour:'0',Minute:'0',Second:'-1',Day:'-1',Month:'-1',Year:'-1',DayOfWeek:'-1'}))">+ Add Time</button></td></tr>
+                </tbody>
+            `;
+            container.appendChild(table);
+        }
+
+        function renderBCStats(container, folder) {
+            const data = modularEventConfigs[folder]['BloodCastle.xml'].data;
+            // Merge all level-based data for display
+            const levels = Object.keys(data.entryLevels).sort((a,b) => parseInt(a) - parseInt(b));
+            
+            const table = document.createElement('table');
+            table.innerHTML = `
+                <thead>
+                    <tr>
+                        <th style="width:50px;">Lvl</th>
+                        <th>Min Lv</th><th>Max Lv</th>
+                        <th>Gate HP</th><th>Statue HP</th>
+                        <th>XP Multi</th>
+                        <th>Max Players</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${levels.map(lvl => {
+                        const entry = data.entryLevels[lvl] || {};
+                        const settings = data.eventSettings[lvl] || {};
+                        const exp = data.rewardExpSettings[lvl] || {};
+                        return `
+                            <tr>
+                                <td style="text-align:center; font-weight:bold; color:var(--accent-blue);">${lvl}</td>
+                                <td><input class="inline-input" value="${entry.MinLevel || ''}" onchange="updateModel(() => data.entryLevels['${lvl}'].MinLevel = this.value)"></td>
+                                <td><input class="inline-input" value="${entry.MaxLevel || ''}" onchange="updateModel(() => data.entryLevels['${lvl}'].MaxLevel = this.value)"></td>
+                                <td><input class="inline-input" value="${settings.GateHP || ''}" onchange="updateModel(() => data.eventSettings['${lvl}'].GateHP = this.value)"></td>
+                                <td><input class="inline-input" value="${settings.StatueHP || ''}" onchange="updateModel(() => data.eventSettings['${lvl}'].StatueHP = this.value)"></td>
+                                <td><input class="inline-input" value="${exp.Multiplier || ''}" onchange="updateModel(() => data.rewardExpSettings['${lvl}'].Multiplier = this.value)"></td>
+                                <td><input class="inline-input" value="${settings.MaxPlayers || ''}" onchange="updateModel(() => data.eventSettings['${lvl}'].MaxPlayers = this.value)"></td>
+                            </tr>
+                        `;
+                    }).join('')}
+                </tbody>
+            `;
+            container.innerHTML += `<p style="margin-bottom:10px; color:var(--text-secondary); font-size:13px;">Configure stats per Castle Level. Note: Some advanced settings (scores/zen) are available in XML direct edit if needed, commonly edited values are shown here.</p>`;
+            container.appendChild(table);
+        }
+
+        function renderBCRewards(container, folder) {
+            const data = modularEventConfigs[folder]['BloodCastle.xml'].data;
+            
+            data.grounds.forEach((g, gIdx) => {
+                const group = document.createElement('div');
+                group.className = 'group-container';
+                group.innerHTML = `<div class="group-header"><span class="group-title">Ground ID: ${g.id}</span></div>`;
+                
+                const table = document.createElement('table');
+                table.innerHTML = `<thead><tr><th>Min Contrib</th><th>Max Contrib</th><th>Reward Item</th><th>Count</th><th></th></tr></thead><tbody>
+                    ${g.rewards.map((r, rIdx) => `
+                        <tr>
+                            <td><input class="inline-input" type="number" value="${r.ContributionMin}" onchange="updateModel(() => data.grounds[${gIdx}].rewards[${rIdx}].ContributionMin = this.value)"></td>
+                            <td><input class="inline-input" type="number" value="${r.ContributionMax}" onchange="updateModel(() => data.grounds[${gIdx}].rewards[${rIdx}].ContributionMax = this.value)"></td>
+                            <td>${renderSearchInput('item', r.RewardItemID, gIdx, rIdx, 'RewardItemID', true)}</td>
+                            <td><input class="inline-input" type="number" value="${r.Count}" onchange="updateModel(() => data.grounds[${gIdx}].rewards[${rIdx}].Count = this.value)"></td>
+                            <td><button class="btn-icon btn-danger" onclick="updateModel(() => data.grounds[${gIdx}].rewards.splice(${rIdx}, 1))"><i data-lucide="trash-2"></i></button></td>
+                        </tr>
+                    `).join('')}
+                    <tr><td colspan="5" style="text-align:center;"><button class="btn btn-outline btn-sm" onclick="updateModel(() => data.grounds[${gIdx}].rewards.push({ContributionMin:'0',ContributionMax:'0',RewardItemID:'0',Count:'1'}))">+ Add Reward</button></td></tr>
+                </tbody>`;
+                group.appendChild(table);
+                container.appendChild(group);
+            });
+            container.innerHTML += `<div style="text-align:center; margin-top:10px;"><button class="btn btn-primary" onclick="updateModel(() => data.grounds.push({id: (data.grounds.length+1).toString(), rewards:[]}))">Add New Ground Group</button></div>`;
+        }
+
+        function renderBCMonsters(container, folder) {
+            const data = modularEventConfigs[folder]['BloodCastle_Monster.xml'].data;
+
+            data.castles.forEach((c, cIdx) => {
+                const group = document.createElement('div');
+                group.className = 'group-container';
+                group.style.borderColor = 'var(--accent-pink)';
+                group.style.background = 'rgba(255, 0, 85, 0.05)';
+                group.innerHTML = `
+                    <div class="group-header">
+                        <span class="group-title" style="color:var(--accent-pink);">Castle Level: ${c.level}</span>
+                    </div>
+                `;
+
+                // Single Entities Table
+                const singles = [
+                    { label: 'Archangel', data: c.Archangel },
+                    { label: 'Gate', data: c.Gate },
+                    { label: 'Statue', data: c.Statue }
+                ];
+
+                const singleTable = document.createElement('table');
+                singleTable.style.marginBottom = '15px';
+                singleTable.innerHTML = `
+                    <thead><tr><th style="width:100px;">Entity</th><th>Index (Name)</th><th>Map</th><th>X</th><th>Y</th><th>Dir</th></tr></thead>
+                    <tbody>
+                        ${singles.map(s => {
+                            if (!s.data) return `<tr><td>${s.label}</td><td colspan="5" style="color:gray;">Not defined</td></tr>`;
+                            return `
+                                <tr>
+                                    <td style="font-weight:bold;">${s.label}</td>
+                                    <td>${renderSearchInput('monster', s.data.Index, cIdx, -1, s.label + '_Index', true)}</td>
+                                    <td><input class="inline-input" value="${s.data.MapNumber}" onchange="updateModel(() => data.castles[${cIdx}].${s.label}.MapNumber = this.value)"></td>
+                                    <td><input class="inline-input" value="${s.data.StartX}" onchange="updateModel(() => data.castles[${cIdx}].${s.label}.StartX = this.value)"></td>
+                                    <td><input class="inline-input" value="${s.data.StartY}" onchange="updateModel(() => data.castles[${cIdx}].${s.label}.StartY = this.value)"></td>
+                                    <td><input class="inline-input" value="${s.data.Dir}" onchange="updateModel(() => data.castles[${cIdx}].${s.label}.Dir = this.value)"></td>
+                                </tr>
+                            `;
+                        }).join('')}
+                    </tbody>
+                `;
+                group.appendChild(singleTable);
+
+                // Monster Groups
+                ['Bosses', 'General', 'Misc'].forEach(gName => {
+                    const monsters = c[gName];
+                    const subHeader = document.createElement('h5');
+                    subHeader.style.cssText = "color:var(--text-secondary); margin: 10px 0 5px; font-weight:bold; text-transform:uppercase; font-size:12px;";
+                    subHeader.innerText = gName + ` (${monsters.length})`;
+                    group.appendChild(subHeader);
+
+                    const mTable = document.createElement('table');
+                    mTable.innerHTML = `
+                        <thead><tr><th>Index</th><th>Map</th><th>X</th><th>Y</th><th>Dir</th><th></th></tr></thead>
+                        <tbody>
+                            ${monsters.map((m, mIdx) => `
+                                <tr>
+                                    <td>${renderSearchInput('monster', m.Index, cIdx, mIdx, gName + '_Index', true)}</td>
+                                    <td><input class="inline-input" value="${m.MapNumber}" onchange="updateModel(() => data.castles[${cIdx}].${gName}[${mIdx}].MapNumber = this.value)"></td>
+                                    <td><input class="inline-input" value="${m.StartX}" onchange="updateModel(() => data.castles[${cIdx}].${gName}[${mIdx}].StartX = this.value)"></td>
+                                    <td><input class="inline-input" value="${m.StartY}" onchange="updateModel(() => data.castles[${cIdx}].${gName}[${mIdx}].StartY = this.value)"></td>
+                                    <td><input class="inline-input" value="${m.Dir}" onchange="updateModel(() => data.castles[${cIdx}].${gName}[${mIdx}].Dir = this.value)"></td>
+                                    <td><button class="btn-icon btn-danger" onclick="updateModel(() => data.castles[${cIdx}].${gName}.splice(${mIdx}, 1))"><i data-lucide="trash-2"></i></button></td>
+                                </tr>
+                            `).join('')}
+                            <tr><td colspan="6" style="text-align:center;"><button class="btn btn-outline btn-sm" onclick="updateModel(() => data.castles[${cIdx}].${gName}.push({Index:'0',MapNumber:'0',Distance:'0',StartX:'0',StartY:'0',Dir:'-1'}))">+ Add ${gName} Monster</button></td></tr>
+                        </tbody>
+                    `;
+                    group.appendChild(mTable);
+                });
+
+                container.appendChild(group);
+            });
+        }
+        
+        function renderGenericIniSection(container, title, dataObj, updateCb) {
+            const section = document.createElement('div');
+            section.className = 'ini-section';
+            section.innerHTML = `<div class="ini-header">${title}</div>`;
+            const grid = document.createElement('div');
+            grid.className = 'ini-grid';
+            
+            Object.keys(dataObj).forEach(key => {
+                 grid.innerHTML += `
+                    <div class="ini-group">
+                        <label class="ini-label">${key}</label>
+                        <input type="text" class="inline-input" value="${dataObj[key]}" 
+                               onchange="updateModel(() => { ${updateCb.toString().replace('updateCb', '')}('${key}', this.value); })">
+                    </div>
+                 `;
+            });
+            section.appendChild(grid);
+            container.appendChild(section);
+        }
+
+        function updateInlineModel(pathStr, val) {
+            // Helper for cleaner onchange - requires data to be globally reachable or bound correctly
+            // ... omitting for now, using arrow functions inlines
+        }
+
         // --- CC UPDATE FUNCTIONS ---
 
         function updateCCSchedule(folder, sIdx, key, val) { modularEventConfigs[folder]['ChaosCastle.xml'].data.schedules[sIdx][key] = val; }
@@ -1427,6 +1816,10 @@
             const newLevel = castles.length;
             castles.push({level: newLevel.toString(), monsters: []});
         }
+        
+        // --- BLOOD CASTLE UPDATE HELPERS ---
+        // Basic updates are handled via inline arrow functions in renderers for now. 
+        // Complex logic can be added here if needed.
 
 
         // --- INVASION HELPERS (retained from previous work) ---
@@ -1802,6 +2195,79 @@
                     });
 
                     content += `</ChaosCastle>`;
+                    return content;
+                }
+            } else if (folder === 'BloodCastle') {
+                if (file === 'BloodCastle.xml') {
+                    const data = config['BloodCastle.xml'].data;
+                    let content = `<?xml version="1.0" encoding="utf-8"?>\n<BloodCastle Enable="${data.settings.Enable}" EarlyFinishRestriction="${data.settings.EarlyFinishRestriction}" EarlyFinishMinTime="${data.settings.EarlyFinishMinTime}" MonsterKillReqPerPlayer="${data.settings.MonsterKillReqPerPlayer}" DeliverWeaponTime="${data.settings.DeliverWeaponTime}" RewardScore="${data.settings.RewardScore}" SkillRushCheck="${data.settings.SkillRushCheck}" EventEnterCount="${data.settings.EventEnterCount}">\n`;
+                    content += `\t<Monster TimeToRegen="0" />\n`;
+                    content += `\t<Time ToOpen="${data.time.ToOpen}" StandBy="${data.time.StandBy}" PlayDuration="${data.time.PlayDuration}" ToClose="${data.time.ToClose}"/>\n`;
+
+                    content += `\t<Schedule>\n`;
+                    data.schedules.forEach(s => {
+                        content += `\t\t<Start Year="${s.Year}" Month="${s.Month}" Day="${s.Day}" DayOfWeek="${s.DayOfWeek}" Hour="${s.Hour}" Minute="${s.Minute}" Second="${s.Second}"/>\n`;
+                    });
+                    content += `\t</Schedule>\n`;
+
+                    content += `\t<EntryLevel>\n`;
+                    Object.keys(data.entryLevels).sort((a,b)=>a-b).forEach(lvl => {
+                        const vals = data.entryLevels[lvl];
+                        content += `\t\t<Castle Level="${lvl}" MinLevel="${vals.MinLevel}" MaxLevel="${vals.MaxLevel}"/>\n`;
+                    });
+                    content += `\t</EntryLevel>\n`;
+
+                    content += `\t<EventSettings>\n`;
+                    Object.keys(data.eventSettings).sort((a,b)=>a-b).forEach(lvl => {
+                        const vals = data.eventSettings[lvl];
+                        let attrs = `Level="${lvl}" ` + Object.entries(vals).map(([k,v]) => `${k}="${v}"`).join(' ');
+                        content += `\t\t<Castle ${attrs}/>\n`;
+                    });
+                    content += `\t</EventSettings>\n`;
+
+                    content += `\t<RewardExpSettings>\n`;
+                    Object.keys(data.rewardExpSettings).sort((a,b)=>a-b).forEach(lvl => {
+                        const vals = data.rewardExpSettings[lvl];
+                        content += `\t\t<Castle Level="${lvl}" Multiplier="${vals.Multiplier}"/>\n`;
+                    });
+                    content += `\t</RewardExpSettings>\n`;
+
+                    content += `\t<EventContributionReward>\n`;
+                    data.grounds.forEach(g => {
+                        content += `\t\t<Ground ID="${g.id}">\n`;
+                        g.rewards.forEach(r => {
+                            content += `\t\t\t<Reward ContributionMin="${r.ContributionMin}" ContributionMax="${r.ContributionMax}" RewardItemID="${r.RewardItemID}" Count="${r.Count}"/>\n`;
+                        });
+                        content += `\t\t</Ground>\n`;
+                    });
+                    content += `\t</EventContributionReward>\n`;
+
+                    content += `</BloodCastle>`;
+                    return content;
+
+                } else if (file === 'BloodCastle_Monster.xml') {
+                    const data = config['BloodCastle_Monster.xml'].data;
+                    let content = `<?xml version="1.0" encoding="utf-8"?>\n<BloodCastle>\n`;
+                    
+                    data.castles.forEach(c => {
+                        content += `\t<Castle Level="${c.level}">\n`;
+                        ['Archangel', 'Gate', 'Statue'].forEach(type => {
+                            const e = c[type];
+                            if(e && e.Index) content += `\t\t<${type} Index="${e.Index}" MapNumber="${e.MapNumber}" Distance="${e.Distance}" StartX="${e.StartX}" StartY="${e.StartY}" Dir="${e.Dir}" />\n`;
+                        });
+                        content += `\t\t<Bosses>\n`;
+                        c.Bosses.forEach(m => content += `\t\t\t<Monster Index="${m.Index}" MapNumber="${m.MapNumber}" Distance="${m.Distance}" StartX="${m.StartX}" StartY="${m.StartY}" Dir="${m.Dir}" />\n`);
+                        content += `\t\t</Bosses>\n`;
+                        content += `\t\t<General>\n`;
+                        c.General.forEach(m => content += `\t\t\t<Monster Index="${m.Index}" MapNumber="${m.MapNumber}" Distance="${m.Distance}" StartX="${m.StartX}" StartY="${m.StartY}" Dir="${m.Dir}" />\n`);
+                        content += `\t\t</General>\n`;
+                        content += `\t\t<Misc>\n`;
+                        c.Misc.forEach(m => content += `\t\t\t<Monster Index="${m.Index}" MapNumber="${m.MapNumber}" Distance="${m.Distance}" StartX="${m.StartX}" StartY="${m.StartY}" Dir="${m.Dir}" />\n`);
+                        content += `\t\t</Misc>\n`;
+                        content += `\t</Castle>\n`;
+                    });
+                    
+                    content += `</BloodCastle>`;
                     return content;
                 }
             }
