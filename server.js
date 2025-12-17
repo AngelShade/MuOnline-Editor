@@ -161,9 +161,7 @@ app.get('/zendropeditor.html', (req, res) => {
     res.sendFile(path.join(__dirname, 'zendropeditor.html'));
 });
 
-app.get('/mix_main_mix.js', (req, res) => {
-    res.sendFile(path.join(__dirname, 'mix_main_mix.js'));
-});
+
 
 app.get('/eventscheduler.html', (req, res) => {
     res.sendFile(path.join(__dirname, 'eventscheduler.html'));
