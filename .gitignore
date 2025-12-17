@@ -20,3 +20,9 @@ Thumbs.db
 
 # Editor files
 server.log
+
+# User specific folders (do not sync)
+Logs/
+logs/
+data/
+Data/

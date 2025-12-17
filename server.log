@@ -235,3 +235,12 @@ Event Backups will be saved to: /app/data/Event/Backups
 [2025-12-17 11:44:46] [INFO] Mix Backups will be saved to: D:\DV-Team(S19.2)Full\Data\Mix\Backups
 [2025-12-17 11:44:46] [INFO] Map Drop Backups will be saved to: D:\DV-Team(S19.2)Full\Data\Item\Drop\EachMonsterMapDrop\Backups
 [2025-12-17 11:44:46] [INFO] Event Backups will be saved to: D:\DV-Team(S19.2)Full\Data\Event\Backups
+[2025-12-17 12:00:34] [INFO] Checking file paths...
+[2025-12-17 12:00:34] [INFO] All file paths verified.
+[2025-12-17 12:00:34] [INFO] Spawn Editor server running on http://localhost:3000
+[2025-12-17 12:00:34] [INFO] Monster Backups will be saved to: D:\DV-Team(S19.2)Full\Data\Monster\Backups
+[2025-12-17 12:00:34] [INFO] Zen Backups will be saved to: D:\DV-Team(S19.2)Full\Data\Item\Drop\Backups
+[2025-12-17 12:00:34] [INFO] Shop Backups will be saved to: D:\DV-Team(S19.2)Full\Data\Shops\Backups
+[2025-12-17 12:00:34] [INFO] Mix Backups will be saved to: D:\DV-Team(S19.2)Full\Data\Mix\Backups
+[2025-12-17 12:00:34] [INFO] Map Drop Backups will be saved to: D:\DV-Team(S19.2)Full\Data\Item\Drop\EachMonsterMapDrop\Backups
+[2025-12-17 12:00:34] [INFO] Event Backups will be saved to: D:\DV-Team(S19.2)Full\Data\Event\Backups

@@ -1,61 +1,49 @@
-# MU Online Web Editor
+# 🐉 MU Online Web Editor
 
-A set of easy-to-use web tools for editing MU Online server configuration files.
-Designed to be simple, visual, and safe to use.
-
-## 🚀 Quick Start Guide (Read This First!)
-
-You do not need to be a programmer to use this. Just follow these 3 steps:
-
-### 1. Install Node.js
-You need a free tool called **Node.js** to run this program.
-*   **[Download Node.js Here](https://nodejs.org/)** (Version 18 or higher recommended).
-*   Install it just like any other program.
-
-### 2. Start the Editor
-*   Open the folder where you downloaded this editor.
-*   Double-click the file named **`Start-Editor.bat`**.
-*   A black window will appear. **Do not close it.** This is the server.
-*   The editor should automatically open in your web browser.
-
-### 3. Start Editing!
-*   The editor comes with **sample files** so you can test it immediately.
-*   Your changes are saved automatically.
-*   When you are done, just close the web browser and the black window.
+**The easiest way to edit your MU Online server files.**
+*No programming required!*
 
 ---
 
-## ⚙️ How to Edit Your Server (Configuration)
+## 🚦 How to Start (Follow These Steps)
 
-By default, this editor modifies the "Sample Data" included in the `data/` folder.
-If you want to edit your **real** MU Online server files:
+### 1️⃣ Install Node.js (Required)
+You need this free tool to run the editor.
+1.  **[Click Here to Download Node.js](https://nodejs.org/)** (Version 18 or higher).
+2.  Install it just like any other program (Click "Next" until finished).
 
-1.  Open the editor in your browser.
-2.  Click on **Server Configuration** (Module 7).
-3.  Change the file paths to point to your server files (e.g., `D:\Muserver\Data\...`).
-4.  Click **Save Configuration**.
-5.  **Restart the editor** (Close the black window and run `Start-Editor.bat` again).
+### 2️⃣ Run the Editor
+1.  Open the folder where you unzipped this editor.
+2.  Double-click the file named **`Start-Editor.bat`**.
+3.  **Wait!** A black window will open. **DO NOT CLOSE IT.**
+    *   *(This window is the server running in the background)*
 
-> **Note:** If you get "File Not Found" errors, it means your paths in Server Configuration are wrong.
+### 3️⃣ Start Editing!
+1.  Your web browser should open automatically.
+2.  You will see the dashboard. Click any button to start editing drops, shops, or monsters.
+3.  **To Save:** Click the "Save" button in the tool. It handles everything for you.
+
+---
+
+## ⚠️ Important Tips
+
+*   **Don't close the black window:** If you close it, the editor stops working.
+*   **To Restart:** Close the black window and run `Start-Editor.bat` again.
+*   **Browser didn't open?** Open Chrome or Edge and type: `http://localhost:3000`
 
 ---
 
-## 🛠️ Included Tools
+## ⚙️ How to Edit YOUR Server Files
 
-*   **Monster Spawn Editor**: Drag-and-drop monsters onto maps.
-*   **Shop Manager**: Edit NPC shops visually.
-*   **Drop Rate Editor**: Control item drops and zen rates.
-*   **Chaos Mix Editor**: Adjust success rates for chaos machine.
-*   **Event Scheduler**: Schedule invasions and events.
-*   **Monster Drop Editor**: Configure what items monsters drop.
-
-## ⚠️ Troubleshooting
-
-*   **"Node is not recognized"**: You didn't install Node.js (Step 1). Install it and restart your computer.
-*   **Browser didn't open**: Open your browser and type `http://localhost:3000` in the address bar.
-*   **Screen is stuck**: Press `F5` or `Ctrl+F5` to refresh the page.
+By default, this tool might show "Sample Data". To edit your real server:
+1.  Click **Server Configuration** on the dashboard.
+2.  Change the paths to point to your server (example: `D:\MuServer\Data\...`).
+3.  Click **Save Configuration**.
+4.  **Restart the editor** (Close the black window and open it again).
 
 ---
-**Tech Info (For Developers)**
-*   Built with Node.js, Express, and Vanilla JS.
-*   No database required (edits XML/INI files directly).
+
+### 🛑 Troubleshooting
+
+*   **"Node is not recognized"**: You skipped Step 1. Install Node.js and restart your computer.
+*   **"File Not Found"**: Your paths in Server Configuration are wrong. Check them again.
